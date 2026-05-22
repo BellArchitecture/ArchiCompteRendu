@@ -1,0 +1,2583 @@
+<!DOCTYPE html>
+<!-- PlanSync CR v1.0 — 22/05/2026 -->
+
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PlanSync CR — Compte Rendus Chantier</title>
+<meta name="description" content="Gestion des comptes rendus de chantier : intervenants, remarques par lot, actions, historique, export PDF.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%232d4ef5'/><text x='50%25' y='55%25' font-size='18' text-anchor='middle' dominant-baseline='middle' fill='white' font-family='Arial' font-weight='bold'>PS</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4f3ef;--bg2:#eceae4;--bg3:#e3e1da;
+  --panel:#faf9f7;--border:#dbd9d1;--border2:#ccc9bf;
+  --text:#1c1b18;--text2:#4a4840;--text3:#8a877e;
+  --blue:#2d4ef5;--blue-bg:#eef0fe;--blue-lt:#d6dafd;
+  --green:#1a7a4a;--green-bg:#e8f5ee;
+  --amber:#c47a00;--amber-bg:#fef3d8;
+  --red:#c0392b;--red-bg:#fdecea;
+  --purple:#6b3fa0;--purple-bg:#f0ebfa;
+  --r:10px;--r2:14px;
+  --shadow:0 1px 4px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.05);
+  --shadow2:0 4px 20px rgba(0,0,0,.12);
+  font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text)
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);height:100vh;overflow:hidden;font-family:inherit}
+.app{display:flex;height:100vh}
+.sidebar{width:260px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+.sb-head{padding:14px 14px 10px;border-bottom:1px solid var(--border)}
+.logo{display:flex;align-items:center;gap:9px;margin-bottom:4px}
+.logo-mark{width:26px;height:26px;background:var(--blue);border-radius:7px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700}
+.sb-list{flex:1;overflow-y:auto;padding:8px}
+.cr-item{padding:10px 12px;border-radius:var(--r);cursor:pointer;border:1px solid transparent;margin-bottom:4px;transition:all .12s}
+.cr-item.cr-arch{opacity:.6;border-left:3px solid var(--amber)}
+.cr-item.active{background:var(--blue-bg);border-color:var(--blue-lt)}
+.cr-item-date{font-size:11px;font-weight:600;color:var(--text3);margin-bottom:2px}
+.cr-item-proj{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cr-item-sub{font-size:11px;color:var(--text3);margin-top:2px;display:flex;gap:8px;align-items:center}
+.sb-foot{padding:10px 14px;border-top:1px solid var(--border)}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{background:var(--panel);border-bottom:1px solid var(--border);padding:0 20px;height:52px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border:1px solid var(--border2);border-radius:var(--r);background:var(--panel);color:var(--text);font-size:12px;cursor:pointer;font-weight:500;font-family:inherit;transition:all .12s;white-space:nowrap}
+.btn:hover{background:var(--bg2)}
+.btn-p{background:var(--blue);color:#fff;border-color:var(--blue)}
+.btn-p:hover{background:#2340d8}
+.btn-sm{padding:5px 10px;font-size:11.5px}
+.btn-g{border:none;background:none;cursor:pointer;font-family:inherit}
+.btn-g:hover{background:var(--bg2);border-radius:6px}
+.content{flex:1;overflow-y:auto}
+.badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px}
+.bgreen{background:var(--green-bg);color:var(--green)}
+.bamber{background:var(--amber-bg);color:var(--amber)}
+.bblue{background:var(--blue-bg);color:var(--blue)}
+.bred{background:var(--red-bg);color:var(--red)}
+.bgray{background:var(--bg2);color:var(--text3)}
+.bpurple{background:var(--purple-bg);color:var(--purple)}
+/* CR VIEW */
+.cr-header{background:var(--panel);border-bottom:1px solid var(--border);padding:16px 24px}
+.cr-meta{display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap}
+.section{margin-bottom:20px}
+.section-title{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:7px}
+/* Intervenants */
+.int-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+.int-card{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:11px 13px}
+.int-lot{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.int-ent{font-size:13px;font-weight:500;margin-bottom:2px}
+.int-contact{font-size:11.5px;color:var(--text3)}
+/* Remarques */
+.lot-block{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);margin-bottom:10px;overflow:hidden}
+.lot-head{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;transition:background .1s}
+.lot-head:hover{background:var(--bg2)}
+.lot-head-left{display:flex;align-items:center;gap:9px}
+.lot-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.lot-title{font-weight:500;font-size:13.5px}
+.lot-body{border-top:1px solid var(--border);padding:12px 16px}
+.remarque-item{display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)}
+.remarque-item:last-child{border-bottom:none}
+.ri-check{width:18px;height:18px;border-radius:4px;border:1.5px solid var(--border2);flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s}
+.ri-check.done{background:var(--blue);border-color:var(--blue)}
+.ri-check.flagged{background:var(--amber-bg);border-color:var(--amber)}
+.ri-text{flex:1;font-size:13px;line-height:1.5}
+.ri-text.done-text{text-decoration:line-through;color:var(--text3)}
+.ri-actions{display:flex;gap:3px;opacity:0;flex-shrink:0;transition:opacity .12s}
+.remarque-item:hover .ri-actions{opacity:1}
+/* Actions/décisions */
+.action-row{display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;margin-bottom:7px;transition:border-color .12s}
+.action-row:hover{border-color:var(--border2)}
+.action-row.done{opacity:.5}
+.ar-status{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;font-weight:600;cursor:pointer}
+/* Tabs */
+.tabbar{display:flex;background:var(--panel);border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto}
+.tab{padding:10px 16px;font-size:12px;font-weight:500;border:none;background:none;cursor:pointer;color:var(--text3);border-bottom:2px solid transparent;font-family:inherit;white-space:nowrap}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+/* New CR form */
+.form-section{background:var(--panel);border:1px solid var(--border);border-radius:var(--r2);padding:18px;margin-bottom:14px}
+.form-section-title{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px;display:flex;align-items:center;gap:7px}
+.fi{margin-bottom:12px}
+.fi label{display:block;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.fi input,.fi select,.fi textarea{width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:8px;font-size:13px;background:var(--bg);color:var(--text);outline:none;font-family:inherit}
+.fi input:focus,.fi select:focus,.fi textarea:focus{border-color:var(--blue);background:var(--panel)}
+.fi textarea{resize:vertical;min-height:72px}
+/* Modal */
+.mo-ov{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:100;backdrop-filter:blur(2px)}
+.mo-box{background:var(--panel);border-radius:var(--r2);padding:24px;width:480px;max-width:95vw;border:1px solid var(--border);box-shadow:var(--shadow2);max-height:90vh;overflow-y:auto}
+.mo-box h3{font-size:15px;font-weight:600;margin-bottom:16px}
+.mo-foot{display:flex;gap:7px;margin-top:16px;justify-content:flex-end}
+/* Toast */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--green);color:#fff;padding:8px 18px;border-radius:20px;font-size:12px;font-weight:500;opacity:0;transition:opacity .3s;pointer-events:none;z-index:200;white-space:nowrap}
+/* Print */
+@media print{
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  body{background:#fff!important;margin:0;padding:0;font-family:Arial,sans-serif;font-size:10pt;color:#000}
+  .app{display:block!important;height:auto!important}
+  .sidebar,.topbar,.tabbar,.ri-actions,.btn,.sb-foot,.print-hide{display:none!important}
+  .main{display:block!important;overflow:visible!important}
+  .content{display:none!important}
+  #print-area{display:block!important}
+  .pr-page{page-break-after:always}
+  .pr-page:last-child{page-break-after:avoid}
+}
+#print-area{display:none}
+/* SVG */
+.ico{display:inline-block;width:16px;height:16px;vertical-align:middle;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.ico-lg{width:19px;height:19px}
+.ico-sm{width:14px;height:14px}
+.ico-xs{width:12px;height:12px}
+</style>
+</head>
+<body>
+
+<svg style="display:none">
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
+<symbol id="i-flag" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></symbol>
+<symbol id="i-edit" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></symbol>
+<symbol id="i-archive" viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></symbol>
+<symbol id="i-building" viewBox="0 0 24 24"><path d="M3 21h18M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16"/><path d="M9 21v-4a2 2 0 014 0v4"/></symbol>
+<symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></symbol>
+<symbol id="i-download" viewBox="0 0 24 24"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0018 9h-1.26A8 8 0 103 16.29"/></symbol>
+<symbol id="i-printer" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></symbol>
+<symbol id="i-chevron-down" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></symbol>
+<symbol id="i-chevron-right" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></symbol>
+<symbol id="i-chevron-up" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></symbol>
+<symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+<symbol id="i-save" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></symbol>
+<symbol id="i-upload" viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/></symbol>
+<symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></symbol>
+<symbol id="i-grip" viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="6" r="1.5" fill="currentColor" stroke="none"/><circle cx="9" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="9" cy="18" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="18" r="1.5" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></symbol>
+</svg>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sb-head">
+      <div class="logo">
+        <div class="logo-mark">PS</div>
+        <div>
+          <div style="font-weight:600;font-size:14px;letter-spacing:-.2px">PlanSync</div>
+          <div style="font-size:10px;color:var(--text3)">Compte Rendus</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div style="padding:8px 10px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:6px;background:var(--bg2);border-radius:8px;padding:6px 10px">
+        <svg class="ico ico-sm" style="color:var(--text3);flex-shrink:0"><use href="#i-search"/></svg>
+        <input id="search-input" placeholder="Rechercher…" style="border:none;background:none;outline:none;font-size:12px;color:var(--text);width:100%;font-family:inherit" oninput="filterCR(this.value)">
+      </div>
+    </div>
+
+    <div class="sb-list" id="cr-list"></div>
+
+    <div class="sb-foot">
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-p" style="flex:1;justify-content:center" onclick="openNewCR()">
+          <svg class="ico ico-sm"><use href="#i-plus"/></svg> Nouveau CR
+        </button>
+        <button class="btn" style="padding:7px 10px;flex-shrink:0" onclick="openTemplates()" title="Modèles">
+          <svg class="ico ico-sm"><use href="#i-file"/></svg>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar" id="topbar">
+      <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
+        <svg class="ico ico-lg" style="color:var(--blue);flex-shrink:0" id="tb-icon"><use href="#i-file"/></svg>
+        <div style="min-width:0">
+          <div style="display:flex;align-items:center;gap:6px">
+            <div style="font-weight:600;font-size:15px;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="tb-title">Compte Rendus Chantier</div>
+            <div id="dirty-dot" style="display:none;width:7px;height:7px;border-radius:50%;background:var(--amber);flex-shrink:0" title="Modifications non exportées"></div>
+          </div>
+          <div style="font-size:11px;color:var(--text3)" id="tb-sub">Sélectionnez un compte rendu</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px" id="tb-actions"></div>
+    </div>
+    <div class="tabbar" id="tabbar" style="display:none">
+      <button class="tab active" onclick="switchTab('remarques',this)">Remarques par lot</button>
+      <button class="tab" onclick="switchTab('intervenants',this)">Intervenants</button>
+      <button class="tab" onclick="switchTab('actions',this)">Actions / Décisions</button>
+      <button class="tab" onclick="switchTab('dates',this)">Dates</button>
+      <button class="tab" onclick="switchTab('historique',this)">Historique</button>
+    </div>
+    <div class="content" id="content">
+      <div style="display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:12px;color:var(--text3)">
+        <svg class="ico" style="width:40px;height:40px"><use href="#i-file"/></svg>
+        <div style="font-weight:500;font-size:14px">Aucun compte rendu sélectionné</div>
+        <div style="font-size:12px">Sélectionnez un CR ou créez-en un nouveau</div>
+        <button class="btn btn-p btn-sm" onclick="openNewCR()"><svg class="ico ico-sm"><use href="#i-plus"/></svg> Nouveau CR</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div id="modal-root"></div>
+<div id="print-area"></div>
+
+<script>
+/* ══ UTILS ══ */
+function ico(id,cls=''){return`<svg class="ico ${cls}"><use href="#i-${id}"/></svg>`;}
+function e(s){return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+function markDirty(){isDirty=true;const d=document.getElementById('dirty-dot');if(d)d.style.display='block';}
+function markClean(){isDirty=false;const d=document.getElementById('dirty-dot');if(d)d.style.display='none';}
+function toast(msg,color='var(--green)'){const t=document.getElementById('toast');t.textContent=msg;t.style.background=color;t.style.opacity='1';setTimeout(()=>t.style.opacity='0',2200);}
+function showModal(html){document.getElementById('modal-root').innerHTML=`<div class="mo-ov" onclick="if(event.target===this)closeModal()"><div class="mo-box" onclick="event.stopPropagation()">${html}</div></div>`;}
+function closeModal(){document.getElementById('modal-root').innerHTML='';}
+let uid=100;
+
+/* ══ LOT COLORS ══ */
+const LOT_COLORS={
+  'MOE':'#2d4ef5','INGENIEUR':'#1a7a4a','GEOLOGUE':'#6b3fa0',
+  'MACONNERIE':'#c47a00','ELECTRICITE':'#f59f00','PLOMBERIE':'#0891b2',
+  'CVC':'#0891b2','MENUISERIE EXT.':'#c47a00','MENUISERIE INT.':'#8a877e',
+  'PEINTURE':'#e91e8c','FERRONERIE':'#495057','CARRELAGE':'#c0392b',
+  'VOLETS':'#2d4ef5','CLIENT':'#c0392b','URBANISME':'#6b3fa0',
+  'THERMICIEN':'#e67700','MICROPIEUX':'#1a7a4a','CUISINE':'#c47a00',
+  'DEFAULT':'#8a877e'
+};
+function lotColor(lot){
+  for(const k of Object.keys(LOT_COLORS)){if(lot.toUpperCase().includes(k))return LOT_COLORS[k];}
+  return LOT_COLORS.DEFAULT;
+}
+// Centralized color resolver: lot→intervenant→derived
+function getColor(obj, cr){
+  if(!cr) return LOT_COLORS.DEFAULT;
+  // If it's a lot — get from its linked intervenant
+  if(obj && obj.intId !== undefined){
+    const int=cr.intervenants.find(function(i){return i.id===obj.intId;});
+    if(int) return int.color||lotColor(int.lot);
+    return obj.color||lotColor(obj.titre||'');
+  }
+  // If it's an intervenant
+  if(obj && obj.id && obj.lot !== undefined){
+    return obj.color||lotColor(obj.lot);
+  }
+  return LOT_COLORS.DEFAULT;
+}
+
+/* ══ DATA ══ */
+let CRS = [
+  {
+    id:'cr1',
+    projet:'Henderson-Williams',
+    adresse:'641 Allée de la Roseraie, 06250 Mougins',
+    date:'14/05/2026',
+    dateProchaine:'21/05/2026 14:00',
+    numero:1,
+    redacteur:'Mme Bell — Bell Architecture',
+    statut:'published',
+    intervenants:[
+      {id:'i1',lot:'Maîtrise d\'Ouvrage',entreprise:'',contacts:'M. et Mme Henderson-Williams',present:true},
+      {id:'i2',lot:'Maîtrise d\'Œuvre',entreprise:'Bell Architecture',contacts:'Mme Bell — 06 13 45 17 99',present:true},
+      {id:'i3',lot:'Ingénieur',entreprise:'AZIMUT ING.',contacts:'M. Bahari Saeid — 06 23 47 25 39 — azimutingco@gmail.com',present:false},
+      {id:'i4',lot:'Géologue',entreprise:'OGEO',contacts:'Mme Parsy-Cotisson Amandine — 06 49 95 69 — a.parsy-cotisson@be-ogeo.fr',present:false},
+      {id:'i5',lot:'Lot Maçonnerie',entreprise:'NBR',contacts:'M. Novellini Alexandre — 06 87 38 37 96\nM. Novellini Christophe — 06 72 46 10 06 — n-b-r@wanadoo.fr',present:false},
+      {id:'i6',lot:'Lot Micropieux',entreprise:'Provence Géotechnique et Fondations',contacts:'Perriard Lionel — 06 67 10 39 05 — provence.gf@gmail.com',present:false},
+      {id:'i7',lot:'Lot Électricité',entreprise:'ADELEC',contacts:'Delabroye Laurent — 06 81 70 04 97 — contact@adelec.me',present:false},
+      {id:'i8',lot:'Lot Climatisation / Plomberie',entreprise:'TORAL',contacts:'Toral Olivier — 06 16 44 76 87 — toral.olivier@gmail.com',present:false},
+      {id:'i9',lot:'Lot Menuiserie Extérieure',entreprise:'QUINTANE',contacts:'Duhamel Antoine — 04 93 60 16 28 — menuiserie@quintane.fr\nPoseur Rudy — 07 85 43 01 97',present:false},
+      {id:'i10',lot:'Lot Peinture',entreprise:'Nuance Peinture Décoration',contacts:'L\'Huillier Cyrille — 06 27 26 20 73 — contact@nuancedecorationpeinture.fr',present:false},
+      {id:'i11',lot:'Lot Ferronerie',entreprise:'SAS LEO',contacts:'Masci Anthony — 06 12 78 99 61 — sasleo@orange.fr',present:false},
+      {id:'i12',lot:'Volets Automatiques',entreprise:'GB Stores Bozzano',contacts:'M. Billan Philippe — 06 16 29 50 79 — gbstores@wanadoo.fr',present:false},
+      {id:'i13',lot:'Lot Cuve à Mazout',entreprise:'Fuel Littoral',contacts:'Christophe — 04 92 08 48 90 — fuel-littoral.thermique@eslc.fr',present:false},
+      {id:'i14',lot:'Lot Cuisine / Buanderie',entreprise:'Howdens Aubagne',contacts:'',present:false},
+      {id:'i15',lot:'Lot Carrelage',entreprise:'Quintane',contacts:'',present:false},
+    ],
+    lots:[
+      {id:'l1',titre:'Maîtrise d\'Œuvre',ouvert:true,intId:'i2',remarques:[
+        {id:'r1',texte:'La vidéo de l\'étude du site a été réalisée le 2 juin 2025 et envoyée au client.',done:false,flag:false},
+        {id:'r2',texte:'BD dans le dressing master 2, dans le dressing master 1.',done:false,flag:true},
+        {id:'r3',texte:'Position bouches VMC.',done:false,flag:true},
+        {id:'r4',texte:'Devis signés: GB stores (motorisation volets, vidéophone, portail); Houwdens cuisine et buanderie; Adelec spots et spots WC.',done:true,flag:false},
+        {id:'r5',texte:'SDB 4: sens d\'ouverture porte. Position WC.',done:false,flag:true},
+        {id:'r6',texte:'SDB niches pour toutes les douches, avec bandeaux LED.',done:false,flag:false},
+        {id:'r7',texte:'SDB maître – tête de douche.',done:false,flag:false},
+        {id:'r8',texte:'EDF: à modifier l\'adresse sur les factures.',done:false,flag:false},
+      ]},
+      {id:'l2',titre:'Ingénieur',ouvert:false,intId:'i3',remarques:[
+        {id:'r9',texte:'Mur parking: détail reçu.',done:true,flag:false},
+        {id:'r10',texte:'Agrandir le parking vers le mur du poolhouse – confirmé.',done:true,flag:false},
+        {id:'r11',texte:'Dimensions des fermettes. Hauteur à l\'égout max. 7m (façade ouest).',done:false,flag:true},
+        {id:'r12',texte:'Les dimensions et la position de la machine de climatisation dans les combles → Ces informations seront fournies par M. Toral.',done:false,flag:true},
+      ]},
+      {id:'l3',titre:'Géologue',ouvert:false,intId:'i4',remarques:[
+        {id:'r13',texte:'Sondages pressiométriques effectués le 7 juillet 2025.',done:true,flag:false},
+        {id:'r14',texte:'Étude G2pro reçue.',done:true,flag:false},
+        {id:'r15',texte:'Gravier avec géomembrane possible au lieu des trottoirs. Géomembrane permettra une barrière étanche et évacuera l\'eau loin des façades.',done:false,flag:false},
+      ]},
+      {id:'l4',titre:'Lot Maçonnerie',ouvert:false,intId:'i5',remarques:[
+        {id:'r16',texte:'Mettre en place la clôture de chantier et sécuriser l\'accès avec un code.',done:false,flag:true},
+        {id:'r17',texte:'Travaux VRD – le plombier et l\'électricien doivent d\'abord installer les raccordements de la maison.',done:false,flag:true},
+        {id:'r18',texte:'Dalle PAC.',done:false,flag:false},
+        {id:'r19',texte:'Façade: couleur 03.',done:false,flag:false},
+        {id:'r20',texte:'Trappes faux plafond 50cm x 50cm – 6 trappes.',done:false,flag:false},
+        {id:'r21',texte:'Chambre 2: fenêtre côté sud endommagée.',done:false,flag:true},
+        {id:'r22',texte:'Si la chape est suffisamment sèche, le carreleur devrait commencer le 25 mai.',done:false,flag:false},
+        {id:'r23',texte:'Marches et contremarches carrelées. Profil Schlueter J110TSBG, alu finition structurée gris beige.',done:false,flag:false},
+        {id:'r24',texte:'DEVIS À FINALISER: Lot VRD, Semelle portail.',done:false,flag:true},
+        {id:'r25',texte:'Isolation murale parties nouvelles R=3,75 m²/KW | Combles R=10 m²/KW | Plafond sous terrasse R=6,85 m²/KW | Plancher bas RDCH R=4,65 m²/KW.',done:false,flag:false},
+        {id:'r26',texte:'Choix des tuiles: TERREAL CASTELNAUDARY.',done:true,flag:false},
+      ]},
+      {id:'l5',titre:'Lot Électricité',ouvert:false,intId:'i7',remarques:[
+        {id:'r27',texte:'Prises tête de lits: Côté gauche: 2 prises standard + USB-C. Côté droit: 1 prise standard + 1 prise anglaise.',done:false,flag:false},
+        {id:'r28',texte:'Connection TV: satellite et RJ45. Variateurs pour chambres, salons, cuisine.',done:false,flag:false},
+        {id:'r29',texte:'Position WIFI dans le local technique au RDJ. Répéteurs dans les greniers.',done:false,flag:false},
+        {id:'r30',texte:'Alimentation portail, éclairage poteaux, vidéophone.',done:false,flag:true},
+        {id:'r31',texte:'Alimentation futur panneaux solaires.',done:false,flag:false},
+        {id:'r32',texte:'Moteurs volets: Salon 4 doubles; Chambre 5 – 2 singles et 1 double; Chambre maître – 2 doubles.',done:false,flag:false},
+        {id:'r33',texte:'Devis à préparer: Sèche-serviette Acova Regate → modifier avec modèle chrome pour les deux chambres à l\'étage.',done:false,flag:true},
+        {id:'r34',texte:'Prises UK de JUNG validées par le client (le prix ne change pas). Appareillage Jung.',done:true,flag:false},
+        {id:'r35',texte:'Spots conformes RE2020 – fourniture et pose 20€ HT/spot. Tous les spots commandés par l\'électricien.',done:true,flag:false},
+      ]},
+      {id:'l6',titre:'Lot Climatisation / Plomberie',ouvert:false,intId:'i8',remarques:[
+        {id:'r36',texte:'Bac douches: SDB1 80×120, SDB2 80×170, SDB4 90×120.',done:false,flag:false},
+        {id:'r37',texte:'Trappes accès clim et VMC 50×50cm.',done:false,flag:false},
+        {id:'r38',texte:'VMC: toutes SDB, buanderie, local technique et cuisine.',done:false,flag:true},
+        {id:'r39',texte:'Poolhouse: prévoir un évier.',done:false,flag:true},
+        {id:'r40',texte:'Baignoire chambres maître: livraison mi-juillet. Alternative: modèle Joséphine (rebord plus fin).',done:false,flag:true},
+        {id:'r41',texte:'Entrée d\'air: 15m³/pièce chambres, 30m³ grand salon.',done:false,flag:false},
+        {id:'r42',texte:'Devis VMC validé.',done:true,flag:false},
+        {id:'r43',texte:'Planning second œuvre: Mars-Avril doublage/cloison/chape, Mai carrelage.',done:false,flag:false},
+      ]},
+      {id:'l7',titre:'Lot Menuiserie Extérieure',ouvert:false,intId:'i9',remarques:[
+        {id:'r44',texte:'Réception des fenêtres à programmer.',done:false,flag:true},
+        {id:'r45',texte:'Devis accepté: grilles entrée d\'air couleur noir, Autoréglable Hygroréglable 3 → communiquer la date de pose.',done:true,flag:false},
+        {id:'r46',texte:'À vérifier: porte-fenêtre dans la cuisine.',done:false,flag:true},
+        {id:'r47',texte:'RDC fenêtre WC d\'invité 00.10.01 → gauche tirant. Confirmé par Quintane le 16.09.25.',done:true,flag:false},
+      ]},
+      {id:'l8',titre:'Lot Menuiserie Intérieure',ouvert:false,intId:'i9',remarques:[
+        {id:'r48',texte:'Pose des portes intérieures par le menuisier du client. Travaux: cuisine 6 sem., buanderie 6 sem., portes 8 sem.',done:false,flag:false},
+        {id:'r49',texte:'Sur place à partir du 08 juin.',done:false,flag:false},
+        {id:'r50',texte:'Jeu de 1 cm sous les portes nécessaire pour le bon fonctionnement de la VMC.',done:false,flag:true},
+      ]},
+      {id:'l9',titre:'Lot Peinture',ouvert:false,intId:'i10',remarques:[
+        {id:'r51',texte:'Préparation murs et plafond, peinture blanc mat pour le plafond – accepté.',done:true,flag:false},
+        {id:'r52',texte:'Prévu pour juillet.',done:false,flag:false},
+        {id:'r53',texte:'Devis à préparer pour la peinture des volets (photos du bois envoyées).',done:false,flag:true},
+      ]},
+      {id:'l10',titre:'Lot Ferronerie',ouvert:false,intId:'i11',remarques:[
+        {id:'r54',texte:'Plans d\'exécution reçus et validés par le client.',done:true,flag:false},
+        {id:'r55',texte:'Planning à fournir.',done:false,flag:true},
+        {id:'r56',texte:'Portail: moins de 600 kg. Contacteur pour le portillon.',done:false,flag:false},
+        {id:'r57',texte:'Garde-corps terrasses – couleur grise RAL 7005 – barreaux verticaux.',done:false,flag:false},
+        {id:'r58',texte:'Rampe escaliers – couleur noir – barreaux verticaux.',done:false,flag:false},
+        {id:'r59',texte:'Garde-corps salon, profils en U au sol et verre (2×80cm, 8/8/2 = 16,2 total) – RAL 7005.',done:false,flag:false},
+      ]},
+      {id:'l11',titre:'Volets Automatiques / Portail',ouvert:false,intId:'i12',remarques:[
+        {id:'r60',texte:'RDV à prévoir avec le menuisier pour les volets (à partir du 8 juin).',done:false,flag:true},
+        {id:'r61',texte:'Devis motorisation volets – accepté.',done:true,flag:false},
+        {id:'r62',texte:'Devis motorisation portail et vidéophone – accepté.',done:true,flag:false},
+        {id:'r63',texte:'Devis stores (le client passera au showroom).',done:false,flag:false},
+      ]},
+      {id:'l12',titre:'Lot Carrelage',ouvert:false,intId:'i15',remarques:[
+        {id:'r64',texte:'Faïences murales SDB3 commandées. SDB4 fond de douche vertes type zellige commandées.',done:true,flag:false},
+      ]},
+      {id:'l13',titre:'Client',ouvert:false,intId:'i1',remarques:[
+        {id:'r65',texte:'Carrelage validé: PELDANO SEQUOIA BIRCH RECT 25×150 (étage), ATLAS EXIGO CALACATTA 60×60 (sols/escaliers/SDB), ATLAS ARENISCA PERLA 60×60 (terrasses/poolhouse).',done:true,flag:false},
+        {id:'r66',texte:'Prises UK JUNG validées. Appareillage Jung.',done:true,flag:false},
+        {id:'r67',texte:'Livraison meubles SDB: 26 mai après-midi, sur site à Mougins.',done:false,flag:true},
+        {id:'r68',texte:'Meetings sur site: 26 mai 11h30, 09 juin 11h30, 22 juin.',done:false,flag:false},
+        {id:'r69',texte:'Facade en pierre pour partie RDC et côté nord (salon). Pierre sélectionnée le 03.03.2026 – validé urbanisme.',done:true,flag:false},
+      ]},
+      {id:'l14',titre:'Urbanisme',ouvert:false,intId:'i1',remarques:[
+        {id:'r70',texte:'PC modificatif déposé le 23.10.2025 – Notification 23.01.2026 – Arrêté 20.02.2026.',done:true,flag:false},
+        {id:'r71',texte:'Contrôle chantier: Mme Darmon bureau des contrôles 04 92 92 58 14.',done:false,flag:false},
+        {id:'r72',texte:'Validation échantillons couleur façade et pierres de façade.',done:false,flag:true},
+      ]},
+      {id:'l15',titre:'Thermicien',ouvert:false,intId:'i3',remarques:[
+        {id:'r73',texte:'Extension: isolation murale 12cm R=3,75 | combles 40cm R=10 | plafond sous terrasse 16cm R=6,85 | plancher bas RDCH 10cm R=4,65 | plafond poolhouse 12cm R=3,75.',done:false,flag:false},
+        {id:'r74',texte:'Volets auto crépusculaire.',done:false,flag:false},
+        {id:'r75',texte:'Étude VMC et climatisation reçue.',done:true,flag:false},
+      ]},
+    ],
+    actions:[
+      {id:'a1',texte:'Communiquer date de pose des grilles d\'entrée d\'air',responsable:'Quintane',intId:'i9',echeance:'21/05/2026',done:false},
+      {id:'a2',texte:'Fournir informations dimensions/position machine climatisation combles',responsable:'M. Toral',intId:'i8',echeance:'21/05/2026',done:false},
+      {id:'a3',texte:'Finaliser devis Lot VRD et Semelle portail',responsable:'NBR',intId:'i5',echeance:'21/05/2026',done:false},
+      {id:'a4',texte:'Préparer devis peinture des volets',responsable:'Nuance Peinture',intId:'i10',echeance:'28/05/2026',done:false},
+      {id:'a5',texte:'Programmer réception des fenêtres',responsable:'Quintane',intId:'i9',echeance:'21/05/2026',done:false},
+      {id:'a6',texte:'Planning à fournir',responsable:'SAS Leo',intId:'i11',echeance:'21/05/2026',done:false},
+      {id:'a7',texte:'Vérifier porte-fenêtre cuisine',responsable:'Quintane',intId:'i9',echeance:'21/05/2026',done:false},
+      {id:'a8',texte:'Mettre en place clôture chantier avec code d\'accès',responsable:'NBR',intId:'i5',echeance:'Immédiat',done:false},
+      {id:'a9',texte:'Sèche-serviette Acova – modifier avec modèle chrome pour chambres étage',responsable:'ADELEC',intId:'i7',echeance:'21/05/2026',done:false},
+      {id:'a10',texte:'RDV avec menuisier pour volets (à partir du 8 juin)',responsable:'GB Stores',intId:'i12',echeance:'08/06/2026',done:false},
+    ]
+  }
+];
+
+/* ══ TEMPLATES ══ */
+// Load saved templates from localStorage
+let TEMPLATES = [];
+try {
+  const saved = localStorage.getItem('plansync_cr_templates');
+  if (saved) TEMPLATES = JSON.parse(saved);
+} catch(e) { TEMPLATES = []; }
+
+function saveTemplatesToStorage() {
+  try { localStorage.setItem('plansync_cr_templates', JSON.stringify(TEMPLATES)); } catch(e) {}
+}
+
+let activeCR=null;
+let activeTab='remarques';
+let searchQuery='';
+let showHistory=false;
+let remarqueSearch='';
+let isDirty=false; // tracks unsaved changes
+
+/* ══ SIDEBAR ══ */
+function renderList(){
+  const el=document.getElementById('cr-list');
+  const q=searchQuery;
+  const matches=cr=>!q||cr.projet.toLowerCase().includes(q)||cr.date.includes(q)||cr.adresse.toLowerCase().includes(q);
+
+  const active=CRS.filter(cr=>cr.statut!=='archived'&&matches(cr));
+  const archived=CRS.filter(cr=>cr.statut==='archived'&&matches(cr));
+
+  function crCard(cr){
+    const flagCount=cr.lots.flatMap(l=>l.remarques).filter(r=>r.flag&&!r.done).length;
+    const doneCount=cr.lots.flatMap(l=>l.remarques).filter(r=>r.done).length;
+    const total=cr.lots.flatMap(l=>l.remarques).length;
+    const allDone=total>0&&doneCount===total;
+    return `<div class="cr-item ${activeCR===cr.id?'active':''} ${cr.statut==='archived'?'cr-arch':''}" onclick="openCR('${cr.id}')">
+      <div class="cr-item-date">${cr.date}${cr.statut==='archived'?' <span style="font-size:9px;background:var(--amber-bg);color:var(--amber);padding:1px 5px;border-radius:4px">Archivé</span>':''}</div>
+      <div class="cr-item-proj">${cr.projet}</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${cr.adresse}</div>
+      <div class="cr-item-sub">
+        <span class="badge ${allDone?'bgreen':'bgray'}" style="font-size:9px">${doneCount}/${total}</span>
+        ${flagCount?`<span class="badge bamber" style="font-size:9px">${flagCount} ⚑</span>`:''}
+        <span style="font-size:10px;color:var(--text3);margin-left:auto">CR n°${cr.numero}</span>
+      </div>
+    </div>`;
+  }
+
+  let html='';
+
+  if(active.length){
+    html+=`<div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;padding:8px 6px 4px">En cours (${active.length})</div>`;
+    html+=active.map(crCard).join('');
+  }
+
+  // History toggle button
+  html+=`<button onclick="showHistory=!showHistory;renderList()" style="width:100%;display:flex;align-items:center;gap:6px;padding:8px 6px;border:none;background:none;cursor:pointer;font-family:inherit;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-top:6px">
+    <svg class="ico ico-xs" style="transition:transform .2s;transform:rotate(${showHistory?'90':'0'}deg)"><use href="#i-chevron-right"/></svg>
+    Historique (${archived.length})
+  </button>`;
+
+  if(showHistory&&archived.length){
+    html+=archived.map(crCard).join('');
+  }
+
+  if(!active.length&&!archived.length){
+    html='<div style="text-align:center;padding:24px;font-size:12px;color:var(--text3)">Aucun résultat</div>';
+  }
+
+  el.innerHTML=html;
+}
+
+function filterCR(q){searchQuery=q.toLowerCase();renderList();}
+
+/* ══ OPEN CR ══ */
+function openCR(id){
+  activeCR=id;
+  activeTab='remarques';
+  remarqueSearch='';
+  actionFilter='';
+  lotsSortedByFlags=false;
+  renderList();
+  renderCR();
+}
+
+function renderCR(){
+  const cr=CRS.find(c=>c.id===activeCR);
+  if(!cr)return;
+
+  document.getElementById('tb-title').textContent=cr.projet;
+  document.getElementById('tb-sub').textContent=`CR n°${cr.numero} — ${cr.date} — Prochaine réunion: ${cr.dateProchaine}`;
+  document.getElementById('tb-icon').innerHTML=`<use href="#i-file"/>`;
+  document.getElementById('tabbar').style.display='flex';
+
+  // Archived banner inside content if needed
+  const existingBanner=document.getElementById('arch-banner');
+  if(cr.statut==='archived'){
+    if(!existingBanner){
+      const banner=document.createElement('div');
+      banner.id='arch-banner';
+      banner.style.cssText='background:var(--amber-bg);border-bottom:1px solid var(--amber);padding:8px 20px;font-size:12px;color:var(--amber);display:flex;align-items:center;gap:8px;flex-shrink:0';
+      banner.innerHTML=`<svg class="ico ico-sm"><use href="#i-archive"/></svg> Ce compte rendu est archivé — il est en lecture seule dans l'historique.
+        <button onclick="toggleArchiveCR('${cr.id}')" style="background:none;border:none;cursor:pointer;color:var(--blue);font-size:12px;font-family:inherit;margin-left:auto;text-decoration:underline">Désarchiver</button>`;
+      const tabbar=document.getElementById('tabbar');
+      tabbar.parentNode.insertBefore(banner,tabbar);
+    }
+  } else {
+    if(existingBanner)existingBanner.remove();
+  }
+
+  // Reset tab UI
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    const tabs=['remarques','intervenants','actions'];
+    t.classList.toggle('active',tabs[i]===activeTab);
+  });
+
+  const isArchived=cr.statut==='archived';
+  document.getElementById('tb-actions').innerHTML=`
+    <button class="btn btn-sm" onclick="openCRSettings('${cr.id}')">${ico('settings','ico-sm')} Réglages</button>
+    <button class="btn btn-sm" onclick="cloneCR('${cr.id}')" title="Dupliquer ce CR comme base pour le suivant"><svg class="ico ico-sm"><use href="#i-copy"/></svg> Dupliquer</button>
+    <button class="btn btn-sm" onclick="saveAsTemplate('${cr.id}')" title="Enregistrer comme modèle réutilisable"><svg class="ico ico-sm"><use href="#i-save"/></svg> Modèle</button>
+    <button class="btn btn-sm" onclick="exportCR('${cr.id}')" title="Exporter / Imprimer"><svg class="ico ico-sm"><use href="#i-printer"/></svg> Exporter PDF</button>
+    <button class="btn btn-sm" onclick="openEditCR('${cr.id}')">${ico('edit','ico-sm')} Modifier</button>
+    <button class="btn btn-sm ${isArchived?'':'btn-amber'}" onclick="toggleArchiveCR('${cr.id}')" title="${isArchived?'Désarchiver':'Archiver ce CR'}" style="${isArchived?'':'color:var(--amber);border-color:var(--amber)'}">
+      <svg class="ico ico-sm"><use href="#i-archive"/></svg> ${isArchived?'Désarchiver':'Archiver'}
+    </button>
+    <button class="btn btn-p btn-sm" onclick="openAddLot('${cr.id}')">${ico('plus','ico-sm')} Ajouter lot</button>`;
+
+  if(activeTab==='remarques') renderRemarques(cr);
+  else if(activeTab==='intervenants') renderIntervenants(cr);
+  else if(activeTab==='actions') renderActions(cr);
+  else if(activeTab==='dates') renderDates(cr);
+  else if(activeTab==='historique') renderHistorique(cr);
+}
+
+/* ══ REMARQUES ══ */
+function renderRemarques(cr){
+  const flagTotal=cr.lots.flatMap(l=>l.remarques).filter(r=>r.flag&&!r.done).length;
+  let html=`<div style="padding:16px 24px">`;
+
+  // Summary
+  const all=cr.lots.flatMap(l=>l.remarques);
+  const done=all.filter(r=>r.done).length;
+  const flags=all.filter(r=>r.flag&&!r.done).length;
+  html+=`<div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+    <div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:10px 16px;display:flex;align-items:center;gap:8px">
+      <div style="font-size:20px;font-weight:600;color:var(--blue)">${all.length}</div>
+      <div style="font-size:11px;color:var(--text3)">Points total</div>
+    </div>
+    <div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:10px 16px;display:flex;align-items:center;gap:8px">
+      <div style="font-size:20px;font-weight:600;color:var(--green)">${done}</div>
+      <div style="font-size:11px;color:var(--text3)">Traités</div>
+    </div>
+    <div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:10px 16px;display:flex;align-items:center;gap:8px">
+      <div style="font-size:20px;font-weight:600;color:var(--amber)">${flags}</div>
+      <div style="font-size:11px;color:var(--text3)">À suivre</div>
+    </div>
+    <div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:10px 16px;flex:1;min-width:140px">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:4px"><span>Avancement</span><span style="font-weight:600">${Math.round(done/all.length*100)}%</span></div>
+      <div style="height:6px;background:var(--bg2);border-radius:3px;overflow:hidden"><div style="height:100%;background:var(--green);border-radius:3px;width:${Math.round(done/all.length*100)}%;transition:width .3s"></div></div>
+    </div>
+    <div style="display:flex;gap:5px;align-items:center;flex-shrink:0">
+      <button class="btn btn-sm" onclick="toggleSortLots('${cr.id}')" title="${lotsSortedByFlags?'Rétablir ordre':'Trier par points en suspens'}">
+        <svg class="ico ico-xs"><use href="#i-flag"/></svg> ${lotsSortedByFlags?'↺':'⚑ Trier'}
+      </button>
+      <button class="btn btn-sm" onclick="exportCSV('${cr.id}')" title="Exporter toutes les remarques en CSV">
+        <svg class="ico ico-xs"><use href="#i-download"/></svg> CSV
+      </button>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:7px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:7px 12px;margin-bottom:14px">
+    <svg class="ico ico-sm" style="color:var(--text3);flex-shrink:0"><use href="#i-search"/></svg>
+    <input type="text" placeholder="Rechercher dans les remarques…" id="remarque-search" value="${remarqueSearch}"
+      oninput="remarqueSearch=this.value;renderRemarques(CRS.find(c=>c.id==='${cr.id}'))"
+      style="border:none;background:none;outline:none;font-size:13px;color:var(--text);width:100%;font-family:inherit">
+    ${remarqueSearch?`<button onclick="remarqueSearch='';renderRemarques(CRS.find(c=>c.id==='${cr.id}'))" style="background:none;border:none;cursor:pointer;padding:2px;color:var(--text3)">✕</button>`:''}
+  </div>`;
+
+  cr.lots.forEach(lot=>{
+    // Color priority: linked intervenant > lot's own color > derived from title
+    const linked=lot.intId?cr.intervenants.find(i=>i.id===lot.intId):null;
+    const color=getColor(lot,cr);
+    const linkedLabel=linked?(linked.entreprise||linked.lot):null;
+    const lotDone=lot.remarques.filter(r=>r.done).length;
+    const lotFlags=lot.remarques.filter(r=>r.flag&&!r.done).length;
+    html+=`<div class="lot-block" data-lotid="${lot.id}">
+      <div class="lot-head" onclick="toggleLot('${cr.id}','${lot.id}')">
+        <div class="lot-head-left">
+          <div class="lot-dot" style="background:${color}"></div>
+          <div class="lot-title">${lot.titre}</div>
+          ${lotFlags?`<span class="badge bamber" style="font-size:9px">${lotFlags} ⚑</span>`:''}
+          ${linkedLabel?`<span class="lot-int-badge" style="font-size:10px;color:${color};background:${color}18;padding:2px 7px;border-radius:10px;font-weight:500">${linkedLabel}</span>`:''}
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="badge ${lotDone===lot.remarques.length&&lot.remarques.length>0?'bgreen':'bgray'}" style="font-size:9px">${lotDone}/${lot.remarques.length}</span>
+          <button class="btn-g" style="padding:3px" onclick="event.stopPropagation();renameLot('${cr.id}','${lot.id}')" title="Renommer">${ico('edit','ico-xs')}</button>
+          <button class="btn-g" style="padding:3px" onclick="event.stopPropagation();deleteLot('${cr.id}','${lot.id}')" title="Supprimer le lot"><svg class="ico ico-xs" style="color:var(--red)"><use href="#i-trash"/></svg></button>
+          ${ico(lot.ouvert?'chevron-up':'chevron-down','ico-sm')}
+        </div>
+      </div>
+      ${lot.ouvert?`<div class="lot-body">
+        ${(()=>{
+          const active=lot.remarques.filter(r=>!r.done&&(!remarqueSearch||r.texte.toLowerCase().includes(remarqueSearch.toLowerCase())));
+          const archived=lot.remarques.filter(r=>r.done);
+          const archId='arch-'+lot.id;
+          let out='';
+          out+=active.map(r=>`
+            <div class="remarque-item">
+              <div class="ri-check ${r.flag?'flagged':''}" onclick="toggleDone('${cr.id}','${lot.id}','${r.id}')" title="Marquer comme traité"></div>
+              <div class="ri-text">${r.texte}</div>
+              <div class="ri-actions">
+                <button class="btn-g" style="padding:3px" onclick="toggleFlag('${cr.id}','${lot.id}','${r.id}')" title="${r.flag?'Retirer':'Marquer à suivre'}"><svg class="ico ico-xs" style="color:${r.flag?'var(--amber)':'var(--text3)'}"><use href="#i-flag"/></svg></button>
+                <button class="btn-g" style="padding:3px" onclick="editRemarque('${cr.id}','${lot.id}','${r.id}')" title="Modifier">${ico('edit','ico-xs')}</button>
+                <button class="btn-g" style="padding:3px" onclick="copyRemarque('${cr.id}','${lot.id}','${r.id}')" title="Copier dans un autre lot"><svg class="ico ico-xs" style="color:var(--text3)"><use href="#i-copy"/></svg></button>
+                <button class="btn-g" style="padding:3px" onclick="toggleDone('${cr.id}','${lot.id}','${r.id}')" title="Archiver ce point"><svg class="ico ico-xs" style="color:var(--text3)"><use href="#i-archive"/></svg></button>
+                <button class="btn-g" style="padding:3px" onclick="remarkToAction('${cr.id}','${lot.id}','${r.id}')" title="Convertir en action"><svg class="ico ico-xs" style="color:var(--text3)"><use href="#i-check"/></svg></button>
+              </div>
+            </div>`).join('');
+          if(archived.length){
+            out+=`<div style="margin-top:8px;border-top:1px dashed var(--border2)">
+              <button onclick="var el=document.getElementById('${archId}');el.style.display=el.style.display==='none'?'block':'none'" style="display:flex;align-items:center;gap:6px;padding:6px 0;border:none;background:none;cursor:pointer;font-family:inherit;font-size:11px;font-weight:600;color:var(--text3);width:100%">
+                <svg class="ico ico-xs"><use href="#i-archive"/></svg> Archive — ${archived.length} point(s) traités
+              </button>
+              <div id="${archId}" style="display:none">
+                ${archived.map(r=>`
+                <div class="remarque-item" style="opacity:.65;background:var(--green-bg)">
+                  <div class="ri-check done" onclick="toggleDone('${cr.id}','${lot.id}','${r.id}')" title="Remettre en cours">${ico('check','ico-xs')}</div>
+                  <div style="flex:1;min-width:0">
+                    <div class="ri-text done-text">${r.texte}</div>
+                    ${r.archivedAt?`<div style="font-size:10px;color:var(--green);margin-top:2px">✓ Traité le ${r.archivedAt}</div>`:''}
+                  </div>
+                  <div class="ri-actions">
+                    <button class="btn-g" style="padding:3px" onclick="deleteRemarque('${cr.id}','${lot.id}','${r.id}')" title="Supprimer définitivement"><svg class="ico ico-xs" style="color:var(--red)"><use href="#i-trash"/></svg></button>
+                  </div>
+                </div>`).join('')}
+              </div>
+            </div>`;
+          }
+          return out;
+        })()}
+        <div style="padding:8px 0 2px;border-top:1px solid var(--border);margin-top:6px;display:flex;gap:6px">
+          <input placeholder="Ajouter une remarque…" id="new-r-${lot.id}" style="flex:1;padding:6px 9px;border:1px solid var(--border2);border-radius:7px;font-size:12px;background:var(--bg);color:var(--text);outline:none;font-family:inherit" onkeydown="if(event.key==='Enter')addRemarque('${cr.id}','${lot.id}')">
+          <button class="btn btn-p btn-sm" onclick="addRemarque('${cr.id}','${lot.id}')">${ico('plus','ico-xs')}</button>
+        </div>
+      </div>`:``}
+    </div>`;
+  });
+  html+='</div>';
+  document.getElementById('content').innerHTML=html;
+}
+
+/* ══ INTERVENANTS ══ */
+function renderIntervenants(cr){
+  const present=cr.intervenants.filter(i=>i.present);
+  const absent=cr.intervenants.filter(i=>!i.present);
+  document.getElementById('content').innerHTML=`<div style="padding:16px 24px">
+    <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center">
+      <span style="font-size:13px;font-weight:500">${cr.intervenants.length} intervenants</span>
+      <span class="badge bgreen">${present.length} présents</span>
+      <span class="badge bgray">${absent.length} absents</span>
+      <button class="btn btn-sm" style="margin-left:auto" onclick="openAddIntervenant('${cr.id}')">${ico('plus','ico-sm')} Ajouter</button>
+    </div>
+    <div class="int-grid">
+      ${cr.intervenants.map((i,idx)=>`
+        <div class="int-card" data-intidx="${idx}" style="border-left:3px solid ${getColor(i,cr)}">
+          <div class="int-lot">${i.lot}</div>
+          <div class="int-ent">${i.entreprise||i.lot}</div>
+          <div class="int-contact" style="white-space:pre-line">${i.contacts||'—'}</div>
+          <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;gap:4px">
+            <span class="badge ${i.present?'bgreen':'bgray'}" style="font-size:9px;cursor:pointer" onclick="togglePresence('${cr.id}','${i.lot}')">${i.present?'✓ Présent':'Absent'}</span>
+            <div style="display:flex;gap:3px">
+              <button class="btn-g" style="padding:3px" onclick="editIntervenant('${cr.id}',${idx})" title="Modifier">${ico('edit','ico-xs')}</button>
+              <button class="btn-g" style="padding:3px" onclick="deleteIntervenant('${cr.id}',${idx})" title="Supprimer"><svg class="ico ico-xs" style="color:var(--red)"><use href="#i-trash"/></svg></button>
+            </div>
+          </div>
+        </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+/* ══ ACTIONS ══ */
+function renderActions(cr){
+  const todo=cr.actions.filter(a=>!a.done&&(!actionFilter||a.intId===actionFilter));
+  const done=cr.actions.filter(a=>a.done&&(!actionFilter||a.intId===actionFilter));
+  const allTodo=cr.actions.filter(a=>!a.done);
+  const allDone=cr.actions.filter(a=>a.done);
+
+  // Build filter chips
+  const intervenantIds=[...new Set(cr.actions.map(a=>a.intId).filter(Boolean))];
+  const filterChips=intervenantIds.map(intId=>{
+    const iv=cr.intervenants.find(i=>i.id===intId);
+    if(!iv)return '';
+    const col=getColor(iv,cr);
+    const active=actionFilter===intId;
+    return `<button onclick="setActionFilter('${cr.id}','${active?'':intId}')"
+      style="font-size:10px;padding:3px 10px;border-radius:12px;border:1.5px solid ${col};background:${active?col:'transparent'};color:${active?'#fff':col};cursor:pointer;font-family:inherit;font-weight:600;transition:all .15s">
+      ${iv.entreprise||iv.lot}
+    </button>`;
+  }).join('');
+
+  function actionCard(a,isDone){
+    const linked=a.intId?cr.intervenants.find(i=>i.id===a.intId):null;
+    const linkedLabel=linked?(linked.entreprise||linked.lot):a.responsable;
+    const linkedColor=linked?getColor(linked,cr):'var(--text3)';
+    return `<div class="action-row ${isDone?'done':''}">
+      <div class="ar-status" style="background:${isDone?'var(--green-bg)':'var(--red-bg)'};color:${isDone?'var(--green)':'var(--red)'}" onclick="toggleAction('${cr.id}','${a.id}')">
+        ${isDone?ico('check','ico-xs'):ico('alert','ico-xs')}
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;${isDone?'text-decoration:line-through;color:var(--text3)':''}">${a.texte}</div>
+        <div style="font-size:11px;margin-top:3px;display:flex;gap:7px;align-items:center;flex-wrap:wrap">
+          ${linkedLabel?`<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;background:${linkedColor}18;color:${linkedColor}">${linkedLabel}</span>`:''}
+          ${a.echeance?`<span style="color:var(--text3)">${ico('calendar','ico-xs')} ${a.echeance}</span>`:''}
+        </div>
+      </div>
+      <div style="display:flex;gap:3px;flex-shrink:0">
+        <button class="btn-g" style="padding:3px" onclick="editAction('${cr.id}','${a.id}')" title="Modifier">${ico('edit','ico-xs')}</button>
+        <button class="btn-g" style="padding:3px" onclick="deleteAction('${cr.id}','${a.id}')" title="Supprimer"><svg class="ico ico-xs" style="color:var(--red)"><use href="#i-trash"/></svg></button>
+      </div>
+    </div>`;
+  }
+
+  document.getElementById('content').innerHTML=`<div style="padding:16px 24px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div style="display:flex;gap:8px;align-items:center">
+        <span style="font-size:13px;font-weight:500">${allTodo.length+allDone.length} actions</span>
+        <span class="badge bred">${allTodo.length} en cours</span>
+        <span class="badge bgreen">${allDone.length} terminées</span>
+        ${actionFilter?`<button onclick="setActionFilter('${cr.id}','')" style="font-size:10px;padding:2px 8px;border-radius:10px;background:var(--bg2);border:1px solid var(--border2);cursor:pointer;color:var(--text3);font-family:inherit">✕ Retirer filtre</button>`:''}
+      </div>
+      <button class="btn btn-p btn-sm" onclick="openAddAction('${cr.id}')">${ico('plus','ico-sm')} Ajouter</button>
+    </div>
+    ${filterChips?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">${filterChips}</div>`:''}
+
+    ${todo.length?`<div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">En cours (${todo.length}${actionFilter?' filtré':''})</div>`:''}
+    ${todo.map(a=>actionCard(a,false)).join('')}
+
+    ${done.length?`<div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 8px">Terminées (${done.length}${actionFilter?' filtré':''})</div>`:''}
+    ${done.map(a=>actionCard(a,true)).join('')}
+
+    ${!cr.actions.length?`<div style="text-align:center;padding:40px;color:var(--text3)">
+      <svg class="ico" style="width:36px;height:36px;display:block;margin:0 auto 10px"><use href="#i-check"/></svg>
+      Aucune action pour ce CR
+    </div>`:''}
+    ${cr.actions.length&&todo.length===0&&done.length===0?`<div style="text-align:center;padding:30px;color:var(--text3);font-size:13px">Aucune action pour cet intervenant</div>`:''}
+  </div>`;
+}
+
+/* ══ DATES ══ */
+function renderDates(cr){
+  // Collect all remarques with dates across all lots
+  const rows=[];
+  cr.lots.forEach(function(lot){
+    const color=getColor(lot,cr);
+    const linked=lot.intId?cr.intervenants.find(function(i){return i.id===lot.intId;}):null;
+    lot.remarques.forEach(function(r){
+      rows.push({r:r,lot:lot,color:color,linked:linked});
+    });
+  });
+
+  if(!rows.length){
+    document.getElementById('content').innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text3);font-size:13px">Aucune remarque</div>';
+    return;
+  }
+
+  // Sort: active first (by createdAt desc), then archived (by archivedAt desc)
+  const active=rows.filter(function(x){return !x.r.done;});
+  const archived=rows.filter(function(x){return x.r.done;});
+
+  function dateSort(a,b){
+    const da=a.r.createdAt||'';const db=b.r.createdAt||'';
+    // dd/mm/yyyy → sort descending
+    const pa=da.split('/');const pb=db.split('/');
+    const ta=pa.length===3?new Date(pa[2],pa[1]-1,pa[0]).getTime():0;
+    const tb=pb.length===3?new Date(pb[2],pb[1]-1,pb[0]).getTime():0;
+    return tb-ta;
+  }
+  active.sort(dateSort);
+  archived.sort(function(a,b){
+    const da=a.r.archivedAt||'';const db=b.r.archivedAt||'';
+    const pa=da.split('/');const pb=db.split('/');
+    const ta=pa.length===3?new Date(pa[2],pa[1]-1,pa[0]).getTime():0;
+    const tb=pb.length===3?new Date(pb[2],pb[1]-1,pb[0]).getTime():0;
+    return tb-ta;
+  });
+
+  function tableRow(x,isArchived){
+    const r=x.r;const lot=x.lot;const color=x.color;const linked=x.linked;
+    return '<tr style="'+(isArchived?'opacity:.6;background:var(--green-bg)':'')+'">'
+      +'<td style="padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top;white-space:nowrap">'
+        +'<span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;background:'+color+'18;color:'+color+'">'+(linked?linked.entreprise||linked.lot:lot.titre)+'</span>'
+      +'</td>'
+      +'<td style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:12.5px;vertical-align:top">'
+        +(isArchived?'<span style="text-decoration:line-through;color:var(--text3)">'+e(r.texte)+'</span>':e(r.texte))
+        +(r.flag?'<span style="margin-left:6px;color:var(--amber);font-size:10px;font-weight:600">⚑</span>':'')
+      +'</td>'
+      +'<td style="padding:8px 10px;border-bottom:1px solid var(--border);white-space:nowrap;vertical-align:top">'
+        +'<div style="font-size:11px;color:var(--text3)">'+(r.createdAt||'—')+'</div>'
+        +(isArchived&&r.archivedAt?'<div style="font-size:10px;color:var(--green);margin-top:2px">✓ '+r.archivedAt+'</div>':'')
+      +'</td>'
+      +'<td style="padding:8px 10px;border-bottom:1px solid var(--border);white-space:nowrap;vertical-align:top;text-align:center">'
+        +(isArchived
+          ?'<button class="btn-g" style="padding:2px" onclick="toggleDone(\''+cr.id+'\',\''+lot.id+'\',\''+r.id+'\')" title="Remettre en cours"><svg class="ico ico-xs" style="color:var(--green)"><use href="#i-check"/></svg></button>'
+          :'<button class="btn-g" style="padding:2px" onclick="toggleDone(\''+cr.id+'\',\''+lot.id+'\',\''+r.id+'\')" title="Archiver"><svg class="ico ico-xs" style="color:var(--text3)"><use href="#i-archive"/></svg></button>'
+        )
+        +'<button class="btn-g" style="padding:2px" onclick="editRemarque(\''+cr.id+'\',\''+lot.id+'\',\''+r.id+'\')" title="Modifier"><svg class="ico ico-xs"><use href="#i-edit"/></svg></button>'
+      +'</td>'
+    +'</tr>';
+  }
+
+  const activeCount=active.length;
+  const archivedCount=archived.length;
+  const crDate=cr.date||'—';
+
+  document.getElementById('content').innerHTML=''
+    +'<div style="padding:16px 24px">'
+
+    // Header stats
+    +'<div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center">'
+      +'<div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:8px 14px;display:flex;gap:8px;align-items:center">'
+        +'<span style="font-size:18px;font-weight:600;color:var(--text)">'+rows.length+'</span>'
+        +'<span style="font-size:11px;color:var(--text3)">points total</span>'
+      +'</div>'
+      +'<div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:8px 14px;display:flex;gap:8px;align-items:center">'
+        +'<span style="font-size:18px;font-weight:600;color:var(--red)">'+activeCount+'</span>'
+        +'<span style="font-size:11px;color:var(--text3)">en cours</span>'
+      +'</div>'
+      +'<div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:8px 14px;display:flex;gap:8px;align-items:center">'
+        +'<span style="font-size:18px;font-weight:600;color:var(--green)">'+archivedCount+'</span>'
+        +'<span style="font-size:11px;color:var(--text3)">traités</span>'
+      +'</div>'
+      +'<div style="font-size:11px;color:var(--text3);margin-left:auto">CR du '+crDate+'</div>'
+    +'</div>'
+
+    // Active table
+    +(activeCount?''
+      +'<div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Points en cours ('+activeCount+')</div>'
+      +'<div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:20px">'
+        +'<table style="width:100%;border-collapse:collapse">'
+          +'<thead><tr style="background:var(--bg2)">'
+            +'<th style="padding:7px 10px;text-align:left;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);white-space:nowrap">Lot</th>'
+            +'<th style="padding:7px 10px;text-align:left;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border)">Remarque</th>'
+            +'<th style="padding:7px 10px;text-align:left;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);white-space:nowrap">Ajouté le</th>'
+            +'<th style="padding:7px 10px;text-align:center;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);white-space:nowrap">Action</th>'
+          +'</tr></thead>'
+          +'<tbody>'+active.map(function(x){return tableRow(x,false);}).join('')+'</tbody>'
+        +'</table>'
+      +'</div>'
+    :'')
+
+    // Archived table
+    +(archivedCount?''
+      +'<div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Points traités / archivés ('+archivedCount+')</div>'
+      +'<div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--r);overflow:hidden">'
+        +'<table style="width:100%;border-collapse:collapse">'
+          +'<thead><tr style="background:var(--bg2)">'
+            +'<th style="padding:7px 10px;text-align:left;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);white-space:nowrap">Lot</th>'
+            +'<th style="padding:7px 10px;text-align:left;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border)">Remarque</th>'
+            +'<th style="padding:7px 10px;text-align:left;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);white-space:nowrap">Ajouté / Traité le</th>'
+            +'<th style="padding:7px 10px;text-align:center;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border)">Action</th>'
+          +'</tr></thead>'
+          +'<tbody>'+archived.map(function(x){return tableRow(x,true);}).join('')+'</tbody>'
+        +'</table>'
+      +'</div>'
+    :'')
+
+    +'</div>';
+}
+
+/* ══ HISTORIQUE ══ */
+function renderHistorique(currentCR){
+  // Find all CRs for the same project, sorted by numero
+  const siblings=CRS
+    .filter(c=>c.projet===currentCR.projet)
+    .sort((a,b)=>a.numero-b.numero);
+
+  if(siblings.length<=1 && CRS.length===1){
+    document.getElementById('content').innerHTML=`
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:var(--text3)">
+        <svg class="ico" style="width:38px;height:38px"><use href="#i-calendar"/></svg>
+        <div style="font-weight:500">Aucun autre compte rendu</div>
+        <div style="font-size:12px">Créez un nouveau CR pour voir l'historique</div>
+        <button class="btn btn-p btn-sm" onclick="openNewCR()">${ico('plus','ico-sm')} Nouveau CR</button>
+      </div>`;
+    return;
+  }
+
+  // Stats per CR
+  function crStats(cr){
+    const all=cr.lots.flatMap(l=>l.remarques);
+    const done=all.filter(r=>r.done).length;
+    const flags=all.filter(r=>r.flag&&!r.done).length;
+    const actTodo=cr.actions.filter(a=>!a.done).length;
+    const actDone=cr.actions.filter(a=>a.done).length;
+    return {total:all.length,done,flags,actTodo,actDone};
+  }
+
+  const html=`<div style="padding:20px 28px;max-width:800px">
+    <div style="font-size:13px;font-weight:500;margin-bottom:18px;color:var(--text2)">
+      ${siblings.length} compte${siblings.length>1?'s':''} rendu${siblings.length>1?'s':''} — ${currentCR.projet}
+    </div>
+
+    <!-- Timeline -->
+    <div style="position:relative">
+      <!-- vertical line -->
+      <div style="position:absolute;left:20px;top:0;bottom:0;width:2px;background:var(--border);border-radius:1px"></div>
+
+      ${siblings.map((cr,idx)=>{
+        const s=crStats(cr);
+        const isCurrent=cr.id===currentCR.id;
+        const isArchived=cr.statut==='archived';
+        const pct=s.total>0?Math.round(s.done/s.total*100):0;
+
+        return `<div style="display:flex;gap:16px;margin-bottom:18px;position:relative">
+          <!-- Timeline dot -->
+          <div style="width:40px;flex-shrink:0;display:flex;justify-content:center;padding-top:10px;position:relative;z-index:1">
+            <div style="width:14px;height:14px;border-radius:50%;border:2.5px solid ${isCurrent?'var(--blue)':isArchived?'var(--amber)':'var(--border2)'};background:${isCurrent?'var(--blue)':isArchived?'var(--amber-bg)':'var(--panel)'}"></div>
+          </div>
+
+          <!-- Card -->
+          <div onclick="jumpToCR('${cr.id}')" style="flex:1;background:${isCurrent?'var(--blue-bg)':'var(--panel)'};border:${isCurrent?'1.5px solid var(--blue-lt)':'1px solid var(--border)'};border-radius:var(--r2);padding:14px 16px;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='var(--blue-lt)'" onmouseout="this.style.borderColor='${isCurrent?'var(--blue-lt)':'var(--border)'}'">
+
+            <!-- Header -->
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px">
+              <div>
+                <div style="display:flex;align-items:center;gap:7px;margin-bottom:2px">
+                  <span style="font-weight:600;font-size:13.5px;color:${isCurrent?'var(--blue)':'var(--text)'}">CR n°${cr.numero}</span>
+                  ${isCurrent?`<span class="badge bblue" style="font-size:9px">En cours</span>`:''}
+                  ${isArchived?`<span class="badge bamber" style="font-size:9px">Archivé</span>`:''}
+                </div>
+                <div style="font-size:12px;font-weight:500;color:var(--text2)">${cr.date}</div>
+                ${cr.dateProchaine?`<div style="font-size:11px;color:var(--text3);margin-top:1px">Prochaine réunion : ${cr.dateProchaine}</div>`:''}
+                ${cr.redacteur?`<div style="font-size:11px;color:var(--text3)">Rédacteur : ${cr.redacteur}</div>`:''}
+              </div>
+              <div style="text-align:right;flex-shrink:0">
+                <div style="font-size:20px;font-weight:700;color:${isCurrent?'var(--blue)':pct===100?'var(--green)':'var(--text2)'}">${pct}%</div>
+                <div style="font-size:10px;color:var(--text3)">traité</div>
+              </div>
+            </div>
+
+            <!-- Progress bar -->
+            <div style="height:4px;background:var(--bg2);border-radius:2px;overflow:hidden;margin-bottom:10px">
+              <div style="height:100%;border-radius:2px;background:${pct===100?'var(--green)':isCurrent?'var(--blue)':'var(--border2)'};width:${pct}%;transition:width .3s"></div>
+            </div>
+
+            <!-- Stats row -->
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text3)">
+                <svg class="ico ico-xs"><use href="#i-file"/></svg>
+                <span>${s.done}/${s.total} points</span>
+              </div>
+              ${s.flags?`<div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--amber)">
+                <svg class="ico ico-xs"><use href="#i-flag"/></svg>
+                <span>${s.flags} à suivre</span>
+              </div>`:''}
+              <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text3)">
+                <svg class="ico ico-xs"><use href="#i-check"/></svg>
+                <span>${s.actDone}/${s.actTodo+s.actDone} actions</span>
+              </div>
+              <div style="margin-left:auto">
+                <span style="font-size:11px;color:${isCurrent?'var(--blue)':'var(--text3)'};font-weight:500">${isCurrent?'Vue actuelle →':'Ouvrir →'}</span>
+              </div>
+            </div>
+
+            <!-- Lots summary (only show if not too many) -->
+            ${s.flags>0?`<div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:5px">
+              ${cr.lots.filter(l=>l.remarques.some(r=>r.flag&&!r.done)).map(l=>`
+                <span style="font-size:10px;padding:2px 7px;border-radius:10px;background:${getColor(l,cr)}18;color:${getColor(l,cr)}">${l.titre}</span>
+              `).join('')}
+            </div>`:''}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+
+    <!-- New CR button -->
+    <div style="display:flex;justify-content:center;margin-top:8px;padding-left:56px">
+      <button class="btn btn-p btn-sm" onclick="openNewCR()">${ico('plus','ico-sm')} Nouveau compte rendu</button>
+    </div>
+
+    <!-- Print History -->
+    ${currentCR.printHistory&&currentCR.printHistory.length?`
+    <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--border)">
+      <div style="font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;display:flex;align-items:center;gap:7px">
+        <svg class="ico ico-sm"><use href="#i-printer"/></svg> Historique des exports PDF (${currentCR.printHistory.length})
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        ${currentCR.printHistory.map((snap,si)=>`
+          <div style="display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:10px 14px">
+            <svg class="ico ico-sm" style="color:var(--text3);flex-shrink:0"><use href="#i-printer"/></svg>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:12.5px;font-weight:500">Export du ${snap.printedAt}</div>
+              <div style="font-size:11px;color:var(--text3);margin-top:2px;display:flex;gap:10px">
+                <span>${snap.doneRemarques}/${snap.totalRemarques} points traités</span>
+                <span>·</span>
+                <span>${snap.doneActions}/${snap.totalActions} actions</span>
+              </div>
+            </div>
+            <span style="font-size:10px;color:var(--text3);white-space:nowrap">CR n°${snap.numero} — ${snap.date}</span>
+            <button class="btn btn-sm btn-g" style="font-size:10px;padding:3px 8px" onclick="reExport('${currentCR.id}')" title="Réexporter ce CR">
+              <svg class="ico ico-xs"><use href="#i-download"/></svg>
+            </button>
+          </div>`).join('')}
+      </div>
+    </div>`:''}
+  </div>`;
+
+  document.getElementById('content').innerHTML=html;
+}
+
+function jumpToCR(id){
+  activeCR=id;
+  activeTab='remarques';
+  renderList();
+  // Update tab UI
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    t.classList.toggle('active',i===0);
+  });
+  renderCR();
+}
+
+/* ══ TABS ══ */
+function switchTab(tab,btn){
+  activeTab=tab;
+  if(tab!=='remarques') remarqueSearch='';
+  if(tab!=='actions') actionFilter='';
+  document.querySelectorAll('.tab').forEach(t=>{t.classList.remove('active');});
+  btn.classList.add('active');
+  renderCR();
+}
+
+/* ══ ACTIONS ══ */
+function toggleLot(crId,lotId){
+  const cr=CRS.find(c=>c.id===crId);
+  const lot=cr?.lots.find(l=>l.id===lotId);
+  if(lot)lot.ouvert=!lot.ouvert;
+  renderCR();
+}
+function toggleDone(crId,lotId,rId){
+  const cr=CRS.find(c=>c.id===crId);
+  const lot=cr?.lots.find(l=>l.id===lotId);
+  const r=lot?.remarques.find(x=>x.id===rId);
+  if(r){
+    r.done=!r.done;
+    if(r.done){
+      r.flag=false;
+      r.archivedAt=new Date().toLocaleDateString('fr-FR');
+    } else {
+      r.archivedAt=null;
+    }
+  }
+  markDirty();renderCR();renderList();
+}
+function toggleFlag(crId,lotId,rId){
+  const cr=CRS.find(c=>c.id===crId);
+  const lot=cr?.lots.find(l=>l.id===lotId);
+  const r=lot?.remarques.find(x=>x.id===rId);
+  if(r)r.flag=!r.flag;
+  renderCR();renderList();
+}
+function deleteRemarque(crId,lotId,rId){
+  const cr=CRS.find(c=>c.id===crId);
+  const lot=cr?.lots.find(l=>l.id===lotId);
+  if(lot)lot.remarques=lot.remarques.filter(r=>r.id!==rId);
+  renderCR();renderList();
+}
+function addRemarque(crId,lotId){
+  const inp=document.getElementById('new-r-'+lotId);
+  if(!inp||!inp.value.trim())return;
+  const cr=CRS.find(c=>c.id===crId);
+  const lot=cr?.lots.find(l=>l.id===lotId);
+  if(lot)lot.remarques.push({id:'r'+(uid++),texte:inp.value.trim(),done:false,flag:false,createdAt:new Date().toLocaleDateString('fr-FR')});
+  inp.value='';markDirty();renderCR();renderList();
+}
+function editRemarque(crId,lotId,rId){
+  const cr=CRS.find(c=>c.id===crId);
+  const lot=cr?.lots.find(l=>l.id===lotId);
+  const r=lot?.remarques.find(x=>x.id===rId);
+  if(!r)return;
+  showModal(`<h3>Modifier la remarque</h3>
+    <div class="fi"><label>Texte</label><textarea id="er-text" style="min-height:80px">${e(r.texte)}</textarea></div>
+    <div style="display:flex;gap:10px;margin-bottom:4px">
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" id="er-flag" ${r.flag?'checked':''} style="width:15px;height:15px"> À suivre</label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" id="er-done" ${r.done?'checked':''} style="width:15px;height:15px"> Traité / Archivé</label>
+    </div>
+    <div class="mo-foot">
+      <button class="btn" style="color:var(--red);margin-right:auto" onclick="deleteRemarque('${crId}','${lotId}','${rId}');closeModal()" title="Supprimer définitivement">
+        <svg class="ico ico-sm"><use href="#i-trash"/></svg> Supprimer
+      </button>
+      <button class="btn" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-p" onclick="saveRemarque('${crId}','${lotId}','${rId}')">${ico('save','ico-sm')} Enregistrer</button>
+    </div>`);
+}
+function saveRemarque(crId,lotId,rId){
+  const cr=CRS.find(c=>c.id===crId);
+  const lot=cr?.lots.find(l=>l.id===lotId);
+  const r=lot?.remarques.find(x=>x.id===rId);
+  if(r){
+    r.texte=document.getElementById('er-text')?.value||r.texte;
+    r.flag=document.getElementById('er-flag')?.checked||false;
+    const wasDone=r.done;
+    r.done=document.getElementById('er-done')?.checked||false;
+    if(r.done&&!wasDone) r.archivedAt=new Date().toLocaleDateString('fr-FR');
+    if(!r.done) r.archivedAt=null;
+  }
+  closeModal();markDirty();renderCR();renderList();
+}
+function togglePresence(crId,lot){
+  const cr=CRS.find(c=>c.id===crId);
+  const i=cr?.intervenants.find(x=>x.lot===lot);
+  if(i)i.present=!i.present;
+  renderCR();
+}
+function toggleAction(crId,aId){
+  const cr=CRS.find(c=>c.id===crId);
+  const a=cr?.actions.find(x=>x.id===aId);
+  if(a)a.done=!a.done;
+  renderCR();renderList();
+}
+function deleteAction(crId,aId){
+  const cr=CRS.find(c=>c.id===crId);
+  if(cr)cr.actions=cr.actions.filter(a=>a.id!==aId);
+  renderCR();
+}
+function openAddAction(crId){
+  const cr=CRS.find(c=>c.id===crId);
+  const intOptions=cr?cr.intervenants.map(i=>`<option value="${i.id}">${i.entreprise||i.lot}</option>`).join(''):'';
+  showModal(`<h3>Ajouter une action</h3>
+    <div class="fi"><label>Action *</label><input id="aa-texte" placeholder="Description de l'action…"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="fi"><label>Intervenant responsable</label>
+        <select id="aa-int" style="width:100%;padding:7px 9px;border:1px solid var(--border2);border-radius:7px;font-size:12px;background:var(--bg);color:var(--text);outline:none;font-family:inherit">
+          <option value="">— aucun —</option>${intOptions}
+        </select>
+      </div>
+      <div class="fi"><label>Échéance</label><input id="aa-ech" placeholder="21/05/2026"></div>
+    </div>
+    <div class="mo-foot">
+      <button class="btn" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-p" onclick="saveAction('${crId}')">${ico('plus','ico-sm')} Ajouter</button>
+    </div>`);
+}
+function saveAction(crId){
+  const texte=document.getElementById('aa-texte')?.value?.trim();
+  if(!texte)return;
+  const cr=CRS.find(c=>c.id===crId);
+  const intId=document.getElementById('aa-int')?.value||null;
+  const linked=intId?cr?.intervenants.find(i=>i.id===intId):null;
+  if(cr)cr.actions.push({
+    id:'a'+(uid++),texte,
+    intId:intId||null,
+    responsable:linked?(linked.entreprise||linked.lot):'',
+    echeance:document.getElementById('aa-ech')?.value||'',
+    done:false
+  });
+  closeModal();renderCR();
+}
+function openAddLot(crId){
+  const cr=CRS.find(c=>c.id===crId);
+  if(!cr)return;
+  if(!cr.intervenants.length){
+    showModal('<h3>Ajouter un lot</h3><p style="color:var(--amber);font-size:13px;padding:10px 0">Il faut d\'abord ajouter un intervenant avant de créer un lot.</p><div class="mo-foot"><button class="btn" onclick="closeModal()">Fermer</button></div>');
+    return;
+  }
+  var intOpts=cr.intervenants.map(function(iv){
+    return '<option value="'+iv.id+'">'+e(iv.entreprise||iv.lot)+'</option>';
+  }).join('');
+  showModal('<h3>Ajouter un lot</h3>'
+    +'<div class="fi"><label>Intervenant responsable *</label>'
+      +'<select id="al-int" style="width:100%;padding:7px 9px;border:1px solid var(--border2);border-radius:7px;font-size:13px;background:var(--bg);color:var(--text);outline:none;font-family:inherit">'
+        +'<option value="">— Choisir un intervenant —</option>'+intOpts
+      +'</select>'
+    +'</div>'
+    +'<div class="fi"><label>Nom du lot (laisser vide = nom de l\'intervenant)</label>'
+      +'<input id="al-titre" placeholder="Ex: Lot Maçonnerie, Thermicien…">'
+    +'</div>'
+    +'<div class="mo-foot">'
+      +'<button class="btn" onclick="closeModal()">Annuler</button>'
+      +'<button class="btn btn-p" onclick="saveLot(\''+crId+'\')">'+ico('plus','ico-sm')+' Ajouter</button>'
+    +'</div>');
+}
+function saveLot(crId){
+  const cr=CRS.find(c=>c.id===crId);
+  const intId=document.getElementById('al-int')?.value;
+  if(!intId){alert('Sélectionnez un intervenant');return;}
+  const int=cr.intervenants.find(function(iv){return iv.id===intId;});
+  const titre=document.getElementById('al-titre')?.value?.trim()||(int?int.lot:'Nouveau lot');
+  if(cr)cr.lots.push({id:'l'+(uid++),titre:titre,ouvert:true,intId:intId,remarques:[]});
+  closeModal();renderCR();
+}
+function openAddIntervenant(crId){
+  showModal(`<h3>Ajouter un intervenant</h3>
+    <div class="fi"><label>Lot / Fonction *</label><input id="ai-lot" placeholder="Ex: Lot Carrelage, Ingénieur…"></div>
+    <div class="fi"><label>Entreprise</label><input id="ai-ent" placeholder="Nom de l'entreprise"></div>
+    <div class="fi"><label>Contacts</label><textarea id="ai-contacts" placeholder="Nom — Téléphone — Email"></textarea></div>
+    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;margin-bottom:12px"><input type="checkbox" id="ai-present" style="width:15px;height:15px"> Présent à cette réunion</label>
+    <div class="mo-foot">
+      <button class="btn" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-p" onclick="saveIntervenant('${crId}')">${ico('plus','ico-sm')} Ajouter</button>
+    </div>`);
+}
+function saveIntervenant(crId){
+  const lot=document.getElementById('ai-lot')?.value?.trim();
+  if(!lot)return;
+  const cr=CRS.find(c=>c.id===crId);
+  if(cr)cr.intervenants.push({id:'i'+(uid++),lot,entreprise:document.getElementById('ai-ent')?.value||'',contacts:document.getElementById('ai-contacts')?.value||'',present:document.getElementById('ai-present')?.checked||false});
+  closeModal();renderCR();
+}
+
+/* ══ NEW / EDIT CR ══ */
+function openNewCR(){
+  showModal(`<h3>${ico('file','ico-sm')} Nouveau compte rendu</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="fi" style="grid-column:1/-1"><label>Nom du projet *</label><input id="nc-proj" placeholder="Ex: Villa Dupont"></div>
+      <div class="fi" style="grid-column:1/-1"><label>Adresse du chantier</label><input id="nc-addr" placeholder="641 Allée de la Roseraie, 06250 Mougins"></div>
+      <div class="fi"><label>Date de la réunion *</label><input type="date" id="nc-date"></div>
+      <div class="fi"><label>Date prochaine réunion</label><input id="nc-datep" placeholder="21/05/2026 14:00"></div>
+      <div class="fi"><label>N° de CR</label><input type="number" id="nc-num" placeholder="1" min="1"></div>
+      <div class="fi"><label>Rédacteur</label><input id="nc-red" placeholder="Mme Bell — Bell Architecture"></div>
+    </div>
+    <div class="mo-foot">
+      <button class="btn" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-p" onclick="saveNewCR()">${ico('plus','ico-sm')} Créer</button>
+    </div>`);
+  setTimeout(()=>document.getElementById('nc-proj')?.focus(),50);
+}
+function saveNewCR(){
+  const proj=document.getElementById('nc-proj')?.value?.trim();
+  if(!proj){alert('Nom du projet requis');return;}
+  const dateRaw=document.getElementById('nc-date')?.value||'';
+  const date=dateRaw?new Date(dateRaw).toLocaleDateString('fr-FR'):'—';
+  const newCR={
+    id:'cr'+(uid++),
+    projet:proj,
+    adresse:document.getElementById('nc-addr')?.value||'',
+    date,
+    dateProchaine:document.getElementById('nc-datep')?.value||'',
+    numero:parseInt(document.getElementById('nc-num')?.value)||CRS.length+1,
+    redacteur:document.getElementById('nc-red')?.value||'',
+    statut:'draft',
+    intervenants:[],
+    lots:[],
+    actions:[],
+  };
+  CRS.unshift(newCR);
+  closeModal();
+  activeCR=newCR.id;
+  activeTab='intervenants';
+  renderList();
+  renderCR();
+  toast('Compte rendu créé ✓');
+}
+function openEditCR(crId){
+  const cr=CRS.find(c=>c.id===crId);if(!cr)return;
+  showModal(`<h3>${ico('edit','ico-sm')} Modifier le CR</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="fi" style="grid-column:1/-1"><label>Nom du projet</label><input id="ec-proj" value="${e(cr.projet)}"></div>
+      <div class="fi" style="grid-column:1/-1"><label>Adresse</label><input id="ec-addr" value="${e(cr.adresse)}"></div>
+      <div class="fi"><label>Date réunion</label><input id="ec-date" value="${e(cr.date)}"></div>
+      <div class="fi"><label>Prochaine réunion</label><input id="ec-datep" value="${e(cr.dateProchaine)}"></div>
+      <div class="fi"><label>N° CR</label><input type="number" id="ec-num" value="${cr.numero}"></div>
+      <div class="fi"><label>Rédacteur</label><input id="ec-red" value="${e(cr.redacteur)}"></div>
+    </div>
+    <div class="mo-foot">
+      <button class="btn" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-p" onclick="saveEditCR('${crId}')">${ico('save','ico-sm')} Enregistrer</button>
+    </div>`);
+}
+function saveEditCR(crId){
+  const cr=CRS.find(c=>c.id===crId);if(!cr)return;
+  cr.projet=document.getElementById('ec-proj')?.value||cr.projet;
+  cr.adresse=document.getElementById('ec-addr')?.value||cr.adresse;
+  cr.date=document.getElementById('ec-date')?.value||cr.date;
+  cr.dateProchaine=document.getElementById('ec-datep')?.value||cr.dateProchaine;
+  cr.numero=parseInt(document.getElementById('ec-num')?.value)||cr.numero;
+  cr.redacteur=document.getElementById('ec-red')?.value||cr.redacteur;
+  closeModal();renderList();renderCR();toast('Modifications enregistrées ✓');
+}
+
+/* ══ EXPORT / PRINT ══ */
+function exportCR(crId){
+  const cr=CRS.find(c=>c.id===crId);
+  if(!cr)return;
+
+  // Page header repeated on every page
+  function pageHeader(){
+    return `<table style="width:100%;border-collapse:collapse;margin-bottom:0">
+      <tr>
+        <td style="width:60px;padding:8px;border:1px solid #000;vertical-align:middle;text-align:center">
+          <div style="font-weight:700;font-size:14pt;letter-spacing:-1px">PS</div>
+          <div style="font-size:6pt;color:#555">PLANSYNC</div>
+        </td>
+        <td style="padding:8px 16px;border:1px solid #000;border-left:none">
+          <div style="font-weight:700;font-size:13pt;letter-spacing:1px">COMPTE RENDU</div>
+        </td>
+        <td style="padding:8px;border:1px solid #000;border-left:none;text-align:right;width:60px">
+          <div style="font-weight:700;font-size:14pt;letter-spacing:-1px">PS</div>
+        </td>
+      </tr>
+    </table>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:12px">
+      <tr>
+        <td colspan="2" style="padding:5px 8px;border:1px solid #000;border-top:none;font-size:9pt">
+          <strong>PROJET: ${e(cr.projet)}</strong>&nbsp;&nbsp;&nbsp;&nbsp;${e(cr.adresse)}
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:5px 8px;border:1px solid #000;border-top:none;font-size:9pt;width:50%">
+          <strong>DATE:</strong> ${e(cr.date)}.
+        </td>
+        <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;font-size:9pt">
+          <strong>DATE PROCHAINE RÉUNION:</strong> ${e(cr.dateProchaine)}
+        </td>
+      </tr>
+    </table>`;
+  }
+
+  // ── Page 1: Intervenants ──
+  let page1=`<div class="pr-page" style="padding:20px;font-family:Arial,sans-serif;font-size:9pt;color:#000">
+    ${pageHeader()}
+    <table style="width:100%;border-collapse:collapse;margin-bottom:4px">
+      <tr style="background:#e0e0e0">
+        <td colspan="2" style="padding:5px 8px;border:1px solid #000;font-weight:600;font-size:9pt">MAÎTRISE D'OUVRAGE</td>
+        <td style="padding:5px 8px;border:1px solid #000;border-left:none;font-weight:600;font-size:9pt">Contact</td>
+        <td style="padding:5px 8px;border:1px solid #000;border-left:none;font-weight:600;font-size:9pt;width:55px;text-align:center">Présent</td>
+        <td style="padding:5px 8px;border:1px solid #000;border-left:none;font-weight:600;font-size:9pt;width:110px;text-align:center">Convocation au prochain RDV</td>
+      </tr>`;
+
+  // MOA rows
+  const moa=cr.intervenants.filter(i=>i.lot.toLowerCase().includes('ouvrage')||i.lot.toLowerCase().includes('moa'));
+  const moe=cr.intervenants.filter(i=>i.lot.toLowerCase().includes('oeuvre')||i.lot.toLowerCase().includes('moe'));
+  const others=cr.intervenants.filter(i=>!moa.includes(i)&&!moe.includes(i));
+
+  moa.forEach(i=>{
+    const name=i.entreprise||i.contacts.split('\n')[0]||'';
+    page1+=`<tr>
+      <td colspan="2" style="padding:5px 8px;border:1px solid #000;border-top:none;font-size:9pt">${e(name)}</td>
+      <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;font-size:9pt">${e(i.contacts.replace(/\n/g,' — '))}</td>
+      <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;text-align:center;font-size:9pt;font-weight:700">${i.present?'X':''}</td>
+      <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;text-align:center;font-size:9pt">☐</td>
+    </tr>`;
+  });
+
+  if(moe.length){
+    page1+=`<tr style="background:#e0e0e0">
+      <td colspan="5" style="padding:5px 8px;border:1px solid #000;border-top:none;font-weight:600;font-size:9pt">MAÎTRISE D'ŒUVRE</td>
+    </tr>`;
+    moe.forEach(i=>{
+      page1+=`<tr>
+        <td style="padding:5px 8px;border:1px solid #000;border-top:none;font-size:9pt;width:130px;font-weight:600">${e(i.lot.toUpperCase())}</td>
+        <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;font-size:9pt">${e(i.entreprise)}</td>
+        <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;font-size:9pt;white-space:pre-line">${e(i.contacts)}</td>
+        <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;text-align:center;font-size:9pt;font-weight:700">${i.present?'X':''}</td>
+        <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;text-align:center;font-size:9pt">☐</td>
+      </tr>`;
+    });
+  }
+
+  if(others.length){
+    page1+=`<tr style="background:#e0e0e0">
+      <td colspan="5" style="padding:5px 8px;border:1px solid #000;border-top:none;font-weight:600;font-size:9pt">INTERVENANTS ENTREPRISES</td>
+    </tr>`;
+    others.forEach(i=>{
+      page1+=`<tr>
+        <td style="padding:5px 8px;border:1px solid #000;border-top:none;font-size:9pt;font-weight:700;vertical-align:top;width:130px">${e(i.lot.toUpperCase())}</td>
+        <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;font-size:9pt;vertical-align:top">${e(i.entreprise)}</td>
+        <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;font-size:8.5pt;vertical-align:top;white-space:pre-line">${e(i.contacts)}</td>
+        <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;text-align:center;vertical-align:top;font-size:9pt;font-weight:700">${i.present?'X':''}</td>
+        <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;text-align:center;vertical-align:top;font-size:9pt">☐</td>
+      </tr>`;
+    });
+  }
+
+  page1+=`</table><div style="text-align:right;font-size:8pt;color:#666;margin-top:4px">1</div></div>`;
+
+  // ── Remarques pages ──
+  let remarquesPages='';
+  cr.lots.forEach((lot,lotIdx)=>{
+    if(!lot.remarques.length)return;
+    // Use stored color or derive from title — convert to a light print-safe bg
+    const fullColor=getColor(lot,cr);
+    // Convert hex to RGB and make a light background (15% opacity on white)
+    function hexToLightBg(hex){
+      const c=hex.replace('#','');
+      if(c.length!==6)return '#e0e0e0';
+      const r=parseInt(c.substr(0,2),16);
+      const g=parseInt(c.substr(2,2),16);
+      const b=parseInt(c.substr(4,2),16);
+      // mix with white at 15%
+      const lr=Math.round(r*0.22+255*0.78);
+      const lg=Math.round(g*0.22+255*0.78);
+      const lb=Math.round(b*0.22+255*0.78);
+      return `rgb(${lr},${lg},${lb})`;
+    }
+    const bgColor=hexToLightBg(fullColor);
+    const textColor=fullColor;
+
+    const block=`<table style="width:100%;border-collapse:collapse;margin-bottom:10px;page-break-inside:avoid">
+      <tr>
+        <td style="background:${bgColor};padding:5px 8px;border:1px solid #000;font-weight:700;font-size:9pt;text-transform:uppercase;color:${textColor};letter-spacing:.03em">
+          REMARQUES INTERVENANTS — ${e(lot.titre.toUpperCase())}
+        </td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #000;border-top:none;padding:8px 12px">
+          ${lot.remarques.filter(r=>!r.done).map((r,i)=>`<div style="padding:3px 0;font-size:9pt;line-height:1.5;color:#000">- ${e(r.texte)}</div>`).join('')}
+          ${lot.remarques.filter(r=>r.done).length?`<div style="margin-top:6px;padding-top:6px;border-top:1px dashed #ccc;font-size:8pt;color:#999"><em>Archive (${lot.remarques.filter(r=>r.done).length} point(s) traités — non imprimés)</em></div>`:''}
+        </td>
+      </tr>
+    </table>`;
+    remarquesPages+=block;
+  });
+
+  const page2=`<div class="pr-page" style="padding:20px;font-family:Arial,sans-serif;font-size:9pt;color:#000">
+    ${pageHeader()}
+    ${remarquesPages}
+    <div style="text-align:right;font-size:8pt;color:#666;margin-top:8px">2</div>
+  </div>`;
+
+  // ── Actions page ──
+  const page3=cr.actions.length?`<div class="pr-page" style="padding:20px;font-family:Arial,sans-serif;font-size:9pt;color:#000">
+    ${pageHeader()}
+    <div style="background:#d4d4d4;padding:4px 8px;border:1px solid #000;font-weight:700;font-size:9pt;margin-bottom:0">
+      ACTIONS / DÉCISIONS
+    </div>
+    <table style="width:100%;border-collapse:collapse">
+      <tr style="background:#eeeeee">
+        <td style="padding:5px 8px;border:1px solid #000;border-top:none;font-weight:600;font-size:8.5pt">N°</td>
+        <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;font-weight:600;font-size:8.5pt">Action</td>
+        <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;font-weight:600;font-size:8.5pt;width:120px">Responsable</td>
+        <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;font-weight:600;font-size:8.5pt;width:90px">Échéance</td>
+        <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;font-weight:600;font-size:8.5pt;width:60px;text-align:center">Statut</td>
+      </tr>
+      ${cr.actions.map((a,i)=>`<tr style="${a.done?'color:#999;text-decoration:line-through':''}">
+        <td style="padding:5px 8px;border:1px solid #000;border-top:none;font-size:8.5pt;text-align:center">${i+1}</td>
+        <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;font-size:8.5pt">${e(a.texte)}</td>
+        <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;font-size:8.5pt">${e(a.responsable)}</td>
+        <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;font-size:8.5pt">${e(a.echeance)}</td>
+        <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;font-size:8.5pt;text-align:center">${a.done?'✓':'En cours'}</td>
+      </tr>`).join('')}
+    </table>
+    ${cr.dateProchaine?`<div style="margin-top:16px;padding:8px;border:1px solid #000;font-size:9pt;text-align:center">
+      <strong>DATE PROCHAINE RÉUNION :</strong> ${e(cr.dateProchaine)}
+    </div>`:''}
+    <div style="text-align:right;font-size:8pt;color:#666;margin-top:8px">3</div>
+  </div>`:'';
+
+  // Inject into print area and print
+  const printArea=document.getElementById('print-area');
+  printArea.innerHTML=page1+page2+page3;
+  printArea.style.display='block';
+  document.getElementById('content').style.display='none';
+  document.querySelector('.app').style.display='none';
+
+  // Save a snapshot to history before printing
+  markClean();
+  savePrintSnapshot(crId);
+
+  window.print();
+
+  // Restore after print
+  setTimeout(()=>{
+    printArea.style.display='none';
+    printArea.innerHTML='';
+    document.getElementById('content').style.display='';
+    document.querySelector('.app').style.display='flex';
+  },1000);
+}
+
+function savePrintSnapshot(crId){
+  const cr=CRS.find(c=>c.id===crId);
+  if(!cr)return;
+  const now=new Date();
+  const dateStr=now.toLocaleDateString('fr-FR')+' '+now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+  // Deep copy the CR state at time of print
+  const snapshot={
+    id:'snap'+(uid++),
+    crId:crId,
+    printedAt:dateStr,
+    projet:cr.projet,
+    date:cr.date,
+    numero:cr.numero,
+    totalRemarques:cr.lots.flatMap(function(l){return l.remarques;}).length,
+    doneRemarques:cr.lots.flatMap(function(l){return l.remarques;}).filter(function(r){return r.done;}).length,
+    totalActions:cr.actions.length,
+    doneActions:cr.actions.filter(function(a){return a.done;}).length,
+  };
+  if(!cr.printHistory) cr.printHistory=[];
+  cr.printHistory.unshift(snapshot);
+  // Keep max 20 snapshots per CR
+  if(cr.printHistory.length>20) cr.printHistory=cr.printHistory.slice(0,20);
+  // Show toast after restore
+  setTimeout(function(){toast('Export PDF + snapshot enregistré dans l\'historique ✓');},1100);
+}
+
+function reExport(crId){exportCR(crId);}
+
+/* ══ EDIT ACTION ══ */
+function editAction(crId,aId){
+  const cr=CRS.find(c=>c.id===crId);
+  const a=cr?.actions.find(x=>x.id===aId);
+  if(!a)return;
+  const intOptions=cr.intervenants.map(i=>`<option value="${i.id}" ${a.intId===i.id?'selected':''}>${i.entreprise||i.lot}</option>`).join('');
+  showModal(`<h3>${ico('edit','ico-sm')} Modifier l'action</h3>
+    <div class="fi"><label>Action *</label><textarea id="ea-texte" style="min-height:72px">${e(a.texte)}</textarea></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="fi"><label>Intervenant responsable</label>
+        <select id="ea-int" style="width:100%;padding:7px 9px;border:1px solid var(--border2);border-radius:7px;font-size:12px;background:var(--bg);color:var(--text);outline:none;font-family:inherit">
+          <option value="">— aucun —</option>${intOptions}
+        </select>
+      </div>
+      <div class="fi"><label>Échéance</label><input id="ea-ech" value="${e(a.echeance)}"></div>
+    </div>
+    <label style="display:flex;align-items:center;gap:7px;font-size:13px;cursor:pointer;margin-bottom:4px">
+      <input type="checkbox" id="ea-done" ${a.done?'checked':''} style="width:15px;height:15px"> Terminée
+    </label>
+    <div class="mo-foot">
+      <button class="btn" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-p" onclick="saveEditAction('${crId}','${aId}')">${ico('save','ico-sm')} Enregistrer</button>
+    </div>`);
+}
+function saveEditAction(crId,aId){
+  const cr=CRS.find(c=>c.id===crId);
+  const a=cr?.actions.find(x=>x.id===aId);
+  if(!a)return;
+  a.texte=document.getElementById('ea-texte')?.value?.trim()||a.texte;
+  const intId=document.getElementById('ea-int')?.value||null;
+  a.intId=intId||null;
+  const linked=intId?cr.intervenants.find(i=>i.id===intId):null;
+  a.responsable=linked?(linked.entreprise||linked.lot):a.responsable;
+  a.echeance=document.getElementById('ea-ech')?.value||'';
+  a.done=document.getElementById('ea-done')?.checked||false;
+  closeModal();renderCR();toast('Action mise à jour ✓');
+}
+
+/* ══ EDIT INTERVENANT ══ */
+function editIntervenant(crId,idx){
+  const cr=CRS.find(c=>c.id===crId);
+  const i=cr?.intervenants[idx];
+  if(!i)return;
+  const col=getColor(i,cr);
+  showModal(`<h3>${ico('edit','ico-sm')} Modifier l'intervenant</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="fi"><label>Lot / Fonction *</label><input id="ei-lot" value="${e(i.lot)}"></div>
+      <div class="fi"><label>Entreprise</label><input id="ei-ent" value="${e(i.entreprise)}"></div>
+    </div>
+    <div class="fi"><label>Contacts (nom, téléphone, email — une ligne par info)</label>
+      <textarea id="ei-contacts" style="min-height:80px">${e(i.contacts)}</textarea>
+    </div>
+    <div class="fi" style="display:flex;align-items:center;gap:10px">
+      <label style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;white-space:nowrap">Couleur</label>
+      <input type="color" id="ei-color" value="${col}"
+        style="width:36px;height:36px;border:1px solid var(--border2);border-radius:8px;padding:2px;cursor:pointer;flex-shrink:0">
+      <span style="font-size:12px;color:var(--text3)">Utilisée dans les badges et l'export</span>
+    </div>
+    <label style="display:flex;align-items:center;gap:7px;font-size:13px;cursor:pointer;margin-bottom:4px">
+      <input type="checkbox" id="ei-present" ${i.present?'checked':''} style="width:15px;height:15px"> Présent à cette réunion
+    </label>
+    <div class="mo-foot">
+      <button class="btn" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-p" onclick="saveEditIntervenant('${crId}',${idx})">${ico('save','ico-sm')} Enregistrer</button>
+    </div>`);
+}
+function saveEditIntervenant(crId,idx){
+  const cr=CRS.find(c=>c.id===crId);
+  const i=cr?.intervenants[idx];
+  if(!i)return;
+  i.lot=document.getElementById('ei-lot')?.value?.trim()||i.lot;
+  i.entreprise=document.getElementById('ei-ent')?.value||'';
+  i.contacts=document.getElementById('ei-contacts')?.value||'';
+  i.present=document.getElementById('ei-present')?.checked||false;
+  const col=document.getElementById('ei-color')?.value;
+  if(col)i.color=col;
+  closeModal();
+  activeTab='intervenants';
+  renderCR();
+  setTimeout(function(){
+    document.querySelectorAll('.tab').forEach(function(t,i){t.classList.toggle('active',i===1);});
+  },10);
+  toast('Intervenant mis à jour ✓');
+}
+function deleteIntervenant(crId,idx){
+  if(!confirm('Supprimer cet intervenant ?'))return;
+  const cr=CRS.find(c=>c.id===crId);
+  if(cr)cr.intervenants.splice(idx,1);
+  renderCR();toast('Intervenant supprimé');
+}
+
+/* ══ LOT RENAME / DELETE ══ */
+function renameLot(crId,lotId){
+  const cr=CRS.find(c=>c.id===crId);
+  const lot=cr?.lots.find(l=>l.id===lotId);
+  if(!lot)return;
+  const name=prompt('Renommer le lot :',lot.titre);
+  if(name&&name.trim())lot.titre=name.trim();
+  renderCR();
+}
+function deleteLot(crId,lotId){
+  const cr=CRS.find(c=>c.id===crId);
+  if(!cr)return;
+  const lot=cr.lots.find(l=>l.id===lotId);
+  if(!lot)return;
+  if(!confirm(`Supprimer le lot "${lot.titre}" et ses ${lot.remarques.length} remarques ?`))return;
+  cr.lots=cr.lots.filter(l=>l.id!==lotId);
+  renderCR();toast('Lot supprimé');
+}
+
+/* ══ CR SETTINGS PANEL ══ */
+function openCRSettings(crId){
+  const cr=CRS.find(c=>c.id===crId);
+  if(!cr)return;
+
+  /* ── Panel 0: Lots ── */
+  var lotsHTML='';
+  cr.lots.forEach(function(lot,li){
+    var linkedInt=lot.intId?cr.intervenants.find(function(i){return i.id===lot.intId;}):null;
+    var lotCol=linkedInt?getColor(linkedInt,cr):'#e03131';
+    var hasInt=!!linkedInt;
+    var intOpts='<option value="">— Intervenant requis —</option>';
+    cr.intervenants.forEach(function(iv){
+      intOpts+='<option value="'+iv.id+'"'+(lot.intId===iv.id?' selected':'')+'>'+e(iv.entreprise||iv.lot)+'</option>';
+    });
+    var done=lot.remarques.filter(function(r){return r.done;}).length;
+    lotsHTML+=''
+      +'<div style="border:1px solid '+(hasInt?'var(--border)':'#fca5a5')+';border-left:4px solid '+lotCol+';border-radius:8px;padding:9px 12px;margin-bottom:6px;background:'+(hasInt?'var(--panel)':'#fff5f5')+';display:flex;align-items:center;gap:7px">'
+        +'<div style="display:flex;flex-direction:column;gap:3px;flex-shrink:0">'
+          +'<button onclick="moveItem(\'lot\',\''+crId+'\','+li+',-1)" style="background:var(--panel);border:1px solid var(--border2);border-radius:6px;cursor:pointer;width:28px;height:24px;font-size:13px;display:flex;align-items:center;justify-content:center;color:var(--text2);font-weight:500;padding:0">▲</button>'
+          +'<button onclick="moveItem(\'lot\',\''+crId+'\','+li+',1)" style="background:var(--panel);border:1px solid var(--border2);border-radius:6px;cursor:pointer;width:28px;height:24px;font-size:13px;display:flex;align-items:center;justify-content:center;color:var(--text2);font-weight:500;padding:0">▼</button>'
+        +'</div>'
+        // Color dot — derived from intervenant, not editable independently
+        +'<div style="width:12px;height:12px;border-radius:50%;background:'+lotCol+';flex-shrink:0;border:2px solid '+(hasInt?'transparent':'#e03131')+'" title="Couleur = couleur de l\'intervenant lié"></div>'
+        +'<input value="'+e(lot.titre)+'" id="gs-lot-'+lot.id+'"'
+          +' style="flex:1;padding:5px 8px;border:1px solid var(--border2);border-radius:6px;font-size:12px;background:var(--bg);color:var(--text);outline:none;font-family:inherit">'
+        // Required intervenant select
+        +'<select id="gs-lot-int-'+lot.id+'" title="Intervenant responsable (obligatoire)"'
+          +' onchange="syncLotIntervenant(\''+crId+'\',\''+lot.id+'\',this)"'
+          +' style="width:155px;padding:5px 8px;border:1px solid '+(hasInt?'var(--border2)':'#e03131')+';border-radius:6px;font-size:11px;background:var(--bg);color:var(--text);outline:none;font-family:inherit;font-weight:'+(hasInt?'400':'600')+'">'
+          +intOpts
+        +'</select>'
+        +'<span style="font-size:10px;color:var(--text3);white-space:nowrap;flex-shrink:0">'+done+'/'+lot.remarques.length+'</span>'
+        +'<button onclick="gsDeleteLot(\''+crId+'\',\''+lot.id+'\')" style="background:none;border:none;cursor:pointer;padding:3px;flex-shrink:0">'
+          +'<svg class="ico ico-xs" style="color:var(--red)"><use href="#i-trash"/></svg>'
+        +'</button>'
+      +'</div>';
+  });
+  if(cr.lots.length===0){
+    lotsHTML='<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">Aucun lot. Ajoutez d\'abord des intervenants, puis créez des lots.</div>';
+  }
+
+  var intsHTML='';
+  cr.intervenants.forEach(function(int,ii){
+    var col=getColor(int,cr);
+    intsHTML+=''
+      +'<div style="border:1px solid var(--border);border-left:4px solid '+col+';border-radius:8px;padding:9px 12px;cursor:default;margin-bottom:6px">'
+        +'<div style="display:flex;align-items:center;gap:7px;margin-bottom:7px">'
+          +'<div style="display:flex;flex-direction:column;gap:3px;flex-shrink:0;margin-right:2px" title="Utiliser ▲ ▼ pour déplacer">'
+            +'<button onclick="moveItem(\'int\',\''+crId+'\','+ii+',-1)" style="background:var(--panel);border:1px solid var(--border2);border-radius:6px;cursor:pointer;width:28px;height:24px;font-size:13px;display:flex;align-items:center;justify-content:center;color:var(--text2);font-weight:500;padding:0">▲</button>'
+            +'<button onclick="moveItem(\'int\',\''+crId+'\','+ii+',1)" style="background:var(--panel);border:1px solid var(--border2);border-radius:6px;cursor:pointer;width:28px;height:24px;font-size:13px;display:flex;align-items:center;justify-content:center;color:var(--text2);font-weight:500;padding:0">▼</button>'
+          +'</div>'
+          +'<span style="font-size:10px;font-weight:700;color:var(--text3);min-width:18px;text-align:center;flex-shrink:0">'+( ii+1)+'</span>'
+          +'<input type="color" id="gs-int-color-'+ii+'" value="'+col+'" title="Couleur intervenant"'
+            +' oninput="syncIntColor(\''+crId+'\','+ii+',this.value)"'
+            +' style="width:26px;height:26px;border:1px solid var(--border);border-radius:50%;padding:2px;cursor:pointer;flex-shrink:0">'
+          +'<input value="'+e(int.lot)+'" id="gs-int-lot-'+ii+'" placeholder="Lot / Fonction"'
+            +' style="flex:1;padding:5px 8px;border:1px solid var(--border2);border-radius:6px;font-size:12px;background:var(--bg);color:var(--text);outline:none;font-family:inherit">'
+          +'<input value="'+e(int.entreprise)+'" id="gs-int-ent-'+ii+'" placeholder="Entreprise"'
+            +' style="flex:1;padding:5px 8px;border:1px solid var(--border2);border-radius:6px;font-size:12px;background:var(--bg);color:var(--text);outline:none;font-family:inherit">'
+          +'<button onclick="gsDeleteInt(\''+crId+'\','+ii+')" style="background:none;border:none;cursor:pointer;padding:3px;flex-shrink:0">'
+            +'<svg class="ico ico-xs" style="color:var(--red)"><use href="#i-trash"/></svg>'
+          +'</button>'
+        +'</div>'
+        +'<textarea id="gs-int-contacts-'+ii+'" placeholder="Contacts (nom, tel, email)"'
+          +' style="width:100%;padding:5px 8px;border:1px solid var(--border2);border-radius:6px;font-size:11px;background:var(--bg);color:var(--text);outline:none;font-family:inherit;resize:vertical;min-height:44px">'+e(int.contacts)+'</textarea>'
+      +'</div>';
+  });
+
+  var actsHTML='';
+  cr.actions.forEach(function(a,ai){
+    var intOpts='<option value="">— aucun intervenant —</option>';
+    cr.intervenants.forEach(function(iv){
+      intOpts+='<option value="'+iv.id+'"'+(a.intId===iv.id?' selected':'')+'>'+e(iv.entreprise||iv.lot)+'</option>';
+    });
+    actsHTML+=''
+      +'<div style="border:1px solid var(--border);border-radius:8px;padding:9px 12px;cursor:default;margin-bottom:6px">'
+        +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">'
+          +'<div style="display:flex;flex-direction:column;gap:3px;flex-shrink:0;margin-right:2px" title="Utiliser ▲ ▼ pour déplacer">'
+            +'<button onclick="moveItem(\'act\',\''+crId+'\','+ai+',-1)" style="background:var(--panel);border:1px solid var(--border2);border-radius:6px;cursor:pointer;width:28px;height:24px;font-size:13px;display:flex;align-items:center;justify-content:center;color:var(--text2);font-weight:500;padding:0">▲</button>'
+            +'<button onclick="moveItem(\'act\',\''+crId+'\','+ai+',1)" style="background:var(--panel);border:1px solid var(--border2);border-radius:6px;cursor:pointer;width:28px;height:24px;font-size:13px;display:flex;align-items:center;justify-content:center;color:var(--text2);font-weight:500;padding:0">▼</button>'
+          +'</div>'
+          +'<span style="font-size:10px;font-weight:700;color:var(--text3);min-width:18px;text-align:center;flex-shrink:0">'+( ai+1)+'</span>'
+          +'<label style="display:flex;align-items:center;gap:5px;font-size:11px;cursor:pointer;white-space:nowrap">'
+            +'<input type="checkbox" id="gs-a-done-'+a.id+'"'+(a.done?' checked':'')+' style="width:13px;height:13px"> Terminee'
+          +'</label>'
+          +'<input value="'+e(a.texte)+'" id="gs-a-texte-'+a.id+'"'
+            +' style="flex:1;padding:5px 8px;border:1px solid var(--border2);border-radius:6px;font-size:12px;background:var(--bg);color:var(--text);outline:none;font-family:inherit">'
+          +'<button onclick="gsDeleteAction(\''+crId+'\',\''+a.id+'\')" style="background:none;border:none;cursor:pointer;padding:3px;flex-shrink:0">'
+            +'<svg class="ico ico-xs" style="color:var(--red)"><use href="#i-trash"/></svg>'
+          +'</button>'
+        +'</div>'
+        +'<div style="display:flex;gap:6px">'
+          +'<select id="gs-a-int-'+a.id+'"'
+            +' style="flex:1;padding:5px 8px;border:1px solid var(--border2);border-radius:6px;font-size:11px;background:var(--bg);color:var(--text);outline:none;font-family:inherit">'
+            +intOpts
+          +'</select>'
+          +'<input value="'+e(a.echeance)+'" id="gs-a-ech-'+a.id+'" placeholder="Echeance"'
+            +' style="width:110px;padding:5px 8px;border:1px solid var(--border2);border-radius:6px;font-size:11px;background:var(--bg);color:var(--text);outline:none;font-family:inherit">'
+        +'</div>'
+      +'</div>';
+  });
+
+  var html=''
+    +'<h3 style="margin-bottom:14px;font-size:15px;font-weight:600">Reglages</h3>'
+    +'<div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:14px" id="gs-tabs">'
+      +'<button class="gs-tab" onclick="gsCRTab(0,this)" style="padding:8px 14px;border:none;background:none;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;color:var(--blue);border-bottom:2px solid var(--blue);margin-bottom:-1px">Lots</button>'
+      +'<button class="gs-tab" onclick="gsCRTab(1,this)" style="padding:8px 14px;border:none;background:none;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;color:var(--text3);border-bottom:2px solid transparent;margin-bottom:-1px">Intervenants</button>'
+      +'<button class="gs-tab" onclick="gsCRTab(2,this)" style="padding:8px 14px;border:none;background:none;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;color:var(--text3);border-bottom:2px solid transparent;margin-bottom:-1px">Actions</button>'
+    +'</div>'
+    +'<div id="gs-p0">'
+      +'<p style="font-size:11px;color:var(--text3);margin-bottom:10px">Boutons ▲▼ pour reordonner · couleur · intervenant lie</p>'
+      +'<div style="max-height:340px;overflow-y:auto">'+lotsHTML+'</div>'
+      +'<button class="btn btn-p btn-sm" style="margin-top:8px;width:100%;justify-content:center" onclick="gsAddLot(\''+crId+'\')">+ Ajouter un lot</button>'
+    +'</div>'
+    +'<div id="gs-p1" style="display:none">'
+      +'<p style="font-size:11px;color:var(--text3);margin-bottom:10px">Boutons ▲▼ pour reordonner · roue couleur</p>'
+      +'<div style="max-height:340px;overflow-y:auto">'+intsHTML+'</div>'
+      +'<button class="btn btn-p btn-sm" style="margin-top:8px;width:100%;justify-content:center" onclick="gsAddInt(\''+crId+'\')">+ Ajouter un intervenant</button>'
+    +'</div>'
+    +'<div id="gs-p2" style="display:none">'
+      +'<p style="font-size:11px;color:var(--text3);margin-bottom:10px">Boutons ▲▼ pour reordonner · lier un intervenant</p>'
+      +'<div style="max-height:340px;overflow-y:auto">'+actsHTML+'</div>'
+      +'<button class="btn btn-p btn-sm" style="margin-top:8px;width:100%;justify-content:center" onclick="gsAddAction(\''+crId+'\')">+ Ajouter une action</button>'
+    +'</div>'
+    +'<div style="display:flex;gap:7px;margin-top:16px;justify-content:flex-end">'
+      +'<button class="btn" onclick="closeModal()">Fermer</button>'
+      +'<button class="btn btn-p" onclick="saveSettings(\''+crId+'\')">Enregistrer tout</button>'
+    +'</div>';
+
+  showModal(html);
+}
+
+function gsCRTab(idx,btn){
+  document.querySelectorAll('.gs-tab').forEach((t,i)=>{
+    t.style.color=i===idx?'var(--blue)':'var(--text3)';
+    t.style.borderBottomColor=i===idx?'var(--blue)':'transparent';
+  });
+  [0,1,2].forEach(i=>document.getElementById('gs-p'+i).style.display=i===idx?'block':'none');
+}
+
+function gsDeleteLot(crId,lotId){
+  const cr=CRS.find(c=>c.id===crId);
+  if(!cr)return;
+  const lot=cr.lots.find(l=>l.id===lotId);
+  if(!lot||!confirm('Supprimer le lot "'+lot.titre+'" et ses '+lot.remarques.length+' remarques ?'))return;
+  cr.lots=cr.lots.filter(l=>l.id!==lotId);
+  openCRSettings(crId);
+}
+function gsAddLot(crId){
+  const cr=CRS.find(c=>c.id===crId);
+  if(!cr)return;
+  if(!cr.intervenants.length){toast('Ajoutez d\'abord un intervenant','var(--amber)');return;}
+  // Use first intervenant by default
+  const firstInt=cr.intervenants[0];
+  cr.lots.push({id:'l'+(uid++),titre:firstInt.lot,ouvert:true,intId:firstInt.id,remarques:[]});
+  openCRSettings(crId);
+}
+function gsDeleteInt(crId,idx){
+  const cr=CRS.find(c=>c.id===crId);
+  if(!cr)return;
+  const int=cr.intervenants[idx];
+  if(!int)return;
+  // Check if any lots are linked to this intervenant
+  const linked=cr.lots.filter(function(l){return l.intId===int.id;});
+  if(linked.length>0){
+    if(!confirm('Supprimer "'+( int.entreprise||int.lot)+'" ?\n\nAttention : '+linked.length+' lot(s) lui sont liés ('+linked.map(function(l){return l.titre;}).join(', ')+').\nCes lots seront aussi supprimés.'))return;
+    cr.lots=cr.lots.filter(function(l){return l.intId!==int.id;});
+  } else {
+    if(!confirm('Supprimer "'+(int.entreprise||int.lot)+'" ?'))return;
+  }
+  cr.intervenants.splice(idx,1);
+  openCRSettings(crId);
+}
+function gsAddInt(crId){
+  const cr=CRS.find(c=>c.id===crId);
+  if(!cr)return;
+  cr.intervenants.push({lot:'Nouveau lot',entreprise:'',contacts:'',present:false});
+  // Switch to intervenants tab
+  openCRSettings(crId);
+  setTimeout(()=>gsCRTab(1,document.querySelectorAll('.gs-tab')[1]),50);
+}
+function gsDeleteAction(crId,aId){
+  const cr=CRS.find(c=>c.id===crId);
+  if(cr)cr.actions=cr.actions.filter(a=>a.id!==aId);
+  openCRSettings(crId);
+  setTimeout(()=>gsCRTab(2,document.querySelectorAll('.gs-tab')[2]),50);
+}
+function gsAddAction(crId){
+  const cr=CRS.find(c=>c.id===crId);
+  if(!cr)return;
+  cr.actions.push({id:'a'+(uid++),texte:'Nouvelle action',responsable:'',echeance:'',done:false});
+  openCRSettings(crId);
+  setTimeout(()=>gsCRTab(2,document.querySelectorAll('.gs-tab')[2]),50);
+}
+function saveSettings(crId){
+  const cr=CRS.find(c=>c.id===crId);
+  if(!cr)return;
+  // Save lots names + intId links
+  cr.lots.forEach(lot=>{
+    const el=document.getElementById('gs-lot-'+lot.id);
+    if(el&&el.value.trim())lot.titre=el.value.trim();
+    const intEl=document.getElementById('gs-lot-int-'+lot.id);
+    if(intEl&&intEl.value)lot.intId=intEl.value;
+    // lot.color is now derived from intervenant — don't save separately
+  });
+  // Validate: every lot must have an intId
+  const orphans=cr.lots.filter(function(l){return !l.intId||!cr.intervenants.find(function(i){return i.id===l.intId;});});
+  if(orphans.length){
+    toast(orphans.length+' lot(s) sans intervenant — sélectionnez un intervenant pour chaque lot','var(--amber)');
+    return;
+  }
+  // Save intervenants
+  cr.intervenants.forEach((int,ii)=>{
+    const lot=document.getElementById('gs-int-lot-'+ii);
+    const ent=document.getElementById('gs-int-ent-'+ii);
+    const contacts=document.getElementById('gs-int-contacts-'+ii);
+    const colorEl=document.getElementById('gs-int-color-'+ii);
+    if(lot)int.lot=lot.value||int.lot;
+    if(ent)int.entreprise=ent.value||'';
+    if(contacts)int.contacts=contacts.value||'';
+    if(colorEl)int.color=colorEl.value;
+  });
+  // Save actions
+  cr.actions.forEach(a=>{
+    const texte=document.getElementById('gs-a-texte-'+a.id);
+    const intEl=document.getElementById('gs-a-int-'+a.id);
+    const ech=document.getElementById('gs-a-ech-'+a.id);
+    const done=document.getElementById('gs-a-done-'+a.id);
+    if(texte&&texte.value.trim())a.texte=texte.value.trim();
+    if(intEl){
+      a.intId=intEl.value||null;
+      const linked=a.intId?cr.intervenants.find(i=>i.id===a.intId):null;
+      a.responsable=linked?(linked.entreprise||linked.lot):a.responsable;
+    }
+    if(ech)a.echeance=ech.value||'';
+    if(done)a.done=done.checked;
+  });
+  closeModal();
+  // Stay on intervenants tab so user sees the color change immediately
+  activeTab='intervenants';
+  renderCR();
+  // Reset tab buttons
+  setTimeout(function(){
+    document.querySelectorAll('.tab').forEach(function(t,i){
+      t.classList.toggle('active',i===1);
+    });
+  },10);
+  renderList();
+  toast('Tout enregistré ✓');
+}
+
+/* ══ ARCHIVE CR ══ */
+function toggleArchiveCR(crId){
+  const cr=CRS.find(c=>c.id===crId);
+  if(!cr)return;
+  const isArchived=cr.statut==='archived';
+  if(!isArchived){
+    if(!confirm(`Archiver "${cr.projet} — ${cr.date}" ?\n\nLe CR sera masqué de la liste principale mais restera accessible dans l'historique.`))return;
+    cr.statut='archived';
+    toast('CR archivé — visible dans l\'historique ✓');
+  } else {
+    cr.statut='published';
+    toast('CR désarchivé ✓');
+  }
+  renderList();
+  renderCR();
+}
+
+/* ══ REORDER — up/down buttons (reliable in modals) ══ */
+let dragSrcIdx=null;
+let dragSrcType=null;
+
+function moveItem(type, crId, fromIdx, dir) {
+  const cr = CRS.find(c => c.id === crId);
+  if (!cr) return;
+  const toIdx = fromIdx + dir;
+
+  // Save all current field values first
+  if (type === 'lot') {
+    cr.lots.forEach(function(lot) {
+      const el = document.getElementById('gs-lot-' + lot.id);
+      if (el && el.value.trim()) lot.titre = el.value.trim();
+      const intEl = document.getElementById('gs-lot-int-' + lot.id);
+      if (intEl) lot.intId = intEl.value || null;
+      const colorEl = document.getElementById('gs-lot-color-' + lot.id);
+      if (colorEl) lot.color = colorEl.value;
+    });
+    if (toIdx < 0 || toIdx >= cr.lots.length) return;
+    const moved = cr.lots.splice(fromIdx, 1)[0];
+    cr.lots.splice(toIdx, 0, moved);
+  } else if (type === 'int') {
+    cr.intervenants.forEach(function(int, ii) {
+      const lotEl = document.getElementById('gs-int-lot-' + ii);
+      const entEl = document.getElementById('gs-int-ent-' + ii);
+      const cEl = document.getElementById('gs-int-contacts-' + ii);
+      const colEl = document.getElementById('gs-int-color-' + ii);
+      if (lotEl) int.lot = lotEl.value || int.lot;
+      if (entEl) int.entreprise = entEl.value || '';
+      if (cEl) int.contacts = cEl.value || '';
+      if (colEl) int.color = colEl.value;
+    });
+    if (toIdx < 0 || toIdx >= cr.intervenants.length) return;
+    const moved = cr.intervenants.splice(fromIdx, 1)[0];
+    cr.intervenants.splice(toIdx, 0, moved);
+  } else if (type === 'act') {
+    cr.actions.forEach(function(a) {
+      const tEl = document.getElementById('gs-a-texte-' + a.id);
+      const iEl = document.getElementById('gs-a-int-' + a.id);
+      const eEl = document.getElementById('gs-a-ech-' + a.id);
+      const dEl = document.getElementById('gs-a-done-' + a.id);
+      if (tEl && tEl.value.trim()) a.texte = tEl.value.trim();
+      if (iEl) { a.intId = iEl.value || null; const lk = a.intId ? cr.intervenants.find(i => i.id === a.intId) : null; a.responsable = lk ? (lk.entreprise || lk.lot) : a.responsable; }
+      if (eEl) a.echeance = eEl.value || '';
+      if (dEl) a.done = dEl.checked;
+    });
+    if (toIdx < 0 || toIdx >= cr.actions.length) return;
+    const moved = cr.actions.splice(fromIdx, 1)[0];
+    cr.actions.splice(toIdx, 0, moved);
+  }
+
+  openCRSettings(crId);
+  setTimeout(function() {
+    const tabIdx = type === 'lot' ? 0 : type === 'int' ? 1 : 2;
+    gsCRTab(tabIdx, document.querySelectorAll('.gs-tab')[tabIdx]);
+    // Scroll the moved item into view
+    const panels = ['gs-p0','gs-p1','gs-p2'];
+    const panel = document.getElementById(panels[tabIdx]);
+    if (panel) {
+      const rows = panel.querySelectorAll('[data-moved]');
+      if (rows.length) rows[0].scrollIntoView({block:'nearest'});
+    }
+  }, 20);
+}
+
+// Keep stubs for compatibility
+function gsDragStart(){}
+function gsDragOver(e){e.preventDefault();}
+function gsDrop(){}
+function gsDragEnd(){}
+function gsDragStart2(){}
+function gsDragOver2(e){e.preventDefault();}
+function gsDrop2(){}
+function gsDragEnd2(){}
+
+/* ══ LIVE COLOR SYNC ══ */
+function syncIntColor(crId, ii, color) {
+  const cr = CRS.find(c => c.id === crId);
+  if (!cr || !cr.intervenants[ii]) return;
+  const int = cr.intervenants[ii];
+
+  // 1. Update data immediately
+  int.color = color;
+
+  // 2. Update the row border in settings modal
+  const picker = document.getElementById('gs-int-color-'+ii);
+  if (picker) {
+    const card = picker.closest('div[style*="border-left"]');
+    if (card) card.style.borderLeftColor = color;
+  }
+
+  // 3. Update the intervenant card in main view
+  const intCard = document.querySelector('.int-card[data-intidx="'+ii+'"]');
+  if (intCard) intCard.style.borderLeftColor = color;
+
+  // 4. Propagate to ALL linked lots
+  cr.lots.forEach(function(lot) {
+    if (lot.intId === int.id) {
+      // Update lot dot in main view
+      const lotBlock = document.querySelector('[data-lotid="'+lot.id+'"]');
+      if (lotBlock) {
+        const dot = lotBlock.querySelector('.lot-dot');
+        if (dot) dot.style.background = color;
+        const head = lotBlock.querySelector('.lot-head');
+        if (head) head.style.borderLeftColor = color;
+      }
+      // Update lot color picker in settings if open
+      const lotPicker = document.getElementById('gs-lot-color-'+lot.id);
+      if (lotPicker) {
+        lotPicker.value = color;
+        const lotRow = lotPicker.closest('div[style*="border-left"]');
+        if (lotRow) lotRow.style.borderLeftColor = color;
+      }
+    }
+  });
+
+  // 5. Propagate to ALL linked actions badges
+  document.querySelectorAll('[data-intid="'+int.id+'"] .action-badge').forEach(function(el) {
+    el.style.background = color+'18';
+    el.style.color = color;
+  });
+}
+
+function syncLotIntervenant(crId, lotId, selectEl) {
+  const cr = CRS.find(c => c.id === crId);
+  const lot = cr && cr.lots.find(l => l.id === lotId);
+  if (!lot) return;
+  lot.intId = selectEl.value || null;
+  const int = lot.intId ? cr.intervenants.find(i => i.id === lot.intId) : null;
+  const color = int ? getColor(int, cr) : '#e03131';
+  // Update row border and dot live
+  const row = selectEl.closest('div[style*="border-left"]');
+  if (row) {
+    row.style.borderLeftColor = color;
+    const dot = row.querySelector('div[style*="border-radius:50%"]');
+    if (dot) dot.style.background = color;
+    selectEl.style.borderColor = lot.intId ? 'var(--border2)' : '#e03131';
+  }
+  // Update lot dot in main view
+  const lotBlock = document.querySelector('[data-lotid="'+lotId+'"]');
+  if (lotBlock) {
+    const d = lotBlock.querySelector('.lot-dot');
+    if (d) d.style.background = color;
+  }
+}
+
+function syncLotColor(crId, lotId, color) {
+  // Lot color is now driven by intervenant — this is kept for compatibility only
+  const cr = CRS.find(c => c.id === crId);
+  const lot = cr && cr.lots.find(l => l.id === lotId);
+  if (!lot) return;
+  const lotBlock = document.querySelector('[data-lotid="'+lotId+'"]');
+  if (lotBlock) {
+    const dot = lotBlock.querySelector('.lot-dot');
+    if (dot) dot.style.background = color;
+  }
+}
+
+
+/* ══ TEMPLATES ══ */
+function saveAsTemplate(crId){
+  const cr=CRS.find(c=>c.id===crId);
+  if(!cr)return;
+  showModal(''
+    +'<h3 style="display:flex;align-items:center;gap:8px"><svg class="ico" style="color:var(--blue)"><use href="#i-save"/></svg> Enregistrer comme modèle</h3>'
+    +'<div class="fi"><label>Nom du modèle *</label><input id="tpl-name" value="'+e(cr.projet)+' — Structure type" placeholder="Ex: Chantier villa standard"></div>'
+    +'<div class="fi"><label>Description</label><textarea id="tpl-desc" placeholder="Décrire ce modèle…" style="min-height:60px"></textarea></div>'
+    +'<div style="background:var(--bg2);border-radius:var(--r);padding:10px 14px;margin-bottom:12px;font-size:12px;color:var(--text3)">'
+      +'Ce modèle sauvegardera : <strong>'+cr.intervenants.length+' intervenants</strong>, <strong>'+cr.lots.length+' lots</strong> (sans les remarques), et la structure des actions.'
+    +'</div>'
+    +'<div class="mo-foot">'
+      +'<button class="btn" onclick="closeModal()">Annuler</button>'
+      +'<button class="btn btn-p" onclick="confirmSaveTemplate(\''+crId+'\')"><svg class="ico ico-sm"><use href="#i-save"/></svg> Enregistrer</button>'
+    +'</div>'
+  );
+  setTimeout(function(){var el=document.getElementById('tpl-name');if(el)el.select();},50);
+}
+
+function confirmSaveTemplate(crId){
+  const cr=CRS.find(c=>c.id===crId);
+  if(!cr)return;
+  const name=document.getElementById('tpl-name')?.value?.trim();
+  if(!name){alert('Nom requis');return;}
+  const desc=document.getElementById('tpl-desc')?.value?.trim()||'';
+
+  // Deep copy intervenants (with colors) and lots (without remarques)
+  const tplIntervenants=cr.intervenants.map(function(iv){
+    return {id:iv.id,lot:iv.lot,entreprise:iv.entreprise,contacts:iv.contacts,color:iv.color,present:false};
+  });
+  const tplLots=cr.lots.map(function(l){
+    return {id:'tl'+(uid++),titre:l.titre,ouvert:true,intId:l.intId,remarques:[]};
+  });
+
+  const tpl={
+    id:'tpl'+(uid++),
+    name:name,
+    desc:desc,
+    projet:cr.projet,
+    createdAt:new Date().toLocaleDateString('fr-FR'),
+    intervenants:tplIntervenants,
+    lots:tplLots,
+    intCount:cr.intervenants.length,
+    lotCount:cr.lots.length,
+  };
+
+  // Check if template with same name exists → offer update
+  const existIdx=TEMPLATES.findIndex(function(t){return t.name===name;});
+  if(existIdx>=0){
+    if(!confirm('Un modèle "'+name+'" existe déjà. Le remplacer ?'))return;
+    TEMPLATES[existIdx]=tpl;
+    closeModal();
+    saveTemplatesToStorage();
+    toast('Modèle mis à jour ✓');
+  } else {
+    TEMPLATES.push(tpl);
+    closeModal();
+    saveTemplatesToStorage();
+    toast('Modèle "'+name+'" enregistré ✓');
+  }
+}
+
+function openTemplates(){
+  if(!TEMPLATES.length){
+    showModal(''
+      +'<h3 style="display:flex;align-items:center;gap:8px"><svg class="ico" style="color:var(--blue)"><use href="#i-file"/></svg> Modèles de CR</h3>'
+      +'<div style="text-align:center;padding:28px 0;color:var(--text3)">'
+        +'<svg class="ico" style="width:40px;height:40px;display:block;margin:0 auto 12px"><use href="#i-file"/></svg>'
+        +'<div style="font-weight:500;margin-bottom:6px">Aucun modèle enregistré</div>'
+        +'<div style="font-size:12px">Ouvrez un CR et cliquez <strong>Modèle</strong> pour sauvegarder une structure réutilisable.</div>'
+      +'</div>'
+      +'<div class="mo-foot"><button class="btn" onclick="closeModal()">Fermer</button></div>'
+    );
+    return;
+  }
+
+  var tplCards='';
+  TEMPLATES.forEach(function(tpl,ti){
+    tplCards+=''
+      +'<div style="border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:8px">'
+        +'<div style="display:flex;align-items:flex-start;gap:10px">'
+          +'<div style="flex:1;min-width:0">'
+            +'<div style="font-weight:600;font-size:13.5px;margin-bottom:3px">'+e(tpl.name)+'</div>'
+            +(tpl.desc?'<div style="font-size:12px;color:var(--text3);margin-bottom:5px">'+e(tpl.desc)+'</div>':'')
+            +'<div style="display:flex;gap:8px;font-size:11px;color:var(--text3)">'
+              +'<span>'+tpl.intCount+' intervenants</span>'
+              +'<span>·</span>'
+              +'<span>'+tpl.lotCount+' lots</span>'
+              +'<span>·</span>'
+              +'<span>Créé le '+tpl.createdAt+'</span>'
+            +'</div>'
+            // Show intervenants as colored chips
+            +'<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:8px">'
+              +tpl.intervenants.map(function(iv){
+                var col=iv.color||lotColor(iv.lot);
+                return '<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:'+col+'18;color:'+col+';font-weight:500">'+(iv.entreprise||iv.lot)+'</span>';
+              }).join('')
+            +'</div>'
+          +'</div>'
+          +'<div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">'
+            +'<button class="btn btn-p btn-sm" onclick="useTemplate('+ti+')" title="Créer un nouveau CR depuis ce modèle">'
+              +'<svg class="ico ico-xs"><use href="#i-plus"/></svg> Utiliser'
+            +'</button>'
+            +'<button class="btn btn-sm" onclick="editTemplate('+ti+')" title="Modifier le nom/description">'
+              +'<svg class="ico ico-xs"><use href="#i-edit"/></svg> Modifier'
+            +'</button>'
+            +'<button class="btn btn-sm" onclick="deleteTemplate('+ti+')" style="color:var(--red)">'
+              +'<svg class="ico ico-xs"><use href="#i-trash"/></svg> Supprimer'
+            +'</button>'
+          +'</div>'
+        +'</div>'
+      +'</div>';
+  });
+
+  showModal(''
+    +'<h3 style="display:flex;align-items:center;gap:8px"><svg class="ico" style="color:var(--blue)"><use href="#i-file"/></svg> Modèles de CR ('+TEMPLATES.length+')</h3>'
+    +'<div style="max-height:420px;overflow-y:auto">'+tplCards+'</div>'
+    +'<div class="mo-foot">'
+      +'<button class="btn" onclick="closeModal()">Fermer</button>'
+    +'</div>'
+  );
+}
+
+function useTemplate(ti){
+  const tpl=TEMPLATES[ti];
+  if(!tpl)return;
+  showModal(''
+    +'<h3><svg class="ico ico-sm" style="color:var(--blue)"><use href="#i-plus"/></svg> Nouveau CR depuis "'+e(tpl.name)+'"</h3>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+      +'<div class="fi" style="grid-column:1/-1"><label>Nom du projet *</label><input id="nc-proj" value="'+e(tpl.projet)+'" placeholder="Nom du projet"></div>'
+      +'<div class="fi" style="grid-column:1/-1"><label>Adresse du chantier</label><input id="nc-addr" placeholder="Adresse"></div>'
+      +'<div class="fi"><label>Date de la réunion *</label><input type="date" id="nc-date"></div>'
+      +'<div class="fi"><label>Date prochaine réunion</label><input id="nc-datep" placeholder="21/05/2026 14:00"></div>'
+      +'<div class="fi"><label>N° de CR</label><input type="number" id="nc-num" placeholder="1" min="1" value="'+(CRS.length+1)+'"></div>'
+      +'<div class="fi"><label>Rédacteur</label><input id="nc-red" placeholder="Mme Bell — Bell Architecture"></div>'
+    +'</div>'
+    +'<div style="background:var(--blue-bg);border-radius:var(--r);padding:10px 14px;margin-bottom:4px;font-size:12px;color:var(--text2)">'
+      +'Sera importé depuis le modèle : '+tpl.intCount+' intervenants + '+tpl.lotCount+' lots vides'
+    +'</div>'
+    +'<div class="mo-foot">'
+      +'<button class="btn" onclick="openTemplates()">← Retour</button>'
+      +'<button class="btn btn-p" onclick="createFromTemplate('+ti+')"><svg class="ico ico-sm"><use href="#i-plus"/></svg> Créer</button>'
+    +'</div>'
+  );
+  setTimeout(function(){var el=document.getElementById('nc-date');if(el)el.valueAsDate=new Date();},50);
+}
+
+function createFromTemplate(ti){
+  const tpl=TEMPLATES[ti];
+  if(!tpl)return;
+  const proj=document.getElementById('nc-proj')?.value?.trim();
+  if(!proj){alert('Nom du projet requis');return;}
+  const dateRaw=document.getElementById('nc-date')?.value||'';
+  const date=dateRaw?new Date(dateRaw).toLocaleDateString('fr-FR'):new Date().toLocaleDateString('fr-FR');
+
+  // Deep copy intervenants with new ids but keep colors
+  const idMap={};
+  const newInts=tpl.intervenants.map(function(iv){
+    var newId='i'+(uid++);
+    idMap[iv.id]=newId;
+    return {id:newId,lot:iv.lot,entreprise:iv.entreprise,contacts:iv.contacts,color:iv.color,present:false};
+  });
+  // Deep copy lots, remap intId
+  const newLots=tpl.lots.map(function(l){
+    return {id:'l'+(uid++),titre:l.titre,ouvert:true,intId:idMap[l.intId]||null,remarques:[]};
+  });
+
+  const newCR={
+    id:'cr'+(uid++),
+    projet:proj,
+    adresse:document.getElementById('nc-addr')?.value||'',
+    date:date,
+    dateProchaine:document.getElementById('nc-datep')?.value||'',
+    numero:parseInt(document.getElementById('nc-num')?.value)||CRS.length+1,
+    redacteur:document.getElementById('nc-red')?.value||'',
+    statut:'draft',
+    intervenants:newInts,
+    lots:newLots,
+    actions:[],
+  };
+  CRS.unshift(newCR);
+  // Initialize colors
+  newCR.intervenants.forEach(function(int){if(!int.color)int.color=lotColor(int.lot);});
+
+  closeModal();
+  activeCR=newCR.id;
+  activeTab='remarques';
+  renderList();
+  renderCR();
+  toast('CR créé depuis le modèle "'+tpl.name+'" ✓');
+}
+
+function editTemplate(ti){
+  const tpl=TEMPLATES[ti];
+  if(!tpl)return;
+  showModal(''
+    +'<h3><svg class="ico ico-sm" style="color:var(--blue)"><use href="#i-edit"/></svg> Modifier le modèle</h3>'
+    +'<div class="fi"><label>Nom *</label><input id="et-name" value="'+e(tpl.name)+'"></div>'
+    +'<div class="fi"><label>Description</label><textarea id="et-desc" style="min-height:60px">'+e(tpl.desc||'')+'</textarea></div>'
+    +'<div class="mo-foot">'
+      +'<button class="btn" onclick="openTemplates()">Annuler</button>'
+      +'<button class="btn btn-p" onclick="confirmEditTemplate('+ti+')" ><svg class="ico ico-sm"><use href="#i-save"/></svg> Enregistrer</button>'
+    +'</div>'
+  );
+}
+function confirmEditTemplate(ti){
+  const name=document.getElementById('et-name')?.value?.trim();
+  if(!name){alert('Nom requis');return;}
+  TEMPLATES[ti].name=name;
+  TEMPLATES[ti].desc=document.getElementById('et-desc')?.value?.trim()||'';
+  saveTemplatesToStorage();
+  openTemplates();
+  toast('Modèle mis à jour ✓');
+}
+function deleteTemplate(ti){
+  if(!confirm('Supprimer ce modèle ?'))return;
+  TEMPLATES.splice(ti,1);
+  saveTemplatesToStorage();
+  openTemplates();
+  toast('Modèle supprimé');
+}
+
+/* ══ CLONE CR ══ */
+function cloneCR(crId){
+  const cr=CRS.find(c=>c.id===crId);
+  if(!cr)return;
+  const pendingFlags=cr.lots.flatMap(l=>l.remarques).filter(r=>r.flag&&!r.done).length;
+  const pendingActions=cr.actions.filter(a=>!a.done).length;
+  showModal(`<h3><svg class="ico ico-sm" style="color:var(--blue)"><use href="#i-copy"/></svg> Dupliquer ce CR</h3>
+    <div style="background:var(--blue-bg);border-radius:var(--r);padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--text2)">
+      Crée un nouveau CR avec les mêmes intervenants, lots vides, et reporte automatiquement les
+      <strong>${pendingFlags} points en suspens (⚑)</strong> et <strong>${pendingActions} actions non terminées</strong>.
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="fi" style="grid-column:1/-1"><label>Nom du projet</label><input id="cl-proj" value="${e(cr.projet)}"></div>
+      <div class="fi"><label>Date de la réunion *</label><input type="date" id="cl-date"></div>
+      <div class="fi"><label>Date prochaine réunion</label><input id="cl-datep" placeholder="28/05/2026 14:00"></div>
+      <div class="fi"><label>N° de CR</label><input type="number" id="cl-num" value="${cr.numero+1}" min="1"></div>
+      <div class="fi"><label>Rédacteur</label><input id="cl-red" value="${e(cr.redacteur)}"></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:4px">
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+        <input type="checkbox" id="cl-flags" checked style="width:15px;height:15px">
+        Reporter les <strong>${pendingFlags} points ⚑</strong> non traités
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+        <input type="checkbox" id="cl-actions" checked style="width:15px;height:15px">
+        Reporter les <strong>${pendingActions} actions</strong> non terminées
+      </label>
+    </div>
+    <div class="mo-foot">
+      <button class="btn" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-p" onclick="confirmCloneCR('${crId}')">${ico('copy','ico-sm')} Dupliquer</button>
+    </div>`);
+  setTimeout(()=>{
+    const d=document.getElementById('cl-date');
+    if(d) d.valueAsDate=new Date();
+  },50);
+}
+
+function confirmCloneCR(crId){
+  const cr=CRS.find(c=>c.id===crId);
+  if(!cr)return;
+  const dateRaw=document.getElementById('cl-date')?.value||'';
+  const date=dateRaw?new Date(dateRaw).toLocaleDateString('fr-FR'):new Date().toLocaleDateString('fr-FR');
+  const importFlags=document.getElementById('cl-flags')?.checked;
+  const importActions=document.getElementById('cl-actions')?.checked;
+
+  // Clone intervenants with new IDs
+  const idMap={};
+  const newInts=cr.intervenants.map(function(iv){
+    const newId='i'+(uid++); idMap[iv.id]=newId;
+    return {id:newId,lot:iv.lot,entreprise:iv.entreprise,contacts:iv.contacts,color:iv.color,present:false};
+  });
+
+  // Clone lots: keep structure, import only ⚑ points if requested
+  const newLots=cr.lots.map(function(lot){
+    const remarks=importFlags
+      ? lot.remarques.filter(r=>r.flag&&!r.done).map(r=>({
+          id:'r'+(uid++), texte:r.texte, done:false, flag:true,
+          createdAt:date, archivedAt:null
+        }))
+      : [];
+    return {id:'l'+(uid++), titre:lot.titre, ouvert:true,
+            intId:idMap[lot.intId]||null, remarques:remarks};
+  });
+
+  // Clone pending actions if requested
+  const newActions=importActions
+    ? cr.actions.filter(a=>!a.done).map(a=>({
+        id:'a'+(uid++), texte:a.texte,
+        intId:idMap[a.intId]||null,
+        responsable:a.responsable,
+        echeance:'', done:false
+      }))
+    : [];
+
+  const newCR={
+    id:'cr'+(uid++),
+    projet:document.getElementById('cl-proj')?.value?.trim()||cr.projet,
+    adresse:cr.adresse,
+    date,
+    dateProchaine:document.getElementById('cl-datep')?.value||'',
+    numero:parseInt(document.getElementById('cl-num')?.value)||cr.numero+1,
+    redacteur:document.getElementById('cl-red')?.value||cr.redacteur,
+    statut:'draft',
+    intervenants:newInts,
+    lots:newLots,
+    actions:newActions,
+  };
+  CRS.unshift(newCR);
+  newCR.intervenants.forEach(function(int){if(!int.color)int.color=lotColor(int.lot);});
+
+  closeModal();
+  activeCR=newCR.id;
+  activeTab='remarques';
+  renderList();
+  renderCR();
+  const imported=newLots.reduce((s,l)=>s+l.remarques.length,0)+newActions.length;
+  toast('CR dupliqué — '+imported+' points/actions reportés ✓');
+}
+
+/* ══ FILTER ACTIONS BY INTERVENANT ══ */
+let actionFilter='';
+function setActionFilter(crId,intId){
+  actionFilter=intId;
+  const cr=CRS.find(c=>c.id===crId);
+  if(cr) renderActions(cr);
+}
+
+/* ══ LINK REMARQUE → ACTION ══ */
+function remarkToAction(crId,lotId,rId){
+  const cr=CRS.find(c=>c.id===crId);
+  const lot=cr?.lots.find(l=>l.id===lotId);
+  const r=lot?.remarques.find(x=>x.id===rId);
+  if(!r)return;
+  const linked=lot.intId?cr.intervenants.find(i=>i.id===lot.intId):null;
+  const intOptions=cr.intervenants.map(i=>
+    `<option value="${i.id}" ${lot.intId===i.id?'selected':''}>${i.entreprise||i.lot}</option>`
+  ).join('');
+  showModal(`<h3>${ico('check','ico-sm')} Convertir en action</h3>
+    <div style="background:var(--bg2);border-radius:var(--r);padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--text2)">
+      <svg class="ico ico-xs" style="color:var(--text3)"><use href="#i-file"/></svg> ${e(r.texte)}
+    </div>
+    <div class="fi"><label>Texte de l'action</label><textarea id="ra-texte" style="min-height:60px">${e(r.texte)}</textarea></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="fi"><label>Intervenant responsable</label>
+        <select id="ra-int" style="width:100%;padding:7px 9px;border:1px solid var(--border2);border-radius:7px;font-size:12px;background:var(--bg);color:var(--text);outline:none;font-family:inherit">
+          <option value="">— aucun —</option>${intOptions}
+        </select>
+      </div>
+      <div class="fi"><label>Échéance</label><input id="ra-ech" placeholder="28/05/2026"></div>
+    </div>
+    <label style="display:flex;align-items:center;gap:7px;font-size:13px;cursor:pointer;margin-bottom:4px">
+      <input type="checkbox" id="ra-archive" checked style="width:15px;height:15px"> Archiver la remarque une fois convertie
+    </label>
+    <div class="mo-foot">
+      <button class="btn" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-p" onclick="confirmRemarkToAction('${crId}','${lotId}','${rId}')">${ico('check','ico-sm')} Créer l'action</button>
+    </div>`);
+}
+function confirmRemarkToAction(crId,lotId,rId){
+  const cr=CRS.find(c=>c.id===crId);
+  const lot=cr?.lots.find(l=>l.id===lotId);
+  const r=lot?.remarques.find(x=>x.id===rId);
+  if(!r)return;
+  const texte=document.getElementById('ra-texte')?.value?.trim()||r.texte;
+  const intId=document.getElementById('ra-int')?.value||null;
+  const linked=intId?cr.intervenants.find(i=>i.id===intId):null;
+  cr.actions.push({
+    id:'a'+(uid++), texte,
+    intId:intId||null,
+    responsable:linked?(linked.entreprise||linked.lot):'',
+    echeance:document.getElementById('ra-ech')?.value||'',
+    done:false
+  });
+  if(document.getElementById('ra-archive')?.checked){
+    r.done=true; r.flag=false;
+    r.archivedAt=new Date().toLocaleDateString('fr-FR');
+  }
+  closeModal(); renderCR(); renderList();
+  toast('Action créée depuis la remarque ✓');
+}
+
+/* ══ EXPORT CSV ══ */
+function exportCSV(crId){
+  const cr=CRS.find(c=>c.id===crId);
+  if(!cr)return;
+  const rows=[['Lot','Intervenant','Remarque','Statut','Ajouté le','Traité le','⚑']];
+  cr.lots.forEach(function(lot){
+    const iv=lot.intId?cr.intervenants.find(i=>i.id===lot.intId):null;
+    lot.remarques.forEach(function(r){
+      rows.push([
+        '"'+lot.titre.replace(/"/g,'""')+'"',
+        '"'+(iv?iv.entreprise||iv.lot:'').replace(/"/g,'""')+'"',
+        '"'+r.texte.replace(/"/g,'""')+'"',
+        r.done?'Traité':'En cours',
+        r.createdAt||'',
+        r.archivedAt||'',
+        r.flag?'⚑':''
+      ]);
+    });
+  });
+  const csv=rows.map(r=>r.join(',')).join('\n');
+  const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='CR_'+cr.projet.replace(/[^a-z0-9]/gi,'_')+'_'+cr.date.replace(/\//g,'-')+'.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('CSV exporté ✓');
+}
+
+/* ══ SORT LOTS BY FLAGS ══ */
+let lotsSortedByFlags=false;
+function toggleSortLots(crId){
+  lotsSortedByFlags=!lotsSortedByFlags;
+  const cr=CRS.find(c=>c.id===crId);
+  if(!cr)return;
+  if(lotsSortedByFlags){
+    cr.lots.sort(function(a,b){
+      const fa=a.remarques.filter(r=>r.flag&&!r.done).length;
+      const fb=b.remarques.filter(r=>r.flag&&!r.done).length;
+      return fb-fa; // most flags first
+    });
+    toast('Lots triés par points en suspens ⚑');
+  } else {
+    toast('Tri original rétabli — réouvrez les Réglages pour réorganiser');
+  }
+  renderCR();
+}
+
+/* ══ COPY REMARQUE BETWEEN LOTS ══ */
+function copyRemarque(crId,lotId,rId){
+  const cr=CRS.find(c=>c.id===crId);
+  const lot=cr?.lots.find(l=>l.id===lotId);
+  const r=lot?.remarques.find(x=>x.id===rId);
+  if(!r)return;
+  // Build lot options excluding current lot
+  var lotOpts=cr.lots
+    .filter(function(l){return l.id!==lotId;})
+    .map(function(l){
+      var iv=l.intId?cr.intervenants.find(function(i){return i.id===l.intId;}):null;
+      var col=getColor(l,cr);
+      return '<option value="'+l.id+'">'+e(l.titre)+(iv?' ('+e(iv.entreprise||iv.lot)+')':'')+'</option>';
+    }).join('');
+  if(!lotOpts){toast('Aucun autre lot disponible','var(--amber)');return;}
+  showModal('<h3>'+ico('copy','ico-sm')+' Copier dans un autre lot</h3>'
+    +'<div style="background:var(--bg2);border-radius:var(--r);padding:8px 12px;margin-bottom:14px;font-size:12px;color:var(--text2)">'+e(r.texte)+'</div>'
+    +'<div class="fi"><label>Lot de destination *</label>'
+      +'<select id="cp-lot" style="width:100%;padding:7px 9px;border:1px solid var(--border2);border-radius:7px;font-size:13px;background:var(--bg);color:var(--text);outline:none;font-family:inherit">'
+        +'<option value="">— Choisir —</option>'+lotOpts
+      +'</select>'
+    +'</div>'
+    +'<label style="display:flex;align-items:center;gap:7px;font-size:13px;cursor:pointer;margin-bottom:4px">'
+      +'<input type="checkbox" id="cp-move" style="width:15px;height:15px"> Déplacer (supprimer de l\'origine)'
+    +'</label>'
+    +'<div class="mo-foot">'
+      +'<button class="btn" onclick="closeModal()">Annuler</button>'
+      +'<button class="btn btn-p" onclick="confirmCopyRemarque(\''+crId+'\',\''+lotId+'\',\''+rId+'\')">'+ico('copy','ico-sm')+' Copier</button>'
+    +'</div>');
+}
+function confirmCopyRemarque(crId,lotId,rId){
+  const cr=CRS.find(c=>c.id===crId);
+  const lot=cr?.lots.find(l=>l.id===lotId);
+  const r=lot?.remarques.find(x=>x.id===rId);
+  if(!r)return;
+  const destLotId=document.getElementById('cp-lot')?.value;
+  const destLot=cr.lots.find(l=>l.id===destLotId);
+  if(!destLot){alert('Choisissez un lot');return;}
+  const isMove=document.getElementById('cp-move')?.checked;
+  destLot.remarques.push({
+    id:'r'+(uid++), texte:r.texte, done:false, flag:r.flag,
+    createdAt:new Date().toLocaleDateString('fr-FR'), archivedAt:null
+  });
+  if(isMove) lot.remarques=lot.remarques.filter(x=>x.id!==rId);
+  closeModal();markDirty();renderCR();renderList();
+  toast((isMove?'Remarque déplacée':'Remarque copiée')+' vers "'+destLot.titre+'" ✓');
+}
+
+/* ══ INIT ══ */
+
+// Initialize color + auto-link lots to intervenants
+CRS.forEach(function(cr){
+  // Init colors on intervenants
+  cr.intervenants.forEach(function(int){
+    if(!int.color) int.color = lotColor(int.lot);
+  });
+  // Auto-link lots that don't have intId yet, by matching names
+  cr.lots.forEach(function(lot){
+    if(!lot.intId){
+      const match = cr.intervenants.find(function(iv){
+        const l=lot.titre.toLowerCase(), iv2=iv.lot.toLowerCase();
+        return l.includes(iv2)||iv2.includes(l)||
+          (iv.entreprise&&(l.includes(iv.entreprise.toLowerCase())||iv.entreprise.toLowerCase().includes(l)));
+      });
+      if(match) lot.intId=match.id;
+    }
+    // Lot inherits color from linked intervenant
+    if(lot.intId){
+      const iv=cr.intervenants.find(function(i){return i.id===lot.intId;});
+      // lot color is derived via getColor() — no need to copy
+    }
+    // Initialize createdAt on existing remarques (use CR date as fallback)
+    lot.remarques.forEach(function(r){
+      if(!r.createdAt) r.createdAt=cr.date||'—';
+    });
+  });
+  // Actions inherit color from linked intervenant
+  cr.actions.forEach(function(a){
+    if(!a.intId){
+      // Try to auto-link by matching responsable name
+      const match=cr.intervenants.find(function(iv){
+        return iv.entreprise&&a.responsable&&
+          (iv.entreprise.toLowerCase().includes(a.responsable.toLowerCase())||
+           a.responsable.toLowerCase().includes(iv.entreprise.toLowerCase()));
+      });
+      if(match) a.intId=match.id;
+    }
+  });
+});
+renderList();
+</script>
+</body>
+</html>
