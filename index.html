@@ -15,7 +15,7 @@
   --bg:#f4f3ef;--bg2:#eceae4;--bg3:#e3e1da;
   --panel:#faf9f7;--border:#dbd9d1;--border2:#ccc9bf;
   --text:#1c1b18;--text2:#4a4840;--text3:#8a877e;
-  --blue:#2d4ef5;--blue-bg:#eef0fe;--blue-lt:#d6dafd;
+  --blue:#C0B7B6;--blue-bg:#f5f2f2;--blue-lt:#e8e2e1;
   --green:#1a7a4a;--green-bg:#e8f5ee;
   --amber:#c47a00;--amber-bg:#fef3d8;
   --red:#c0392b;--red-bg:#fdecea;
@@ -44,8 +44,8 @@ body{background:var(--bg);height:100vh;overflow:hidden;font-family:inherit}
 .topbar{background:var(--panel);border-bottom:1px solid var(--border);padding:0 20px;height:52px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 .btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border:1px solid var(--border2);border-radius:var(--r);background:var(--panel);color:var(--text);font-size:12px;cursor:pointer;font-weight:500;font-family:inherit;transition:all .12s;white-space:nowrap}
 .btn:hover{background:var(--bg2)}
-.btn-p{background:var(--blue);color:#fff;border-color:var(--blue)}
-.btn-p:hover{background:#2340d8}
+.btn-p{background:var(--blue);color:#3d3533;border-color:var(--blue)}
+.btn-p:hover{background:#a89e9d}
 .btn-sm{padding:5px 10px;font-size:11.5px}
 .btn-g{border:none;background:none;cursor:pointer;font-family:inherit}
 .btn-g:hover{background:var(--bg2);border-radius:6px}
@@ -79,7 +79,7 @@ body{background:var(--bg);height:100vh;overflow:hidden;font-family:inherit}
 .remarque-item{display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)}
 .remarque-item:last-child{border-bottom:none}
 .ri-check{width:18px;height:18px;border-radius:4px;border:1.5px solid var(--border2);flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s}
-.ri-check.done{background:var(--blue);border-color:var(--blue)}
+.ri-check.done{background:var(--blue);border-color:var(--blue);color:#3d3533;}
 .ri-check.flagged{background:var(--amber-bg);border-color:var(--amber)}
 .ri-text{flex:1;font-size:13px;line-height:1.5}
 .ri-text.done-text{text-decoration:line-through;color:var(--text3)}
@@ -244,11 +244,11 @@ let uid=100;
 
 /* ══ LOT COLORS ══ */
 const LOT_COLORS={
-  'MOE':'#2d4ef5','INGENIEUR':'#1a7a4a','GEOLOGUE':'#6b3fa0',
+  'MOE':'#7a9db5','INGENIEUR':'#1a7a4a','GEOLOGUE':'#6b3fa0',
   'MACONNERIE':'#c47a00','ELECTRICITE':'#f59f00','PLOMBERIE':'#0891b2',
   'CVC':'#0891b2','MENUISERIE EXT.':'#c47a00','MENUISERIE INT.':'#8a877e',
   'PEINTURE':'#e91e8c','FERRONERIE':'#495057','CARRELAGE':'#c0392b',
-  'VOLETS':'#2d4ef5','CLIENT':'#c0392b','URBANISME':'#6b3fa0',
+  'VOLETS':'#7a9db5','CLIENT':'#c0392b','URBANISME':'#6b3fa0',
   'THERMICIEN':'#e67700','MICROPIEUX':'#1a7a4a','CUISINE':'#c47a00',
   'DEFAULT':'#8a877e'
 };
@@ -451,8 +451,8 @@ function renderList(){
   const archived=CRS.filter(cr=>cr.statut==='archived'&&matches(cr));
 
   function crCard(cr){
-    const flagCount=cr.lots.flatMap(l=>l.remarques).filter(r=>r.flag&&!r.done).length;
-    const doneCount=cr.lots.flatMap(l=>l.remarques).filter(r=>r.done).length;
+    const flagCount=cr.lots.flatMap(l=>l.remarques).filter(r=>r.flag&&!r.archived).length;
+    const doneCount=cr.lots.flatMap(l=>l.remarques).filter(r=>r.archived).length;
     const total=cr.lots.flatMap(l=>l.remarques).length;
     const allDone=total>0&&doneCount===total;
     return `<div class="cr-item ${activeCR===cr.id?'active':''} ${cr.statut==='archived'?'cr-arch':''}" onclick="openCR('${cr.id}')">
@@ -561,8 +561,8 @@ function renderRemarques(cr){
 
   // Summary
   const all=cr.lots.flatMap(l=>l.remarques);
-  const done=all.filter(r=>r.done).length;
-  const flags=all.filter(r=>r.flag&&!r.done).length;
+  const done=all.filter(r=>r.archived).length;
+  const flags=all.filter(r=>r.flag&&!r.archived).length;
   html+=`<div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap">
     <div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:10px 16px;display:flex;align-items:center;gap:8px">
       <div style="font-size:20px;font-weight:600;color:var(--blue)">${all.length}</div>
@@ -602,8 +602,8 @@ function renderRemarques(cr){
     const linked=lot.intId?cr.intervenants.find(i=>i.id===lot.intId):null;
     const color=getColor(lot,cr);
     const linkedLabel=linked?(linked.entreprise||linked.lot):null;
-    const lotDone=lot.remarques.filter(r=>r.done).length;
-    const lotFlags=lot.remarques.filter(r=>r.flag&&!r.done).length;
+    const lotDone=lot.remarques.filter(r=>r.archived).length;
+    const lotFlags=lot.remarques.filter(r=>r.flag&&!r.archived).length;
     html+=`<div class="lot-block" data-lotid="${lot.id}">
       <div class="lot-head" onclick="toggleLot('${cr.id}','${lot.id}')">
         <div class="lot-head-left">
@@ -621,34 +621,37 @@ function renderRemarques(cr){
       </div>
       ${lot.ouvert?`<div class="lot-body">
         ${(()=>{
-          const active=lot.remarques.filter(r=>!r.done&&(!remarqueSearch||r.texte.toLowerCase().includes(remarqueSearch.toLowerCase())));
-          const archived=lot.remarques.filter(r=>r.done);
+          const active=lot.remarques.filter(r=>!r.archived&&(!remarqueSearch||r.texte.toLowerCase().includes(remarqueSearch.toLowerCase())));
+          const archived=lot.remarques.filter(r=>r.archived);
           const archId='arch-'+lot.id;
           let out='';
           out+=active.map(r=>`
-            <div class="remarque-item">
-              <div class="ri-check ${r.flag?'flagged':''}" onclick="toggleDone('${cr.id}','${lot.id}','${r.id}')" title="Marquer comme traité"></div>
-              <div class="ri-text">${r.texte}</div>
+            <div class="remarque-item" style="${r.done?'opacity:.7':''}">
+              <div class="ri-check ${r.done?'done':r.flag?'flagged':''}" onclick="toggleDone('${cr.id}','${lot.id}','${r.id}')" title="${r.done?'Marquer non traité':'Marquer comme traité'}">
+                ${r.done?ico('check','ico-xs'):''}
+              </div>
+              <div class="ri-text ${r.done?'done-text':''}">${r.texte}</div>
               <div class="ri-actions">
-                <button class="btn-g" style="padding:3px" onclick="toggleFlag('${cr.id}','${lot.id}','${r.id}')" title="${r.flag?'Retirer':'Marquer à suivre'}"><svg class="ico ico-xs" style="color:${r.flag?'var(--amber)':'var(--text3)'}"><use href="#i-flag"/></svg></button>
+                ${!r.done?`<button class="btn-g" style="padding:3px" onclick="toggleFlag('${cr.id}','${lot.id}','${r.id}')" title="${r.flag?'Retirer':'Marquer à suivre'}"><svg class="ico ico-xs" style="color:${r.flag?'var(--amber)':'var(--text3)'}"><use href="#i-flag"/></svg></button>`:''}
                 <button class="btn-g" style="padding:3px" onclick="editRemarque('${cr.id}','${lot.id}','${r.id}')" title="Modifier">${ico('edit','ico-xs')}</button>
-                <button class="btn-g" style="padding:3px" onclick="copyRemarque('${cr.id}','${lot.id}','${r.id}')" title="Copier dans un autre lot"><svg class="ico ico-xs" style="color:var(--text3)"><use href="#i-copy"/></svg></button>
-                <button class="btn-g" style="padding:3px" onclick="toggleDone('${cr.id}','${lot.id}','${r.id}')" title="Archiver ce point"><svg class="ico ico-xs" style="color:var(--text3)"><use href="#i-archive"/></svg></button>
-                <button class="btn-g" style="padding:3px" onclick="remarkToAction('${cr.id}','${lot.id}','${r.id}')" title="Convertir en action"><svg class="ico ico-xs" style="color:var(--text3)"><use href="#i-check"/></svg></button>
+                ${!r.done?`<button class="btn-g" style="padding:3px" onclick="copyRemarque('${cr.id}','${lot.id}','${r.id}')" title="Copier dans un autre lot"><svg class="ico ico-xs" style="color:var(--text3)"><use href="#i-copy"/></svg></button>`:''}
+                ${r.done?`<button class="btn-g" style="padding:3px" onclick="archiveRemarque('${cr.id}','${lot.id}','${r.id}')" title="Archiver (masquer)"><svg class="ico ico-xs" style="color:var(--text3)"><use href="#i-archive"/></svg></button>`:`<button class="btn-g" style="padding:3px" onclick="toggleDone('${cr.id}','${lot.id}','${r.id}')" title="Marquer traité + garder visible"><svg class="ico ico-xs" style="color:var(--text3)"><use href="#i-archive"/></svg></button>`}
+                ${!r.done?`<button class="btn-g" style="padding:3px" onclick="remarkToAction('${cr.id}','${lot.id}','${r.id}')" title="Convertir en action"><svg class="ico ico-xs" style="color:var(--text3)"><use href="#i-check"/></svg></button>`:''}
               </div>
             </div>`).join('');
           if(archived.length){
             out+=`<div style="margin-top:8px;border-top:1px dashed var(--border2)">
               <button onclick="var el=document.getElementById('${archId}');el.style.display=el.style.display==='none'?'block':'none'" style="display:flex;align-items:center;gap:6px;padding:6px 0;border:none;background:none;cursor:pointer;font-family:inherit;font-size:11px;font-weight:600;color:var(--text3);width:100%">
-                <svg class="ico ico-xs"><use href="#i-archive"/></svg> Archive — ${archived.length} point(s) traités
+                <svg class="ico ico-xs"><use href="#i-archive"/></svg> Archive — ${archived.length} point(s) archivés
               </button>
               <div id="${archId}" style="display:none">
                 ${archived.map(r=>`
                 <div class="remarque-item" style="opacity:.65;background:var(--green-bg)">
-                  <div class="ri-check done" onclick="toggleDone('${cr.id}','${lot.id}','${r.id}')" title="Remettre en cours">${ico('check','ico-xs')}</div>
+                  <div class="ri-check done" onclick="unarchiveRemarque('${cr.id}','${lot.id}','${r.id}')" title="Remettre visible (barré)">${ico('check','ico-xs')}</div>
                   <div style="flex:1;min-width:0">
                     <div class="ri-text done-text">${r.texte}</div>
-                    ${r.archivedAt?`<div style="font-size:10px;color:var(--green);margin-top:2px">✓ Traité le ${r.archivedAt}</div>`:''}
+                    ${r.archivedAt?`<div style="font-size:10px;color:var(--green);margin-top:2px">✓ Archivé le ${r.archivedAt}</div>`:''}
+                    ${r.doneAt&&!r.archivedAt?`<div style="font-size:10px;color:var(--green);margin-top:2px">✓ Traité le ${r.doneAt}</div>`:''}
                   </div>
                   <div class="ri-actions">
                     <button class="btn-g" style="padding:3px" onclick="deleteRemarque('${cr.id}','${lot.id}','${r.id}')" title="Supprimer définitivement"><svg class="ico ico-xs" style="color:var(--red)"><use href="#i-trash"/></svg></button>
@@ -785,8 +788,8 @@ function renderDates(cr){
   }
 
   // Sort: active first (by createdAt desc), then archived (by archivedAt desc)
-  const active=rows.filter(function(x){return !x.r.done;});
-  const archived=rows.filter(function(x){return x.r.done;});
+  const active=rows.filter(function(x){return !x.r.archived;});
+  const archived=rows.filter(function(x){return x.r.archived;});
 
   function dateSort(a,b){
     const da=a.r.createdAt||'';const db=b.r.createdAt||'';
@@ -909,8 +912,8 @@ function renderHistorique(currentCR){
   // Stats per CR
   function crStats(cr){
     const all=cr.lots.flatMap(l=>l.remarques);
-    const done=all.filter(r=>r.done).length;
-    const flags=all.filter(r=>r.flag&&!r.done).length;
+    const done=all.filter(r=>r.archived).length;
+    const flags=all.filter(r=>r.flag&&!r.archived).length;
     const actTodo=cr.actions.filter(a=>!a.done).length;
     const actDone=cr.actions.filter(a=>a.done).length;
     return {total:all.length,done,flags,actTodo,actDone};
@@ -985,7 +988,7 @@ function renderHistorique(currentCR){
 
             <!-- Lots summary (only show if not too many) -->
             ${s.flags>0?`<div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:5px">
-              ${cr.lots.filter(l=>l.remarques.some(r=>r.flag&&!r.done)).map(l=>`
+              ${cr.lots.filter(l=>l.remarques.some(r=>r.flag&&!r.archived)).map(l=>`
                 <span style="font-size:10px;padding:2px 7px;border-radius:10px;background:${getColor(l,cr)}18;color:${getColor(l,cr)}">${l.titre}</span>
               `).join('')}
             </div>`:''}
@@ -1065,11 +1068,30 @@ function toggleDone(crId,lotId,rId){
     r.done=!r.done;
     if(r.done){
       r.flag=false;
-      r.archivedAt=new Date().toLocaleDateString('fr-FR');
+      r.doneAt=new Date().toLocaleDateString('fr-FR');
     } else {
-      r.archivedAt=null;
+      r.doneAt=null;
     }
+    // If un-checking, also un-archive
+    if(!r.done) r.archived=false;
   }
+  markDirty();renderCR();renderList();
+}
+function archiveRemarque(crId,lotId,rId){
+  const cr=CRS.find(c=>c.id===crId);
+  const lot=cr?.lots.find(l=>l.id===lotId);
+  const r=lot?.remarques.find(x=>x.id===rId);
+  if(r){
+    r.archived=true;
+    r.archivedAt=r.doneAt||new Date().toLocaleDateString('fr-FR');
+  }
+  markDirty();renderCR();renderList();
+}
+function unarchiveRemarque(crId,lotId,rId){
+  const cr=CRS.find(c=>c.id===crId);
+  const lot=cr?.lots.find(l=>l.id===lotId);
+  const r=lot?.remarques.find(x=>x.id===rId);
+  if(r){ r.archived=false; } // stays done=true, shows as strikethrough
   markDirty();renderCR();renderList();
 }
 function toggleFlag(crId,lotId,rId){
@@ -1121,8 +1143,8 @@ function saveRemarque(crId,lotId,rId){
     r.flag=document.getElementById('er-flag')?.checked||false;
     const wasDone=r.done;
     r.done=document.getElementById('er-done')?.checked||false;
-    if(r.done&&!wasDone) r.archivedAt=new Date().toLocaleDateString('fr-FR');
-    if(!r.done) r.archivedAt=null;
+    if(r.done&&!wasDone) r.doneAt=new Date().toLocaleDateString('fr-FR');
+    if(!r.done){r.doneAt=null;r.archived=false;r.archivedAt=null;}
   }
   closeModal();markDirty();renderCR();renderList();
 }
@@ -1424,8 +1446,8 @@ function exportCR(crId){
       </tr>
       <tr>
         <td style="border:1px solid #000;border-top:none;padding:8px 12px">
-          ${lot.remarques.filter(r=>!r.done).map((r,i)=>`<div style="padding:3px 0;font-size:9pt;line-height:1.5;color:#000">- ${e(r.texte)}</div>`).join('')}
-          ${lot.remarques.filter(r=>r.done).length?`<div style="margin-top:6px;padding-top:6px;border-top:1px dashed #ccc;font-size:8pt;color:#999"><em>Archive (${lot.remarques.filter(r=>r.done).length} point(s) traités — non imprimés)</em></div>`:''}
+          ${lot.remarques.filter(r=>!r.archived).map((r,i)=>`<div style="padding:3px 0;font-size:9pt;line-height:1.5;color:#000">- ${e(r.texte)}</div>`).join('')}
+          ${lot.remarques.filter(r=>r.archived).length?`<div style="margin-top:6px;padding-top:6px;border-top:1px dashed #ccc;font-size:8pt;color:#999"><em>Archive (${lot.remarques.filter(r=>r.archived).length} point(s) traités — non imprimés)</em></div>`:''}
         </td>
       </tr>
     </table>`;
@@ -1502,7 +1524,7 @@ function savePrintSnapshot(crId){
     date:cr.date,
     numero:cr.numero,
     totalRemarques:cr.lots.flatMap(function(l){return l.remarques;}).length,
-    doneRemarques:cr.lots.flatMap(function(l){return l.remarques;}).filter(function(r){return r.done;}).length,
+    doneRemarques:cr.lots.flatMap(function(l){return l.remarques;}).filter(function(r){return r.archived;}).length,
     totalActions:cr.actions.length,
     doneActions:cr.actions.filter(function(a){return a.done;}).length,
   };
@@ -2562,6 +2584,8 @@ CRS.forEach(function(cr){
     // Initialize createdAt on existing remarques (use CR date as fallback)
     lot.remarques.forEach(function(r){
       if(!r.createdAt) r.createdAt=cr.date||'—';
+      // Migrate: if done but not archived, keep as done (strikethrough)
+      if(r.done&&r.archived===undefined) r.archived=false;
     });
   });
   // Actions inherit color from linked intervenant
