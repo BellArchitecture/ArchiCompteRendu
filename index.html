@@ -6,9 +6,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PlanSync CR — Compte Rendus Chantier</title>
+<meta name="robots" content="noindex,nofollow,nosnippet">
 <meta name="description" content="Gestion des comptes rendus de chantier : intervenants, remarques par lot, actions, historique, export PDF.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%232d4ef5'/><text x='50%25' y='55%25' font-size='18' text-anchor='middle' dominant-baseline='middle' fill='white' font-family='Arial' font-weight='bold'>PS</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -127,6 +129,15 @@ body{background:var(--bg);height:100vh;overflow:hidden;font-family:inherit}
 .ico-lg{width:19px;height:19px}
 .ico-sm{width:14px;height:14px}
 .ico-xs{width:12px;height:12px}
+.sortable-ghost{opacity:.3;background:var(--blue-bg)!important;border-color:var(--blue)!important}
+.sort-handle{cursor:grab}.sort-handle:active{cursor:grabbing}
+
+/* ══ AUTH ══ */
+#auth-overlay{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column}
+#auth-overlay.hidden{display:none}
+.auth-box{background:var(--panel);border:1px solid var(--border);border-radius:var(--r2);padding:36px 40px;width:340px;box-shadow:var(--shadow2);text-align:center}
+.auth-box .logo-mark{margin:0 auto 16px;width:44px;height:44px;font-size:16px;border-radius:10px}
+.auth-error{color:var(--red);font-size:12px;margin-top:8px;min-height:16px}
 </style>
 </head>
 <body>
@@ -158,6 +169,26 @@ body{background:var(--bg);height:100vh;overflow:hidden;font-family:inherit}
 <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></symbol>
 <symbol id="i-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></symbol>
 </svg>
+
+
+<div id="auth-overlay">
+  <div class="auth-box">
+    <div class="logo-mark" id="auth-logo-mark" style="background:var(--blue);display:flex;align-items:center;justify-content:center;color:#3d3533;font-weight:700;font-size:16px">PS</div>
+    <div style="font-weight:700;font-size:18px;margin-bottom:4px" id="auth-firm-name">PlanSync</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:24px">Compte Rendus Chantier</div>
+    <div class="fi" style="text-align:left">
+      <label style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px">Mot de passe</label>
+      <input type="password" id="auth-pwd" placeholder="••••••••"
+        style="width:100%;padding:10px 12px;border:1px solid var(--border2);border-radius:8px;font-size:14px;background:var(--bg);color:var(--text);outline:none;font-family:inherit"
+        onkeydown="if(event.key==='Enter')checkAuth()">
+    </div>
+    <div class="auth-error" id="auth-error"></div>
+    <button class="btn btn-p" style="width:100%;justify-content:center;margin-top:12px;padding:10px" onclick="checkAuth()">
+      Accéder
+    </button>
+    <div style="font-size:10px;color:var(--text3);margin-top:16px">Usage interne — accès restreint</div>
+  </div>
+</div>
 
 <div class="app">
   <!-- SIDEBAR -->
@@ -287,21 +318,21 @@ let CRS = [
     redacteur:'Mme Bell — Bell Architecture',
     statut:'published',
     intervenants:[
-      {id:'i1',lot:'Maîtrise d\'Ouvrage',entreprise:'',contacts:'M. et Mme Henderson-Williams',present:true},
-      {id:'i2',lot:'Maîtrise d\'Œuvre',entreprise:'Bell Architecture',contacts:'Mme Bell — 06 13 45 17 99',present:true},
-      {id:'i3',lot:'Ingénieur',entreprise:'AZIMUT ING.',contacts:'M. Bahari Saeid — 06 23 47 25 39 — azimutingco@gmail.com',present:false},
-      {id:'i4',lot:'Géologue',entreprise:'OGEO',contacts:'Mme Parsy-Cotisson Amandine — 06 49 95 69 — a.parsy-cotisson@be-ogeo.fr',present:false},
-      {id:'i5',lot:'Lot Maçonnerie',entreprise:'NBR',contacts:'M. Novellini Alexandre — 06 87 38 37 96\nM. Novellini Christophe — 06 72 46 10 06 — n-b-r@wanadoo.fr',present:false},
-      {id:'i6',lot:'Lot Micropieux',entreprise:'Provence Géotechnique et Fondations',contacts:'Perriard Lionel — 06 67 10 39 05 — provence.gf@gmail.com',present:false},
-      {id:'i7',lot:'Lot Électricité',entreprise:'ADELEC',contacts:'Delabroye Laurent — 06 81 70 04 97 — contact@adelec.me',present:false},
-      {id:'i8',lot:'Lot Climatisation / Plomberie',entreprise:'TORAL',contacts:'Toral Olivier — 06 16 44 76 87 — toral.olivier@gmail.com',present:false},
-      {id:'i9',lot:'Lot Menuiserie Extérieure',entreprise:'QUINTANE',contacts:'Duhamel Antoine — 04 93 60 16 28 — menuiserie@quintane.fr\nPoseur Rudy — 07 85 43 01 97',present:false},
-      {id:'i10',lot:'Lot Peinture',entreprise:'Nuance Peinture Décoration',contacts:'L\'Huillier Cyrille — 06 27 26 20 73 — contact@nuancedecorationpeinture.fr',present:false},
-      {id:'i11',lot:'Lot Ferronerie',entreprise:'SAS LEO',contacts:'Masci Anthony — 06 12 78 99 61 — sasleo@orange.fr',present:false},
-      {id:'i12',lot:'Volets Automatiques',entreprise:'GB Stores Bozzano',contacts:'M. Billan Philippe — 06 16 29 50 79 — gbstores@wanadoo.fr',present:false},
-      {id:'i13',lot:'Lot Cuve à Mazout',entreprise:'Fuel Littoral',contacts:'Christophe — 04 92 08 48 90 — fuel-littoral.thermique@eslc.fr',present:false},
-      {id:'i14',lot:'Lot Cuisine / Buanderie',entreprise:'Howdens Aubagne',contacts:'',present:false},
-      {id:'i15',lot:'Lot Carrelage',entreprise:'Quintane',contacts:'',present:false},
+      {id:'i1',lot:'Maîtrise d\'Ouvrage',entreprise:'',contacts:'M. et Mme Henderson-Williams',convoque:true,present:true},
+      {id:'i2',lot:'Maîtrise d\'Œuvre',entreprise:'Bell Architecture',contacts:'Mme Bell — 06 13 45 17 99',convoque:true,present:true},
+      {id:'i3',lot:'Ingénieur',entreprise:'AZIMUT ING.',contacts:'M. Bahari Saeid — 06 23 47 25 39 — azimutingco@gmail.com',convoque:true,present:false},
+      {id:'i4',lot:'Géologue',entreprise:'OGEO',contacts:'Mme Parsy-Cotisson Amandine — 06 49 95 69 — a.parsy-cotisson@be-ogeo.fr',convoque:true,present:false},
+      {id:'i5',lot:'Lot Maçonnerie',entreprise:'NBR',contacts:'M. Novellini Alexandre — 06 87 38 37 96\nM. Novellini Christophe — 06 72 46 10 06 — n-b-r@wanadoo.fr',convoque:true,present:false},
+      {id:'i6',lot:'Lot Micropieux',entreprise:'Provence Géotechnique et Fondations',contacts:'Perriard Lionel — 06 67 10 39 05 — provence.gf@gmail.com',convoque:true,present:false},
+      {id:'i7',lot:'Lot Électricité',entreprise:'ADELEC',contacts:'Delabroye Laurent — 06 81 70 04 97 — contact@adelec.me',convoque:true,present:false},
+      {id:'i8',lot:'Lot Climatisation / Plomberie',entreprise:'TORAL',contacts:'Toral Olivier — 06 16 44 76 87 — toral.olivier@gmail.com',convoque:true,present:false},
+      {id:'i9',lot:'Lot Menuiserie Extérieure',entreprise:'QUINTANE',contacts:'Duhamel Antoine — 04 93 60 16 28 — menuiserie@quintane.fr\nPoseur Rudy — 07 85 43 01 97',convoque:true,present:false},
+      {id:'i10',lot:'Lot Peinture',entreprise:'Nuance Peinture Décoration',contacts:'L\'Huillier Cyrille — 06 27 26 20 73 — contact@nuancedecorationpeinture.fr',convoque:true,present:false},
+      {id:'i11',lot:'Lot Ferronerie',entreprise:'SAS LEO',contacts:'Masci Anthony — 06 12 78 99 61 — sasleo@orange.fr',convoque:true,present:false},
+      {id:'i12',lot:'Volets Automatiques',entreprise:'GB Stores Bozzano',contacts:'M. Billan Philippe — 06 16 29 50 79 — gbstores@wanadoo.fr',convoque:true,present:false},
+      {id:'i13',lot:'Lot Cuve à Mazout',entreprise:'Fuel Littoral',contacts:'Christophe — 04 92 08 48 90 — fuel-littoral.thermique@eslc.fr',convoque:true,present:false},
+      {id:'i14',lot:'Lot Cuisine / Buanderie',entreprise:'Howdens Aubagne',contacts:'',convoque:true,present:false},
+      {id:'i15',lot:'Lot Carrelage',entreprise:'Quintane',contacts:'',convoque:true,present:false},
     ],
     lots:[
       {id:'l1',titre:'Maîtrise d\'Œuvre',ouvert:true,intId:'i2',remarques:[
@@ -433,27 +464,27 @@ let CRS = [
     redacteur:'Mme Bell — Bell Architecture',
     statut:'published',
     intervenants:[
-      {id:'j1',lot:'Maîtrise d\'Ouvrage',entreprise:'',contacts:'M. et Mme Jundi',present:false},
-      {id:'j2',lot:'Maîtrise d\'Œuvre',entreprise:'Bell Architecture',contacts:'Mme Bell — 06 13 45 17 99',present:true},
-      {id:'j3',lot:'Ingénieur',entreprise:'ISTRUCTURE',contacts:'M. Rosso Grégory — 06 70 07 69 49 — contact@istructure.fr',present:false},
-      {id:'j4',lot:'Géologue',entreprise:'B.E.G.T',contacts:'04 94 40 08 29 — contact.begt@gmail.com',present:false},
-      {id:'j5',lot:'Lot Maçonnerie',entreprise:'NBR',contacts:'M. Novellini Alexandre — 06 87 38 37 96\nM. Novellini Christophe — 06 72 46 10 06 — n-b-r@wanadoo.fr',present:false},
-      {id:'j6',lot:'Lot Isolation Intérieur / Peinture',entreprise:'Nuance Décoration Peinture',contacts:'L\'Huillier Cyrille — 06 27 26 20 73 — contact@nuancedecorationpeinture.fr',present:false},
-      {id:'j7',lot:'Lot Électricité',entreprise:'ADELEC',contacts:'Delabroye Laurent — 06 81 70 04 97 — contact@adelec.me',present:false},
-      {id:'j8',lot:'Lot Climatisation / Plomberie',entreprise:'TORAL',contacts:'Toral Olivier — 06 16 44 76 87 — toral.olivier@gmail.com',present:false},
-      {id:'j9',lot:'Lot Menuiserie Extérieure',entreprise:'QUINTANE',contacts:'Duhamel Antoine — 04 93 60 16 28 — menuiserie@quintane.fr',present:false},
-      {id:'j10',lot:'Lot Velux',entreprise:'SGARD',contacts:'Sgard Yannick — 06 26 32 86 39 — Sgard.yannick@orange.fr',present:false},
-      {id:'j11',lot:'Lot Cuisine',entreprise:'Siematic Nice',contacts:'Mme Alphonsine — 04 93 56 66 00 — contact@albalat-agencement.fr',present:false},
-      {id:'j12',lot:'Lot Peinture',entreprise:'Nuance Décoration Peinture',contacts:'L\'Huillier Cyrille — 06 27 26 20 73 — contact@nuancedecorationpeinture.fr',present:true},
-      {id:'j13',lot:'Lot Garde Corps / Ferronerie',entreprise:'',contacts:'',present:false},
-      {id:'j14',lot:'Lot Pergola',entreprise:'',contacts:'',present:false},
-      {id:'j15',lot:'Lot Alarme',entreprise:'',contacts:'M. Satge — 06 60 76 00 92 — aataSatge@gmail.com',present:false},
-      {id:'j16',lot:'Lot Cours en Pavés',entreprise:'Europavage',contacts:'',present:false},
-      {id:'j17',lot:'Lot Cheminée',entreprise:'ATRYHOME',contacts:'',present:false},
-      {id:'j18',lot:'Lot Porte Cuisine',entreprise:'RIMADESIO',contacts:'nice@rimadesio.com',present:false},
-      {id:'j19',lot:'Lot Piscine',entreprise:'AQUAREVE',contacts:'M. Bellito Jonathan — 06 58 79 29 39 — direction@aquarevepiscines.fr',present:false},
-      {id:'j20',lot:'Lot Revêtement Sol',entreprise:'',contacts:'',present:false},
-      {id:'j21',lot:'Client',entreprise:'',contacts:'M. et Mme Jundi',present:false},
+      {id:'j1',lot:'Maîtrise d\'Ouvrage',entreprise:'',contacts:'M. et Mme Jundi',convoque:true,present:false},
+      {id:'j2',lot:'Maîtrise d\'Œuvre',entreprise:'Bell Architecture',contacts:'Mme Bell — 06 13 45 17 99',convoque:true,present:true},
+      {id:'j3',lot:'Ingénieur',entreprise:'ISTRUCTURE',contacts:'M. Rosso Grégory — 06 70 07 69 49 — contact@istructure.fr',convoque:true,present:false},
+      {id:'j4',lot:'Géologue',entreprise:'B.E.G.T',contacts:'04 94 40 08 29 — contact.begt@gmail.com',convoque:true,present:false},
+      {id:'j5',lot:'Lot Maçonnerie',entreprise:'NBR',contacts:'M. Novellini Alexandre — 06 87 38 37 96\nM. Novellini Christophe — 06 72 46 10 06 — n-b-r@wanadoo.fr',convoque:true,present:false},
+      {id:'j6',lot:'Lot Isolation Intérieur / Peinture',entreprise:'Nuance Décoration Peinture',contacts:'L\'Huillier Cyrille — 06 27 26 20 73 — contact@nuancedecorationpeinture.fr',convoque:true,present:false},
+      {id:'j7',lot:'Lot Électricité',entreprise:'ADELEC',contacts:'Delabroye Laurent — 06 81 70 04 97 — contact@adelec.me',convoque:true,present:false},
+      {id:'j8',lot:'Lot Climatisation / Plomberie',entreprise:'TORAL',contacts:'Toral Olivier — 06 16 44 76 87 — toral.olivier@gmail.com',convoque:true,present:false},
+      {id:'j9',lot:'Lot Menuiserie Extérieure',entreprise:'QUINTANE',contacts:'Duhamel Antoine — 04 93 60 16 28 — menuiserie@quintane.fr',convoque:true,present:false},
+      {id:'j10',lot:'Lot Velux',entreprise:'SGARD',contacts:'Sgard Yannick — 06 26 32 86 39 — Sgard.yannick@orange.fr',convoque:true,present:false},
+      {id:'j11',lot:'Lot Cuisine',entreprise:'Siematic Nice',contacts:'Mme Alphonsine — 04 93 56 66 00 — contact@albalat-agencement.fr',convoque:true,present:false},
+      {id:'j12',lot:'Lot Peinture',entreprise:'Nuance Décoration Peinture',contacts:'L\'Huillier Cyrille — 06 27 26 20 73 — contact@nuancedecorationpeinture.fr',convoque:true,present:true},
+      {id:'j13',lot:'Lot Garde Corps / Ferronerie',entreprise:'',contacts:'',convoque:true,present:false},
+      {id:'j14',lot:'Lot Pergola',entreprise:'',contacts:'',convoque:true,present:false},
+      {id:'j15',lot:'Lot Alarme',entreprise:'',contacts:'M. Satge — 06 60 76 00 92 — aataSatge@gmail.com',convoque:true,present:false},
+      {id:'j16',lot:'Lot Cours en Pavés',entreprise:'Europavage',contacts:'',convoque:true,present:false},
+      {id:'j17',lot:'Lot Cheminée',entreprise:'ATRYHOME',contacts:'',convoque:true,present:false},
+      {id:'j18',lot:'Lot Porte Cuisine',entreprise:'RIMADESIO',contacts:'nice@rimadesio.com',convoque:true,present:false},
+      {id:'j19',lot:'Lot Piscine',entreprise:'AQUAREVE',contacts:'M. Bellito Jonathan — 06 58 79 29 39 — direction@aquarevepiscines.fr',convoque:true,present:false},
+      {id:'j20',lot:'Lot Revêtement Sol',entreprise:'',contacts:'',convoque:true,present:false},
+      {id:'j21',lot:'Client',entreprise:'',contacts:'M. et Mme Jundi',convoque:true,present:false},
     ],
     lots:[
       {id:'jl1',titre:'Maîtrise d\'Œuvre',ouvert:false,intId:'j2',remarques:[
@@ -634,7 +665,65 @@ let activeTab='remarques';
 let searchQuery='';
 let showHistory=false;
 let remarqueSearch='';
+let quickFilter='all'; // all | flag | open | done | action
 let isDirty=false; // tracks unsaved changes
+let isAuthenticated=false;
+
+/* ══ AUTH ══ */
+// ⚠️ Protection côté client uniquement — ne remplace pas une vraie protection Vercel/Auth côté serveur.
+// Stocker le SHA-256 du mot de passe (jamais le mot de passe en clair).
+const AUTH_HASH='963364b3915b6b43f2192109c3b2511b1344b0406dacfbc3685ff8b9d3b18efd';
+
+async function checkAuth(){
+  const pwd=document.getElementById('auth-pwd')?.value||'';
+  if(!pwd){showAuthError('Entrez le mot de passe');return;}
+  try{
+    const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(pwd));
+    const hash=Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+    if(hash===AUTH_HASH){
+      isAuthenticated=true;
+      sessionStorage.setItem('ps_auth','1');
+      document.getElementById('auth-overlay').classList.add('hidden');
+      renderList();
+      updateSidebarLogo();
+    } else {
+      showAuthError('Mot de passe incorrect');
+      document.getElementById('auth-pwd').value='';
+      document.getElementById('auth-pwd').focus();
+    }
+  }catch(e){
+    showAuthError('Erreur de vérification — navigateur non compatible');
+  }
+}
+function showAuthError(msg){
+  const el=document.getElementById('auth-error');
+  if(el)el.textContent=msg;
+  setTimeout(()=>{if(el)el.textContent='';},3000);
+}
+function initAuth(){
+  // Restore session if still valid
+  if(sessionStorage.getItem('ps_auth')==='1'){
+    isAuthenticated=true;
+    const overlay=document.getElementById('auth-overlay');
+    if(overlay)overlay.classList.add('hidden');
+  } else {
+    // Focus password field
+    setTimeout(()=>document.getElementById('auth-pwd')?.focus(),100);
+  }
+  // Sync firm name on auth screen
+  const fn=document.getElementById('auth-firm-name');
+  if(fn)fn.textContent=PDF_SETTINGS.firmName||'PlanSync';
+  const lm=document.getElementById('auth-logo-mark');
+  if(lm){
+    if(PDF_SETTINGS.logoLeft){
+      lm.innerHTML='<img src="'+PDF_SETTINGS.logoLeft+'" style="width:100%;height:100%;object-fit:contain;border-radius:8px">';
+      lm.style.background='none';
+    } else {
+      const initials=(PDF_SETTINGS.firmName||'PS').split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase()||'PS';
+      lm.textContent=initials;
+    }
+  }
+}
 
 /* ══ SIDEBAR ══ */
 function renderList(){
@@ -733,14 +822,14 @@ function renderCR(){
   const isArchived=cr.statut==='archived';
   document.getElementById('tb-actions').innerHTML=`
     <button class="btn btn-sm" onclick="openCRSettings('${cr.id}')">${ico('settings','ico-sm')} Réglages</button>
-    <button class="btn btn-sm" onclick="cloneCR('${cr.id}')" title="Dupliquer ce CR comme base pour le suivant"><svg class="ico ico-sm"><use href="#i-copy"/></svg> Dupliquer</button>
     <button class="btn btn-sm" onclick="saveAsTemplate('${cr.id}')" title="Enregistrer comme modèle réutilisable"><svg class="ico ico-sm"><use href="#i-save"/></svg> Modèle</button>
-    <button class="btn btn-sm" onclick="exportCR('${cr.id}')" title="Exporter / Imprimer"><svg class="ico ico-sm"><use href="#i-printer"/></svg> Exporter PDF</button>
+    <button class="btn btn-sm" onclick="previewPDF('${cr.id}')" title="Aperçu PDF avant impression"><svg class="ico ico-sm"><use href="#i-printer"/></svg> Aperçu PDF</button>
     <button class="btn btn-sm" onclick="openEditCR('${cr.id}')">${ico('edit','ico-sm')} Modifier</button>
     <button class="btn btn-sm ${isArchived?'':'btn-amber'}" onclick="toggleArchiveCR('${cr.id}')" title="${isArchived?'Désarchiver':'Archiver ce CR'}" style="${isArchived?'':'color:var(--amber);border-color:var(--amber)'}">
       <svg class="ico ico-sm"><use href="#i-archive"/></svg> ${isArchived?'Désarchiver':'Archiver'}
     </button>
-    <button class="btn btn-p btn-sm" onclick="openAddLot('${cr.id}')">${ico('plus','ico-sm')} Ajouter lot</button>`;
+    <button class="btn btn-p btn-sm" onclick="cloneCR('${cr.id}')" style="background:var(--green);border-color:var(--green);color:#fff;font-weight:600">${ico('plus','ico-sm')} CR Suivant</button>
+    <button class="btn btn-sm" onclick="openAddLot('${cr.id}')">${ico('plus','ico-sm')} Lot</button>`;
 
   if(activeTab==='remarques') renderRemarques(cr);
   else if(activeTab==='intervenants') renderIntervenants(cr);
@@ -752,44 +841,69 @@ function renderCR(){
 /* ══ REMARQUES ══ */
 function renderRemarques(cr){
   const flagTotal=cr.lots.flatMap(l=>l.remarques).filter(r=>r.flag&&!r.done).length;
-  let html=`<div style="padding:16px 24px">`;
+  let html=`<div style="padding:12px 20px">`;
 
-  // Summary
+  // Summary counts
   const all=cr.lots.flatMap(l=>l.remarques);
-  const done=all.filter(r=>r.archived).length;
-  const flags=all.filter(r=>r.flag&&!r.archived).length;
-  html+=`<div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap">
-    <div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:10px 16px;display:flex;align-items:center;gap:8px">
-      <div style="font-size:20px;font-weight:600;color:var(--blue)">${all.length}</div>
-      <div style="font-size:11px;color:var(--text3)">Points total</div>
+  const openR=all.filter(r=>!r.done&&!r.archived);
+  const flagR=all.filter(r=>r.flag&&!r.archived);
+  const doneR=all.filter(r=>r.done&&!r.archived);
+  const archR=all.filter(r=>r.archived);
+  const actCount=cr.actions.filter(a=>!a.done).length;
+  const lateActCount=cr.actions.filter(a=>!a.done&&isLate(a.echeance)).length;
+
+  html+=`
+  <!-- KPI strip -->
+  <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:stretch">
+    <div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:8px 14px;display:flex;align-items:center;gap:8px;min-width:80px">
+      <div style="font-size:22px;font-weight:700;color:var(--text)">${all.length}</div>
+      <div style="font-size:10px;color:var(--text3);line-height:1.3">Points<br>total</div>
     </div>
-    <div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:10px 16px;display:flex;align-items:center;gap:8px">
-      <div style="font-size:20px;font-weight:600;color:var(--green)">${done}</div>
-      <div style="font-size:11px;color:var(--text3)">Traités</div>
+    <div style="background:var(--amber-bg);border:1px solid ${flagR.length?'var(--amber)':'var(--border)'};border-radius:var(--r);padding:8px 14px;display:flex;align-items:center;gap:8px;min-width:80px">
+      <div style="font-size:22px;font-weight:700;color:var(--amber)">${flagR.length}</div>
+      <div style="font-size:10px;color:var(--amber);line-height:1.3">A<br>suivre</div>
     </div>
-    <div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:10px 16px;display:flex;align-items:center;gap:8px">
-      <div style="font-size:20px;font-weight:600;color:var(--amber)">${flags}</div>
-      <div style="font-size:11px;color:var(--text3)">À suivre</div>
+    <div style="background:${openR.length?'#fff5f5':'var(--panel)'};border:1px solid ${openR.length?'#f5b8b8':'var(--border)'};border-radius:var(--r);padding:8px 14px;display:flex;align-items:center;gap:8px;min-width:80px">
+      <div style="font-size:22px;font-weight:700;color:${openR.length?'#c0392b':'var(--text3)'}">${openR.length}</div>
+      <div style="font-size:10px;color:${openR.length?'#c0392b':'var(--text3)'};line-height:1.3">Non<br>traites</div>
     </div>
-    <div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:10px 16px;flex:1;min-width:140px">
-      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:4px"><span>Avancement</span><span style="font-weight:600">${Math.round(done/all.length*100)}%</span></div>
-      <div style="height:6px;background:var(--bg2);border-radius:3px;overflow:hidden"><div style="height:100%;background:var(--green);border-radius:3px;width:${Math.round(done/all.length*100)}%;transition:width .3s"></div></div>
+    <div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:8px 14px;display:flex;align-items:center;gap:8px;min-width:80px">
+      <div style="font-size:22px;font-weight:700;color:var(--text)">${actCount}</div>
+      <div style="font-size:10px;color:var(--text3);line-height:1.3">Actions<br>en cours</div>
     </div>
-    <div style="display:flex;gap:5px;align-items:center;flex-shrink:0">
-      <button class="btn btn-sm" onclick="toggleSortLots('${cr.id}')" title="${lotsSortedByFlags?'Rétablir ordre':'Trier par points en suspens'}">
-        <svg class="ico ico-xs"><use href="#i-flag"/></svg> ${lotsSortedByFlags?'↺':'⚑ Trier'}
-      </button>
-      <button class="btn btn-sm" onclick="exportCSV('${cr.id}')" title="Exporter toutes les remarques en CSV">
-        <svg class="ico ico-xs"><use href="#i-download"/></svg> CSV
-      </button>
+    ${lateActCount?`<div style="background:#fff5f5;border:1px solid #f5b8b8;border-radius:var(--r);padding:8px 14px;display:flex;align-items:center;gap:8px;min-width:80px">
+      <div style="font-size:22px;font-weight:700;color:#c0392b">${lateActCount}</div>
+      <div style="font-size:10px;color:#c0392b;line-height:1.3">Actions<br>en retard</div>
+    </div>`:''}
+    ${cr.dateProchaine?`<div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:8px 14px;display:flex;align-items:center;gap:8px">
+      <div style="font-size:11px;color:var(--text3)">Prochaine reunion<br><strong style="color:var(--text);font-size:13px">${cr.dateProchaine}</strong></div>
+    </div>`:''}
+    <div style="display:flex;flex-direction:column;gap:4px;justify-content:center;margin-left:auto">
+      <button class="btn btn-sm" onclick="exportCSV('${cr.id}')" title="CSV"><svg class="ico ico-xs"><use href="#i-download"/></svg></button>
+      <button class="btn btn-sm" onclick="toggleSortLots('${cr.id}')" title="${lotsSortedByFlags?'Ordre original':'Trier par urgence'}"><svg class="ico ico-xs"><use href="#i-flag"/></svg></button>
     </div>
   </div>
-  <div style="display:flex;align-items:center;gap:7px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:7px 12px;margin-bottom:14px">
-    <svg class="ico ico-sm" style="color:var(--text3);flex-shrink:0"><use href="#i-search"/></svg>
-    <input type="text" placeholder="Rechercher dans les remarques…" id="remarque-search" value="${remarqueSearch}"
-      oninput="remarqueSearch=this.value;renderRemarques(CRS.find(c=>c.id==='${cr.id}'))"
-      style="border:none;background:none;outline:none;font-size:13px;color:var(--text);width:100%;font-family:inherit">
-    ${remarqueSearch?`<button onclick="remarqueSearch='';renderRemarques(CRS.find(c=>c.id==='${cr.id}'))" style="background:none;border:none;cursor:pointer;padding:2px;color:var(--text3)">✕</button>`:''}
+
+  <!-- Quick filter bar -->
+  <div style="display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap;align-items:center">
+    ${[
+      ['all','Tous',all.length,'var(--text2)','var(--bg2)'],
+      ['flag','⚑ À suivre',flagR.length,'var(--amber)','var(--amber-bg)'],
+      ['open','Non traités',openR.length,'var(--text2)','var(--bg2)'],
+      ['done','Traités',doneR.length,'var(--green)','var(--green-bg)'],
+      ['action','Actions',actCount,'var(--blue)','var(--blue-bg)'],
+    ].map(([k,label,count,col,bg])=>`
+      <button onclick="quickFilter='${k}';renderRemarques(CRS.find(c=>c.id==='${cr.id}'))"
+        style="padding:5px 12px;border-radius:20px;border:1.5px solid ${quickFilter===k?col:'var(--border)'};background:${quickFilter===k?bg:'transparent'};color:${quickFilter===k?col:'var(--text3)'};font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .12s">
+        ${label} <span style="font-size:10px;opacity:.8">${count}</span>
+      </button>`).join('')}
+    <div style="flex:1;min-width:120px;display:flex;align-items:center;gap:6px;background:var(--bg2);border-radius:20px;padding:5px 10px;margin-left:4px">
+      <svg class="ico ico-xs" style="color:var(--text3)"><use href="#i-search"/></svg>
+      <input placeholder="Rechercher…" id="remarque-search" value="${remarqueSearch}"
+        oninput="remarqueSearch=this.value;renderRemarques(CRS.find(c=>c.id==='${cr.id}'))"
+        style="border:none;background:none;outline:none;font-size:12px;color:var(--text);width:100%;font-family:inherit">
+      ${remarqueSearch?`<button onclick="remarqueSearch='';renderRemarques(CRS.find(c=>c.id==='${cr.id}'))" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:12px">✕</button>`:''}
+    </div>
   </div>`;
 
   cr.lots.forEach(lot=>{
@@ -797,8 +911,11 @@ function renderRemarques(cr){
     const linked=lot.intId?cr.intervenants.find(i=>i.id===lot.intId):null;
     const color=getColor(lot,cr);
     const linkedLabel=linked?(linked.entreprise||linked.lot):null;
-    const lotDone=lot.remarques.filter(r=>r.archived).length;
+    const lotArchived=lot.remarques.filter(r=>r.archived).length;
     const lotFlags=lot.remarques.filter(r=>r.flag&&!r.archived).length;
+    const lotOpen=lot.remarques.filter(r=>!r.done&&!r.archived).length;
+    // Backward compat
+    const lotDone=lotArchived;
     html+=`<div class="lot-block" data-lotid="${lot.id}">
       <div class="lot-head" onclick="toggleLot('${cr.id}','${lot.id}')">
         <div class="lot-head-left">
@@ -816,50 +933,127 @@ function renderRemarques(cr){
       </div>
       ${lot.ouvert?`<div class="lot-body">
         ${(()=>{
-          const active=lot.remarques.filter(r=>!r.archived&&(!remarqueSearch||r.texte.toLowerCase().includes(remarqueSearch.toLowerCase())));
+          // Apply quickFilter + search
+          let active=lot.remarques.filter(r=>!r.archived);
+          if(remarqueSearch) active=active.filter(r=>r.texte.toLowerCase().includes(remarqueSearch.toLowerCase()));
+          if(quickFilter==='flag') active=active.filter(r=>r.flag);
+          else if(quickFilter==='open') active=active.filter(r=>!r.done);
+          else if(quickFilter==='done') active=active.filter(r=>r.done);
+          else if(quickFilter==='action') active=[];// actions shown in Actions tab
+
+          // Sort: flags first, then open, then done
+          active.sort((a,b)=>{
+            const scoreA=(a.flag&&!a.done)?2:(!a.done)?1:0;
+            const scoreB=(b.flag&&!b.done)?2:(!b.done)?1:0;
+            return scoreB-scoreA;
+          });
+
           const archived=lot.remarques.filter(r=>r.archived);
           const archId='arch-'+lot.id;
           let out='';
-          out+=active.map(r=>`
-            <div class="remarque-item" style="${r.done?'opacity:.7':''}">
-              <div class="ri-check ${r.done?'done':r.flag?'flagged':''}" onclick="toggleDone('${cr.id}','${lot.id}','${r.id}')" title="${r.done?'Marquer non traité':'Marquer comme traité'}">
+
+          if(active.length===0&&quickFilter!=='all'){
+            out+='<div style="padding:10px 0;font-size:12px;color:var(--text3);text-align:center">Aucun point pour ce filtre</div>';
+          }
+
+          out+=active.map(r=>{
+            // Status badge
+            const badge=r.flag&&!r.done
+              ?'<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;background:var(--amber-bg);color:var(--amber);white-space:nowrap;flex-shrink:0">⚑ À suivre</span>'
+              :r.decision&&!r.done
+              ?'<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;background:var(--purple-bg);color:var(--purple);white-space:nowrap;flex-shrink:0">🔷 Décision</span>'
+              :r.done
+              ?'<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;background:var(--green-bg);color:var(--green);white-space:nowrap;flex-shrink:0">✓ Traité</span>'
+              :'';
+            // Image thumbnails
+            const imgGrid=(r.images&&r.images.length)?`<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px">${r.images.map(img=>`
+              <div style="position:relative;border-radius:5px;overflow:hidden;border:1px solid var(--border)">
+                <img src="${img.data}" style="width:80px;height:60px;object-fit:cover;display:block" title="${e(img.caption||img.name)}">
+                ${img.caption?`<div style="padding:2px 4px;font-size:9px;color:var(--text3);background:var(--bg2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px">${e(img.caption)}</div>`:''}
+                <button onclick="deleteImage('${cr.id}','${lot.id}','${r.id}','${img.id}')" style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,.55);border:none;color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">x</button>
+              </div>`).join('')}</div>`:'';
+            return `<div class="remarque-item" style="${r.done?'opacity:.65':''}${r.flag&&!r.done?';border-left:2px solid var(--amber);padding-left:8px;margin-left:-2px':''}">
+              <div class="ri-check ${r.done?'done':r.flag?'flagged':''}" onclick="toggleDone('${cr.id}','${lot.id}','${r.id}')" title="${r.done?'Décocher':'Marquer traité'}" style="flex-shrink:0">
                 ${r.done?ico('check','ico-xs'):''}
               </div>
-              <div class="ri-text ${r.done?'done-text':''}">${r.texte}</div>
-              <div class="ri-actions">
-                ${!r.done?`<button class="btn-g" style="padding:3px" onclick="toggleFlag('${cr.id}','${lot.id}','${r.id}')" title="${r.flag?'Retirer':'Marquer à suivre'}"><svg class="ico ico-xs" style="color:${r.flag?'var(--amber)':'var(--text3)'}"><use href="#i-flag"/></svg></button>`:''}
-                <button class="btn-g" style="padding:3px" onclick="editRemarque('${cr.id}','${lot.id}','${r.id}')" title="Modifier">${ico('edit','ico-xs')}</button>
-                ${!r.done?`<button class="btn-g" style="padding:3px" onclick="copyRemarque('${cr.id}','${lot.id}','${r.id}')" title="Copier dans un autre lot"><svg class="ico ico-xs" style="color:var(--text3)"><use href="#i-copy"/></svg></button>`:''}
-                ${r.done?`<button class="btn-g" style="padding:3px" onclick="archiveRemarque('${cr.id}','${lot.id}','${r.id}')" title="Archiver (masquer)"><svg class="ico ico-xs" style="color:var(--text3)"><use href="#i-archive"/></svg></button>`:`<button class="btn-g" style="padding:3px" onclick="toggleDone('${cr.id}','${lot.id}','${r.id}')" title="Marquer traité + garder visible"><svg class="ico ico-xs" style="color:var(--text3)"><use href="#i-archive"/></svg></button>`}
-                ${!r.done?`<button class="btn-g" style="padding:3px" onclick="remarkToAction('${cr.id}','${lot.id}','${r.id}')" title="Convertir en action"><svg class="ico ico-xs" style="color:var(--text3)"><use href="#i-check"/></svg></button>`:''}
+              <div style="flex:1;min-width:0">
+                <div class="ri-text ${r.done?'done-text':''}" style="line-height:1.4">${r.texte}</div>
+                <div style="margin-top:3px;display:flex;gap:4px;align-items:center;flex-wrap:wrap">
+                  ${badge}
+                  ${r.doneAt&&r.done?'<span style="font-size:9px;color:var(--text3)">'+r.doneAt+'</span>':''}
+                </div>
+                ${imgGrid}
               </div>
-            </div>`).join('');
+              <!-- Context menu "…" -->
+              <div class="ri-actions" style="position:relative">
+                <button class="btn-g" style="padding:4px 6px;font-size:14px;font-weight:700;color:var(--text3);line-height:1" onclick="toggleRemarqueMenu(event,'rmenu-${r.id}')" title="Plus d\'actions">…</button>
+                <div id="rmenu-${r.id}" style="display:none;position:absolute;right:0;top:24px;background:var(--panel);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow2);z-index:50;min-width:180px;padding:4px 0">
+                  ${!r.done?`<button onclick="toggleFlag('${cr.id}','${lot.id}','${r.id}');closeAllMenus()" style="width:100%;text-align:left;padding:7px 14px;border:none;background:none;cursor:pointer;font-size:12px;font-family:inherit;color:${r.flag?'var(--amber)':'var(--text2)'}">
+                    ${r.flag?'⚑ Retirer le marquage':'⚑ Marquer à suivre'}
+                  </button>`:''}
+                  ${!r.done?`<button onclick="toggleDone('${cr.id}','${lot.id}','${r.id}');closeAllMenus()" style="width:100%;text-align:left;padding:7px 14px;border:none;background:none;cursor:pointer;font-size:12px;font-family:inherit;color:var(--green)">
+                    ✓ Marquer traité
+                  </button>`:''}
+                  ${r.done?`<button onclick="archiveRemarque('${cr.id}','${lot.id}','${r.id}');closeAllMenus()" style="width:100%;text-align:left;padding:7px 14px;border:none;background:none;cursor:pointer;font-size:12px;font-family:inherit">
+                    Archiver
+                  </button>`:''}
+                  <button onclick="editRemarque('${cr.id}','${lot.id}','${r.id}');closeAllMenus()" style="width:100%;text-align:left;padding:7px 14px;border:none;background:none;cursor:pointer;font-size:12px;font-family:inherit">
+                    Modifier la remarque
+                  </button>
+                  <button onclick="openAddImage('${cr.id}','${lot.id}','${r.id}');closeAllMenus()" style="width:100%;text-align:left;padding:7px 14px;border:none;background:none;cursor:pointer;font-size:12px;font-family:inherit">
+                    Ajouter une image
+                  </button>
+                  ${!r.done?`<button onclick="copyRemarque('${cr.id}','${lot.id}','${r.id}');closeAllMenus()" style="width:100%;text-align:left;padding:7px 14px;border:none;background:none;cursor:pointer;font-size:12px;font-family:inherit">
+                    Copier dans un autre lot
+                  </button>`:''}
+                  ${!r.done?`<button onclick="remarkToAction('${cr.id}','${lot.id}','${r.id}');closeAllMenus()" style="width:100%;text-align:left;padding:7px 14px;border:none;background:none;cursor:pointer;font-size:12px;font-family:inherit">
+                    Convertir en action
+                  </button>`:''}
+                  <div style="height:1px;background:var(--border);margin:3px 0"></div>
+                  <button onclick="deleteRemarque('${cr.id}','${lot.id}','${r.id}');closeAllMenus()" style="width:100%;text-align:left;padding:7px 14px;border:none;background:none;cursor:pointer;font-size:12px;font-family:inherit;color:var(--red)">
+                    Supprimer
+                  </button>
+                </div>
+              </div>
+            </div>`;
+          }).join('');
+
           if(archived.length){
             out+=`<div style="margin-top:8px;border-top:1px dashed var(--border2)">
               <button onclick="var el=document.getElementById('${archId}');el.style.display=el.style.display==='none'?'block':'none'" style="display:flex;align-items:center;gap:6px;padding:6px 0;border:none;background:none;cursor:pointer;font-family:inherit;font-size:11px;font-weight:600;color:var(--text3);width:100%">
-                <svg class="ico ico-xs"><use href="#i-archive"/></svg> Archive — ${archived.length} point(s) archivés
+                <svg class="ico ico-xs"><use href="#i-archive"/></svg> Archive — ${archived.length} point(s) archivés ▸
               </button>
               <div id="${archId}" style="display:none">
                 ${archived.map(r=>`
-                <div class="remarque-item" style="opacity:.65;background:var(--green-bg)">
-                  <div class="ri-check done" onclick="unarchiveRemarque('${cr.id}','${lot.id}','${r.id}')" title="Remettre visible (barré)">${ico('check','ico-xs')}</div>
+                <div class="remarque-item" style="opacity:.6;background:var(--green-bg)">
+                  <div class="ri-check done" onclick="unarchiveRemarque('${cr.id}','${lot.id}','${r.id}')" title="Remettre visible">${ico('check','ico-xs')}</div>
                   <div style="flex:1;min-width:0">
                     <div class="ri-text done-text">${r.texte}</div>
-                    ${r.archivedAt?`<div style="font-size:10px;color:var(--green);margin-top:2px">✓ Archivé le ${r.archivedAt}</div>`:''}
-                    ${r.doneAt&&!r.archivedAt?`<div style="font-size:10px;color:var(--green);margin-top:2px">✓ Traité le ${r.doneAt}</div>`:''}
+                    ${r.archivedAt?`<div style="font-size:10px;color:var(--green);margin-top:2px">🗄 Archivé le ${r.archivedAt}</div>`:''}
                   </div>
-                  <div class="ri-actions">
-                    <button class="btn-g" style="padding:3px" onclick="deleteRemarque('${cr.id}','${lot.id}','${r.id}')" title="Supprimer définitivement"><svg class="ico ico-xs" style="color:var(--red)"><use href="#i-trash"/></svg></button>
-                  </div>
+                  <button class="btn-g" style="padding:3px" onclick="deleteRemarque('${cr.id}','${lot.id}','${r.id}')" title="Supprimer définitivement"><svg class="ico ico-xs" style="color:var(--red)"><use href="#i-trash"/></svg></button>
                 </div>`).join('')}
               </div>
             </div>`;
           }
           return out;
         })()}
-        <div style="padding:8px 0 2px;border-top:1px solid var(--border);margin-top:6px;display:flex;gap:6px">
-          <input placeholder="Ajouter une remarque…" id="new-r-${lot.id}" style="flex:1;padding:6px 9px;border:1px solid var(--border2);border-radius:7px;font-size:12px;background:var(--bg);color:var(--text);outline:none;font-family:inherit" onkeydown="if(event.key==='Enter')addRemarque('${cr.id}','${lot.id}')">
-          <button class="btn btn-p btn-sm" onclick="addRemarque('${cr.id}','${lot.id}')">${ico('plus','ico-xs')}</button>
+        <!-- Quick add with type selector -->
+        <div style="padding:8px 0 2px;border-top:1px solid var(--border);margin-top:8px">
+          <div style="display:flex;gap:4px;margin-bottom:5px;flex-wrap:wrap">
+            ${[['remarque','💬','Remarque','var(--text2)'],['flag','⚑','À suivre','var(--amber)'],['action','⚡','Action','var(--blue)'],['decision','🔷','Décision','var(--purple)']].map(([t,icon,label,col])=>`
+            <button id="qtype-${lot.id}-${t}" onclick="setQuickType('${lot.id}','${t}')"
+              style="font-size:10px;padding:3px 9px;border-radius:12px;border:1.5px solid ${col};background:transparent;color:${col};cursor:pointer;font-family:inherit;font-weight:600;opacity:.5;transition:all .12s">
+              ${icon} ${label}
+            </button>`).join('')}
+          </div>
+          <div style="display:flex;gap:6px">
+            <input placeholder="Ajouter une remarque…" id="new-r-${lot.id}"
+              style="flex:1;padding:6px 9px;border:1px solid var(--border2);border-radius:7px;font-size:12px;background:var(--bg);color:var(--text);outline:none;font-family:inherit"
+              onfocus="setQuickType('${lot.id}','remarque')"
+              onkeydown="if(event.key==='Enter')addRemarque('${cr.id}','${lot.id}')">
+            <button class="btn btn-p btn-sm" onclick="addRemarque('${cr.id}','${lot.id}')">${ico('plus','ico-xs')}</button>
+          </div>
         </div>
       </div>`:``}
     </div>`;
@@ -885,9 +1079,10 @@ function renderIntervenants(cr){
           <div class="int-lot">${i.lot}</div>
           <div class="int-ent">${i.entreprise||i.lot}</div>
           <div class="int-contact" style="white-space:pre-line">${i.contacts||'—'}</div>
-          <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;gap:4px">
+          <div style="margin-top:8px;display:flex;align-items:center;flex-wrap:wrap;gap:4px">
+            <span class="badge ${i.convoque!==false?'bblue':'bgray'}" style="font-size:9px;cursor:pointer" onclick="toggleConvoque('${cr.id}','${i.id}')" title="Convoqué à cette réunion">${i.convoque!==false?'📩 Convoqué':'Non convoqué'}</span>
             <span class="badge ${i.present?'bgreen':'bgray'}" style="font-size:9px;cursor:pointer" onclick="togglePresence('${cr.id}','${i.lot}')">${i.present?'✓ Présent':'Absent'}</span>
-            <div style="display:flex;gap:3px">
+            <div style="display:flex;gap:3px;margin-left:auto">
               <button class="btn-g" style="padding:3px" onclick="editIntervenant('${cr.id}',${idx})" title="Modifier">${ico('edit','ico-xs')}</button>
               <button class="btn-g" style="padding:3px" onclick="deleteIntervenant('${cr.id}',${idx})" title="Supprimer"><svg class="ico ico-xs" style="color:var(--red)"><use href="#i-trash"/></svg></button>
             </div>
@@ -899,20 +1094,48 @@ function renderIntervenants(cr){
 
 /* ══ ACTIONS ══ */
 function renderActions(cr){
-  const todo=cr.actions.filter(a=>!a.done&&(!actionFilter||a.intId===actionFilter));
-  const done=cr.actions.filter(a=>a.done&&(!actionFilter||a.intId===actionFilter));
-  const allTodo=cr.actions.filter(a=>!a.done);
-  const allDone=cr.actions.filter(a=>a.done);
+  // Status filter first
+  const allActions=cr.actions;
+  const lateActions=allActions.filter(a=>!a.done&&isLate(a.echeance));
+  const soonActions=allActions.filter(a=>!a.done&&isSoon(a.echeance));
 
-  // Build filter chips
+  // Status filter
+  let filteredActions=allActions;
+  if(actionStatusFilter==='late') filteredActions=allActions.filter(a=>!a.done&&isLate(a.echeance));
+  else if(actionStatusFilter==='soon') filteredActions=allActions.filter(a=>!a.done&&isSoon(a.echeance));
+  else if(actionStatusFilter==='open') filteredActions=allActions.filter(a=>!a.done);
+  else if(actionStatusFilter==='done') filteredActions=allActions.filter(a=>a.done);
+
+  // Then by-intervenant filter on top
+  if(actionFilter) filteredActions=filteredActions.filter(a=>a.intId===actionFilter);
+
+  const todo=filteredActions.filter(a=>!a.done);
+  const done=filteredActions.filter(a=>a.done);
+  const allTodo=allActions.filter(a=>!a.done);
+  const allDone=allActions.filter(a=>a.done);
+
+  // Status quick filters
+  const statusFilters=[
+    ['all','Toutes',allActions.length,'var(--text2)'],
+    ['late','⚠ En retard',lateActions.length,'var(--red)'],
+    ['soon','⏰ Avant prochaine réunion',soonActions.length,'var(--amber)'],
+    ['open','En cours',allTodo.length,'var(--text2)'],
+    ['done','Terminées',allDone.length,'var(--green)'],
+  ].map(([k,label,count,col])=>`
+    <button onclick="actionStatusFilter='${k}';renderActions(CRS.find(c=>c.id==='${cr.id}'))"
+      style="padding:4px 11px;border-radius:16px;border:1.5px solid ${actionStatusFilter===k?col:'var(--border)'};background:${actionStatusFilter===k?col+'18':'transparent'};color:${actionStatusFilter===k?col:'var(--text3)'};font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">
+      ${label} <span style="opacity:.7">${count}</span>
+    </button>`).join('');
+
+  // Intervenant chips (secondary filter)
   const intervenantIds=[...new Set(cr.actions.map(a=>a.intId).filter(Boolean))];
   const filterChips=intervenantIds.map(intId=>{
     const iv=cr.intervenants.find(i=>i.id===intId);
     if(!iv)return '';
     const col=getColor(iv,cr);
     const active=actionFilter===intId;
-    return `<button onclick="setActionFilter('${cr.id}','${active?'':intId}')"
-      style="font-size:10px;padding:3px 10px;border-radius:12px;border:1.5px solid ${col};background:${active?col:'transparent'};color:${active?'#fff':col};cursor:pointer;font-family:inherit;font-weight:600;transition:all .15s">
+    return `<button onclick="actionFilter='${active?'':intId}';renderActions(CRS.find(c=>c.id==='${cr.id}'))"
+      style="font-size:10px;padding:2px 9px;border-radius:10px;border:1.5px solid ${col};background:${active?col:'transparent'};color:${active?'#fff':col};cursor:pointer;font-family:inherit;font-weight:600">
       ${iv.entreprise||iv.lot}
     </button>`;
   }).join('');
@@ -921,47 +1144,66 @@ function renderActions(cr){
     const linked=a.intId?cr.intervenants.find(i=>i.id===a.intId):null;
     const linkedLabel=linked?(linked.entreprise||linked.lot):a.responsable;
     const linkedColor=linked?getColor(linked,cr):'var(--text3)';
-    return `<div class="action-row ${isDone?'done':''}">
-      <div class="ar-status" style="background:${isDone?'var(--green-bg)':'var(--red-bg)'};color:${isDone?'var(--green)':'var(--red)'}" onclick="toggleAction('${cr.id}','${a.id}')">
-        ${isDone?ico('check','ico-xs'):ico('alert','ico-xs')}
+    const late=!isDone&&isLate(a.echeance);
+    const soon=!isDone&&!late&&isSoon(a.echeance);
+    const statusBg=isDone?'var(--green-bg)':late?'var(--red-bg)':soon?'var(--amber-bg)':'var(--bg2)';
+    const statusColor=isDone?'var(--green)':late?'var(--red)':soon?'var(--amber)':'var(--text3)';
+    const imgGrid=(a.images&&a.images.length)?`<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px">${a.images.map(img=>`
+      <div style="position:relative;border-radius:5px;overflow:hidden;border:1px solid var(--border)">
+        <img src="${img.data}" style="width:80px;height:60px;object-fit:cover;display:block" title="${e(img.caption||img.name)}">
+        ${img.caption?`<div style="padding:2px 4px;font-size:9px;color:var(--text3);background:var(--bg2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px">${e(img.caption)}</div>`:''}
+        <button onclick="deleteActionImage('${cr.id}','${a.id}','${img.id}')" style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,.55);border:none;color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">x</button>
+      </div>`).join('')}</div>`:'';
+    return `<div class="action-row ${isDone?'done':''}" style="${late?'border-left:3px solid var(--red)':soon?'border-left:3px solid var(--amber)':''}">
+      <div class="ar-status" style="background:${statusBg};color:${statusColor};cursor:pointer" onclick="toggleAction('${cr.id}','${a.id}')">
+        ${isDone?ico('check','ico-xs'):late?'!':soon?'~':ico('alert','ico-xs')}
       </div>
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;${isDone?'text-decoration:line-through;color:var(--text3)':''}">${a.texte}</div>
         <div style="font-size:11px;margin-top:3px;display:flex;gap:7px;align-items:center;flex-wrap:wrap">
           ${linkedLabel?`<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;background:${linkedColor}18;color:${linkedColor}">${linkedLabel}</span>`:''}
-          ${a.echeance?`<span style="color:var(--text3)">${ico('calendar','ico-xs')} ${a.echeance}</span>`:''}
+          ${a.echeance?`<span style="color:${late?'var(--red)':soon?'var(--amber)':'var(--text3)'};font-weight:${late||soon?'600':'400'}">${ico('calendar','ico-xs')} ${a.echeance}${late?' EN RETARD':soon?' Bientot':''}</span>`:''}
         </div>
+        ${imgGrid}
       </div>
       <div style="display:flex;gap:3px;flex-shrink:0">
+        <button class="btn-g" style="padding:3px" onclick="openAddActionImage('${cr.id}','${a.id}')" title="Ajouter une image"><svg class="ico ico-xs"><use href="#i-upload"/></svg></button>
         <button class="btn-g" style="padding:3px" onclick="editAction('${cr.id}','${a.id}')" title="Modifier">${ico('edit','ico-xs')}</button>
         <button class="btn-g" style="padding:3px" onclick="deleteAction('${cr.id}','${a.id}')" title="Supprimer"><svg class="ico ico-xs" style="color:var(--red)"><use href="#i-trash"/></svg></button>
       </div>
     </div>`;
   }
 
-  document.getElementById('content').innerHTML=`<div style="padding:16px 24px">
+  document.getElementById('content').innerHTML=`<div style="padding:12px 20px">
+    <!-- Header -->
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
       <div style="display:flex;gap:8px;align-items:center">
-        <span style="font-size:13px;font-weight:500">${allTodo.length+allDone.length} actions</span>
-        <span class="badge bred">${allTodo.length} en cours</span>
-        <span class="badge bgreen">${allDone.length} terminées</span>
-        ${actionFilter?`<button onclick="setActionFilter('${cr.id}','')" style="font-size:10px;padding:2px 8px;border-radius:10px;background:var(--bg2);border:1px solid var(--border2);cursor:pointer;color:var(--text3);font-family:inherit">✕ Retirer filtre</button>`:''}
+        <span style="font-size:13px;font-weight:600">${allActions.length} actions</span>
+        ${lateActions.length?`<span class="badge bred">⚠ ${lateActions.length} en retard</span>`:''}
+        ${soonActions.length?`<span class="badge bamber">⏰ ${soonActions.length} bientôt</span>`:''}
       </div>
       <button class="btn btn-p btn-sm" onclick="openAddAction('${cr.id}')">${ico('plus','ico-sm')} Ajouter</button>
     </div>
-    ${filterChips?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">${filterChips}</div>`:''}
 
-    ${todo.length?`<div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">En cours (${todo.length}${actionFilter?' filtré':''})</div>`:''}
+    <!-- Status quick filters -->
+    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px">
+      ${statusFilters}
+    </div>
+
+    <!-- Intervenant chips -->
+    ${filterChips?`<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)">${filterChips}</div>`:''}
+
+    ${todo.length?`<div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">En cours (${todo.length})</div>`:''}
     ${todo.map(a=>actionCard(a,false)).join('')}
 
-    ${done.length?`<div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 8px">Terminées (${done.length}${actionFilter?' filtré':''})</div>`:''}
+    ${done.length?`<div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 8px">Terminées (${done.length})</div>`:''}
     ${done.map(a=>actionCard(a,true)).join('')}
 
-    ${!cr.actions.length?`<div style="text-align:center;padding:40px;color:var(--text3)">
+    ${!allActions.length?`<div style="text-align:center;padding:40px;color:var(--text3)">
       <svg class="ico" style="width:36px;height:36px;display:block;margin:0 auto 10px"><use href="#i-check"/></svg>
       Aucune action pour ce CR
     </div>`:''}
-    ${cr.actions.length&&todo.length===0&&done.length===0?`<div style="text-align:center;padding:30px;color:var(--text3);font-size:13px">Aucune action pour cet intervenant</div>`:''}
+    ${allActions.length&&todo.length===0&&done.length===0&&(actionFilter||actionStatusFilter!=='all')?`<div style="text-align:center;padding:30px;color:var(--text3);font-size:13px">Aucune action pour ce filtre</div>`:''}
   </div>`;
 }
 
@@ -1248,7 +1490,7 @@ function switchTab(tab,btn){
   renderCR();
 }
 
-/* ══ ACTIONS ══ */
+/* ══ LOT & REMARQUE ACTIONS ══ */
 function toggleLot(crId,lotId){
   const cr=CRS.find(c=>c.id===crId);
   const lot=cr?.lots.find(l=>l.id===lotId);
@@ -1307,8 +1549,23 @@ function addRemarque(crId,lotId){
   if(!inp||!inp.value.trim())return;
   const cr=CRS.find(c=>c.id===crId);
   const lot=cr?.lots.find(l=>l.id===lotId);
-  if(lot)lot.remarques.push({id:'r'+(uid++),texte:inp.value.trim(),done:false,flag:false,createdAt:new Date().toLocaleDateString('fr-FR')});
-  inp.value='';markDirty();renderCR();renderList();
+  if(!lot)return;
+  const type=(_quickTypes&&_quickTypes[lotId])||'remarque';
+  const newR={
+    id:'r'+(uid++),
+    texte:inp.value.trim(),
+    done:false,
+    flag:type==='flag',
+    decision:type==='decision',
+    archived:false,
+    createdAt:new Date().toLocaleDateString('fr-FR')
+  };
+  lot.remarques.push(newR);
+  inp.value='';
+  markDirty();renderCR();renderList();
+  if(type==='action'){
+    setTimeout(()=>remarkToAction(crId,lotId,newR.id),50);
+  }
 }
 function editRemarque(crId,lotId,rId){
   const cr=CRS.find(c=>c.id===crId);
@@ -1347,6 +1604,12 @@ function togglePresence(crId,lot){
   const cr=CRS.find(c=>c.id===crId);
   const i=cr?.intervenants.find(x=>x.lot===lot);
   if(i)i.present=!i.present;
+  renderCR();
+}
+function toggleConvoque(crId,intId){
+  const cr=CRS.find(c=>c.id===crId);
+  const i=cr?.intervenants.find(x=>x.id===intId);
+  if(i)i.convoque=!(i.convoque!==false);
   renderCR();
 }
 function toggleAction(crId,aId){
@@ -1431,7 +1694,8 @@ function openAddIntervenant(crId){
     <div class="fi"><label>Lot / Fonction *</label><input id="ai-lot" placeholder="Ex: Lot Carrelage, Ingénieur…"></div>
     <div class="fi"><label>Entreprise</label><input id="ai-ent" placeholder="Nom de l'entreprise"></div>
     <div class="fi"><label>Contacts</label><textarea id="ai-contacts" placeholder="Nom — Téléphone — Email"></textarea></div>
-    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;margin-bottom:12px"><input type="checkbox" id="ai-present" style="width:15px;height:15px"> Présent à cette réunion</label>
+    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;margin-bottom:6px"><input type="checkbox" id="ai-convoque" checked style="width:15px;height:15px"> 📩 Convoqué à cette réunion</label>
+    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;margin-bottom:12px"><input type="checkbox" id="ai-present" style="width:15px;height:15px"> ✓ Présent à cette réunion</label>
     <div class="mo-foot">
       <button class="btn" onclick="closeModal()">Annuler</button>
       <button class="btn btn-p" onclick="saveIntervenant('${crId}')">${ico('plus','ico-sm')} Ajouter</button>
@@ -1441,7 +1705,7 @@ function saveIntervenant(crId){
   const lot=document.getElementById('ai-lot')?.value?.trim();
   if(!lot)return;
   const cr=CRS.find(c=>c.id===crId);
-  if(cr)cr.intervenants.push({id:'i'+(uid++),lot,entreprise:document.getElementById('ai-ent')?.value||'',contacts:document.getElementById('ai-contacts')?.value||'',present:document.getElementById('ai-present')?.checked||false});
+  if(cr)cr.intervenants.push({id:'i'+(uid++),lot,entreprise:document.getElementById('ai-ent')?.value||'',contacts:document.getElementById('ai-contacts')?.value||'',present:document.getElementById('ai-present')?.checked||false,convoque:document.getElementById('ai-convoque')?.checked!==false});
   closeModal();renderCR();
 }
 
@@ -1572,8 +1836,9 @@ function exportCR(crId){
       <tr style="background:#e0e0e0">
         <td colspan="2" style="padding:5px 8px;border:1px solid #000;font-weight:600;font-size:9pt">MAÎTRISE D'OUVRAGE</td>
         <td style="padding:5px 8px;border:1px solid #000;border-left:none;font-weight:600;font-size:9pt">Contact</td>
+        <td style="padding:5px 8px;border:1px solid #000;border-left:none;font-weight:600;font-size:9pt;width:60px;text-align:center">Convoqué</td>
         <td style="padding:5px 8px;border:1px solid #000;border-left:none;font-weight:600;font-size:9pt;width:55px;text-align:center">Présent</td>
-        <td style="padding:5px 8px;border:1px solid #000;border-left:none;font-weight:600;font-size:9pt;width:110px;text-align:center">Convocation au prochain RDV</td>
+        <td style="padding:5px 8px;border:1px solid #000;border-left:none;font-weight:600;font-size:9pt;width:90px;text-align:center">Convocation<br>prochain RDV</td>
       </tr>`;
 
   // MOA rows
@@ -1586,6 +1851,7 @@ function exportCR(crId){
     page1+=`<tr>
       <td colspan="2" style="padding:5px 8px;border:1px solid #000;border-top:none;font-size:9pt">${e(name)}</td>
       <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;font-size:9pt">${e(i.contacts.replace(/\n/g,' — '))}</td>
+      <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;text-align:center;font-size:9pt">${i.convoque!==false?'X':''}</td>
       <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;text-align:center;font-size:9pt;font-weight:700">${i.present?'X':''}</td>
       <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;text-align:center;font-size:9pt">☐</td>
     </tr>`;
@@ -1593,13 +1859,14 @@ function exportCR(crId){
 
   if(moe.length){
     page1+=`<tr style="background:#e0e0e0">
-      <td colspan="5" style="padding:5px 8px;border:1px solid #000;border-top:none;font-weight:600;font-size:9pt">MAÎTRISE D'ŒUVRE</td>
+      <td colspan="6" style="padding:5px 8px;border:1px solid #000;border-top:none;font-weight:600;font-size:9pt">MAÎTRISE D'ŒUVRE</td>
     </tr>`;
     moe.forEach(i=>{
       page1+=`<tr>
-        <td style="padding:5px 8px;border:1px solid #000;border-top:none;font-size:9pt;width:130px;font-weight:600">${e(i.lot.toUpperCase())}</td>
+        <td style="padding:5px 8px;border:1px solid #000;border-top:none;font-size:9pt;width:120px;font-weight:600">${e(i.lot.toUpperCase())}</td>
         <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;font-size:9pt">${e(i.entreprise)}</td>
         <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;font-size:9pt;white-space:pre-line">${e(i.contacts)}</td>
+        <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;text-align:center;font-size:9pt">${i.convoque!==false?'X':''}</td>
         <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;text-align:center;font-size:9pt;font-weight:700">${i.present?'X':''}</td>
         <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;text-align:center;font-size:9pt">☐</td>
       </tr>`;
@@ -1608,13 +1875,14 @@ function exportCR(crId){
 
   if(others.length){
     page1+=`<tr style="background:#e0e0e0">
-      <td colspan="5" style="padding:5px 8px;border:1px solid #000;border-top:none;font-weight:600;font-size:9pt">INTERVENANTS ENTREPRISES</td>
+      <td colspan="6" style="padding:5px 8px;border:1px solid #000;border-top:none;font-weight:600;font-size:9pt">INTERVENANTS ENTREPRISES</td>
     </tr>`;
     others.forEach(i=>{
       page1+=`<tr>
-        <td style="padding:5px 8px;border:1px solid #000;border-top:none;font-size:9pt;font-weight:700;vertical-align:top;width:130px">${e(i.lot.toUpperCase())}</td>
+        <td style="padding:5px 8px;border:1px solid #000;border-top:none;font-size:9pt;font-weight:700;vertical-align:top;width:120px">${e(i.lot.toUpperCase())}</td>
         <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;font-size:9pt;vertical-align:top">${e(i.entreprise)}</td>
         <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;font-size:8.5pt;vertical-align:top;white-space:pre-line">${e(i.contacts)}</td>
+        <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;text-align:center;vertical-align:top;font-size:9pt">${i.convoque!==false?'X':''}</td>
         <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;text-align:center;vertical-align:top;font-size:9pt;font-weight:700">${i.present?'X':''}</td>
         <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;text-align:center;vertical-align:top;font-size:9pt">☐</td>
       </tr>`;
@@ -1803,8 +2071,11 @@ function editIntervenant(crId,idx){
         style="width:36px;height:36px;border:1px solid var(--border2);border-radius:8px;padding:2px;cursor:pointer;flex-shrink:0">
       <span style="font-size:12px;color:var(--text3)">Utilisée dans les badges et l'export</span>
     </div>
+    <label style="display:flex;align-items:center;gap:7px;font-size:13px;cursor:pointer;margin-bottom:6px">
+      <input type="checkbox" id="ei-convoque" ${i.convoque!==false?'checked':''} style="width:15px;height:15px"> 📩 Convoqué à cette réunion
+    </label>
     <label style="display:flex;align-items:center;gap:7px;font-size:13px;cursor:pointer;margin-bottom:4px">
-      <input type="checkbox" id="ei-present" ${i.present?'checked':''} style="width:15px;height:15px"> Présent à cette réunion
+      <input type="checkbox" id="ei-present" ${i.present?'checked':''} style="width:15px;height:15px"> ✓ Présent à cette réunion
     </label>
     <div class="mo-foot">
       <button class="btn" onclick="closeModal()">Annuler</button>
@@ -1819,6 +2090,7 @@ function saveEditIntervenant(crId,idx){
   i.entreprise=document.getElementById('ei-ent')?.value||'';
   i.contacts=document.getElementById('ei-contacts')?.value||'';
   i.present=document.getElementById('ei-present')?.checked||false;
+  i.convoque=document.getElementById('ei-convoque')?.checked!==false;
   const col=document.getElementById('ei-color')?.value;
   if(col)i.color=col;
   closeModal();
@@ -1873,7 +2145,7 @@ function openCRSettings(crId){
     var done=lot.remarques.filter(function(r){return r.done;}).length;
     lotsHTML+=''
       +'<div style="border:1px solid '+(hasInt?'var(--border)':'#fca5a5')+';border-left:4px solid '+lotCol+';border-radius:8px;padding:9px 12px;margin-bottom:6px;background:'+(hasInt?'var(--panel)':'#fff5f5')+';display:flex;align-items:center;gap:7px">'
-        +'<div style="display:flex;flex-direction:column;gap:3px;flex-shrink:0">'
+        +'<div class="sort-handle" style="display:flex;flex-direction:column;gap:3px;flex-shrink:0;cursor:grab">'
           +'<button onclick="moveItem(\'lot\',\''+crId+'\','+li+',-1)" style="background:var(--panel);border:1px solid var(--border2);border-radius:6px;cursor:pointer;width:28px;height:24px;font-size:13px;display:flex;align-items:center;justify-content:center;color:var(--text2);font-weight:500;padding:0">▲</button>'
           +'<button onclick="moveItem(\'lot\',\''+crId+'\','+li+',1)" style="background:var(--panel);border:1px solid var(--border2);border-radius:6px;cursor:pointer;width:28px;height:24px;font-size:13px;display:flex;align-items:center;justify-content:center;color:var(--text2);font-weight:500;padding:0">▼</button>'
         +'</div>'
@@ -1903,10 +2175,10 @@ function openCRSettings(crId){
     intsHTML+=''
       +'<div style="border:1px solid var(--border);border-left:4px solid '+col+';border-radius:8px;padding:9px 12px;cursor:default;margin-bottom:6px">'
         +'<div style="display:flex;align-items:center;gap:7px;margin-bottom:7px">'
-          +'<div style="display:flex;flex-direction:column;gap:3px;flex-shrink:0;margin-right:2px" title="Utiliser ▲ ▼ pour déplacer">'
+          +'<div class="sort-handle" style="display:flex;align-items:center;gap:4px;flex-shrink:0;cursor:grab">'+'<span style="color:var(--text3);font-size:16px;line-height:1;user-select:none">&#8801;</span>'+'<div style="display:flex;flex-direction:column;gap:2px">'
             +'<button onclick="moveItem(\'int\',\''+crId+'\','+ii+',-1)" style="background:var(--panel);border:1px solid var(--border2);border-radius:6px;cursor:pointer;width:28px;height:24px;font-size:13px;display:flex;align-items:center;justify-content:center;color:var(--text2);font-weight:500;padding:0">▲</button>'
             +'<button onclick="moveItem(\'int\',\''+crId+'\','+ii+',1)" style="background:var(--panel);border:1px solid var(--border2);border-radius:6px;cursor:pointer;width:28px;height:24px;font-size:13px;display:flex;align-items:center;justify-content:center;color:var(--text2);font-weight:500;padding:0">▼</button>'
-          +'</div>'
+          +'</div>'+'</div>'
           +'<span style="font-size:10px;font-weight:700;color:var(--text3);min-width:18px;text-align:center;flex-shrink:0">'+( ii+1)+'</span>'
           +'<input type="color" id="gs-int-color-'+ii+'" value="'+col+'" title="Couleur intervenant"'
             +' oninput="syncIntColor(\''+crId+'\','+ii+',this.value)"'
@@ -1921,6 +2193,9 @@ function openCRSettings(crId){
         +'</div>'
         +'<textarea id="gs-int-contacts-'+ii+'" placeholder="Contacts (nom, tel, email)"'
           +' style="width:100%;padding:5px 8px;border:1px solid var(--border2);border-radius:6px;font-size:11px;background:var(--bg);color:var(--text);outline:none;font-family:inherit;resize:vertical;min-height:44px">'+e(int.contacts)+'</textarea>'
+        +'<label style="display:flex;align-items:center;gap:6px;margin-top:5px;font-size:11px;cursor:pointer">'
+          +'<input type="checkbox" id="gs-int-convoque-'+ii+'"'+(int.convoque!==false?' checked':'')+' style="width:13px;height:13px"> 📩 Convoqué'
+        +'</label>'
       +'</div>';
   });
 
@@ -1933,10 +2208,10 @@ function openCRSettings(crId){
     actsHTML+=''
       +'<div style="border:1px solid var(--border);border-radius:8px;padding:9px 12px;cursor:default;margin-bottom:6px">'
         +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">'
-          +'<div style="display:flex;flex-direction:column;gap:3px;flex-shrink:0;margin-right:2px" title="Utiliser ▲ ▼ pour déplacer">'
+          +'<div class="sort-handle" style="display:flex;align-items:center;gap:4px;flex-shrink:0;cursor:grab">'+'<span style="color:var(--text3);font-size:16px;line-height:1;user-select:none">&#8801;</span>'+'<div style="display:flex;flex-direction:column;gap:2px">'
             +'<button onclick="moveItem(\'act\',\''+crId+'\','+ai+',-1)" style="background:var(--panel);border:1px solid var(--border2);border-radius:6px;cursor:pointer;width:28px;height:24px;font-size:13px;display:flex;align-items:center;justify-content:center;color:var(--text2);font-weight:500;padding:0">▲</button>'
             +'<button onclick="moveItem(\'act\',\''+crId+'\','+ai+',1)" style="background:var(--panel);border:1px solid var(--border2);border-radius:6px;cursor:pointer;width:28px;height:24px;font-size:13px;display:flex;align-items:center;justify-content:center;color:var(--text2);font-weight:500;padding:0">▼</button>'
-          +'</div>'
+          +'</div>'+'</div>'
           +'<span style="font-size:10px;font-weight:700;color:var(--text3);min-width:18px;text-align:center;flex-shrink:0">'+( ai+1)+'</span>'
           +'<label style="display:flex;align-items:center;gap:5px;font-size:11px;cursor:pointer;white-space:nowrap">'
             +'<input type="checkbox" id="gs-a-done-'+a.id+'"'+(a.done?' checked':'')+' style="width:13px;height:13px"> Terminee'
@@ -1967,17 +2242,17 @@ function openCRSettings(crId){
     +'</div>'
     +'<div id="gs-p0">'
       +'<p style="font-size:11px;color:var(--text3);margin-bottom:10px">Boutons ▲▼ pour reordonner · couleur · intervenant lie</p>'
-      +'<div style="max-height:340px;overflow-y:auto">'+lotsHTML+'</div>'
+      +'<div id="gs-lots-list" style="max-height:340px;overflow-y:auto">'+lotsHTML+'</div>'
       +'<button class="btn btn-p btn-sm" style="margin-top:8px;width:100%;justify-content:center" onclick="gsAddLot(\''+crId+'\')">+ Ajouter un lot</button>'
     +'</div>'
     +'<div id="gs-p1" style="display:none">'
       +'<p style="font-size:11px;color:var(--text3);margin-bottom:10px">Boutons ▲▼ pour reordonner · roue couleur</p>'
-      +'<div style="max-height:340px;overflow-y:auto">'+intsHTML+'</div>'
+      +'<div id="gs-ints-list" style="max-height:340px;overflow-y:auto">'+intsHTML+'</div>'
       +'<button class="btn btn-p btn-sm" style="margin-top:8px;width:100%;justify-content:center" onclick="gsAddInt(\''+crId+'\')">+ Ajouter un intervenant</button>'
     +'</div>'
     +'<div id="gs-p2" style="display:none">'
       +'<p style="font-size:11px;color:var(--text3);margin-bottom:10px">Boutons ▲▼ pour reordonner · lier un intervenant</p>'
-      +'<div style="max-height:340px;overflow-y:auto">'+actsHTML+'</div>'
+      +'<div id="gs-acts-list" style="max-height:340px;overflow-y:auto">'+actsHTML+'</div>'
       +'<button class="btn btn-p btn-sm" style="margin-top:8px;width:100%;justify-content:center" onclick="gsAddAction(\''+crId+'\')">+ Ajouter une action</button>'
     +'</div>'
     +'<div style="display:flex;gap:7px;margin-top:16px;justify-content:flex-end">'
@@ -1986,6 +2261,27 @@ function openCRSettings(crId){
     +'</div>';
 
   showModal(html);
+
+  // Init SortableJS on each panel list (needs timeout for DOM)
+  setTimeout(function(){
+    function makeSortable(containerId,type){
+      var el=document.getElementById(containerId);
+      if(!el||typeof Sortable==='undefined')return;
+      Sortable.create(el,{
+        animation:150, handle:'.sort-handle',
+        filter:'input,textarea,select,button',
+        preventOnFilter:false,
+        ghostClass:'sortable-ghost',
+        onEnd:function(evt){
+          if(evt.oldIndex===evt.newIndex)return;
+          moveItem(type,crId,evt.oldIndex,evt.newIndex,true);
+        }
+      });
+    }
+    makeSortable('gs-lots-list','lot');
+    makeSortable('gs-ints-list','int');
+    makeSortable('gs-acts-list','act');
+  },120);
 }
 
 function gsCRTab(idx,btn){
@@ -2073,10 +2369,12 @@ function saveSettings(crId){
     const ent=document.getElementById('gs-int-ent-'+ii);
     const contacts=document.getElementById('gs-int-contacts-'+ii);
     const colorEl=document.getElementById('gs-int-color-'+ii);
+    const convoqueEl=document.getElementById('gs-int-convoque-'+ii);
     if(lot)int.lot=lot.value||int.lot;
     if(ent)int.entreprise=ent.value||'';
     if(contacts)int.contacts=contacts.value||'';
     if(colorEl)int.color=colorEl.value;
+    if(convoqueEl)int.convoque=convoqueEl.checked;
   });
   // Save actions
   cr.actions.forEach(a=>{
@@ -2128,10 +2426,10 @@ function toggleArchiveCR(crId){
 let dragSrcIdx=null;
 let dragSrcType=null;
 
-function moveItem(type, crId, fromIdx, dir) {
+function moveItem(type, crId, fromIdx, dirOrTo, isAbsolute) {
   const cr = CRS.find(c => c.id === crId);
   if (!cr) return;
-  const toIdx = fromIdx + dir;
+  const toIdx = isAbsolute ? dirOrTo : fromIdx + dirOrTo;
 
   // Save all current field values first
   if (type === 'lot') {
@@ -2510,12 +2808,13 @@ function deleteTemplate(ti){
 function cloneCR(crId){
   const cr=CRS.find(c=>c.id===crId);
   if(!cr)return;
-  const pendingFlags=cr.lots.flatMap(l=>l.remarques).filter(r=>r.flag&&!r.done).length;
+  const pendingOpen=cr.lots.flatMap(l=>l.remarques).filter(r=>!r.done&&!r.archived).length;
   const pendingActions=cr.actions.filter(a=>!a.done).length;
-  showModal(`<h3><svg class="ico ico-sm" style="color:var(--blue)"><use href="#i-copy"/></svg> Dupliquer ce CR</h3>
+  showModal(`<h3><svg class="ico ico-sm" style="color:var(--blue)"><use href="#i-copy"/></svg> Creer le CR suivant</h3>
     <div style="background:var(--blue-bg);border-radius:var(--r);padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--text2)">
-      Crée un nouveau CR avec les mêmes intervenants, lots vides, et reporte automatiquement les
-      <strong>${pendingFlags} points en suspens (⚑)</strong> et <strong>${pendingActions} actions non terminées</strong>.
+      Reprend la structure complète et reporte automatiquement les
+      <strong>${pendingOpen} points non traités</strong> et <strong>${pendingActions} actions non terminées</strong>.
+      <br><span style="color:var(--text3)">Les points traités et archivés ne sont pas repris.</span>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div class="fi" style="grid-column:1/-1"><label>Nom du projet</label><input id="cl-proj" value="${e(cr.projet)}"></div>
@@ -2527,7 +2826,7 @@ function cloneCR(crId){
     <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:4px">
       <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
         <input type="checkbox" id="cl-flags" checked style="width:15px;height:15px">
-        Reporter les <strong>${pendingFlags} points ⚑</strong> non traités
+        Reporter les <strong>${pendingOpen} points non traités</strong> (tous, dont les ⚑)
       </label>
       <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
         <input type="checkbox" id="cl-actions" checked style="width:15px;height:15px">
@@ -2536,7 +2835,7 @@ function cloneCR(crId){
     </div>
     <div class="mo-foot">
       <button class="btn" onclick="closeModal()">Annuler</button>
-      <button class="btn btn-p" onclick="confirmCloneCR('${crId}')">${ico('copy','ico-sm')} Dupliquer</button>
+      <button class="btn btn-p" onclick="confirmCloneCR('${crId}')">${ico('copy','ico-sm')} Creer le CR suivant</button>
     </div>`);
   setTimeout(()=>{
     const d=document.getElementById('cl-date');
@@ -2556,22 +2855,25 @@ function confirmCloneCR(crId){
   const idMap={};
   const newInts=cr.intervenants.map(function(iv){
     const newId='i'+(uid++); idMap[iv.id]=newId;
-    return {id:newId,lot:iv.lot,entreprise:iv.entreprise,contacts:iv.contacts,color:iv.color,present:false};
+    return {id:newId,lot:iv.lot,entreprise:iv.entreprise,contacts:iv.contacts,
+            color:iv.color,present:false,convoque:iv.convoque!==false};
   });
 
   // Clone lots: keep structure, import only ⚑ points if requested
   const newLots=cr.lots.map(function(lot){
     const remarks=importFlags
-      ? lot.remarques.filter(r=>r.flag&&!r.done).map(r=>({
-          id:'r'+(uid++), texte:r.texte, done:false, flag:true,
-          createdAt:date, archivedAt:null
+      // All non-done non-archived points (flag or not)
+      ? lot.remarques.filter(r=>!r.done&&!r.archived).map(r=>({
+          id:'r'+(uid++), texte:r.texte, done:false,
+          flag:r.flag||false, decision:r.decision||false,
+          archived:false, createdAt:date, archivedAt:null, doneAt:null
         }))
       : [];
     return {id:'l'+(uid++), titre:lot.titre, ouvert:true,
             intId:idMap[lot.intId]||null, remarques:remarks};
   });
 
-  // Clone pending actions if requested
+  // Clone only non-done actions (never archived)
   const newActions=importActions
     ? cr.actions.filter(a=>!a.done).map(a=>({
         id:'a'+(uid++), texte:a.texte,
@@ -2602,12 +2904,14 @@ function confirmCloneCR(crId){
   activeTab='remarques';
   renderList();
   renderCR();
-  const imported=newLots.reduce((s,l)=>s+l.remarques.length,0)+newActions.length;
-  toast('CR dupliqué — '+imported+' points/actions reportés ✓');
+  const importedPts=newLots.reduce((s,l)=>s+l.remarques.length,0);
+  const importedAct=newActions.length;
+  toast('Nouveau CR créé — '+importedPts+' points non traités et '+importedAct+' actions reportés ✓');
 }
 
 /* ══ FILTER ACTIONS BY INTERVENANT ══ */
-let actionFilter='';
+let actionFilter='';        // filter by intId (intervenant)
+let actionStatusFilter='all'; // all | late | soon | open | done
 function setActionFilter(crId,intId){
   actionFilter=intId;
   const cr=CRS.find(c=>c.id===crId);
@@ -2700,6 +3004,7 @@ function exportCSV(crId){
 
 /* ══ SORT LOTS BY FLAGS ══ */
 let lotsSortedByFlags=false;
+const _quickTypes={};  // lotId → current quick-add type (remarque|flag|action)
 function toggleSortLots(crId){
   lotsSortedByFlags=!lotsSortedByFlags;
   const cr=CRS.find(c=>c.id===crId);
@@ -2898,6 +3203,393 @@ function savePdfSettingsForm(){
   toast('Paramètres enregistrés ✓');
 }
 
+/* ══ CONTEXT MENU ══ */
+let _menuOpen=null;
+function toggleRemarqueMenu(e,id){
+  e.stopPropagation();
+  closeAllMenus();
+  const el=document.getElementById(id);
+  if(el&&el.style.display==='none'){el.style.display='block';_menuOpen=id;}
+}
+function closeAllMenus(){
+  if(_menuOpen){const el=document.getElementById(_menuOpen);if(el)el.style.display='none';}
+  _menuOpen=null;
+}
+document.addEventListener('click',function(){closeAllMenus();});
+
+/* ══ QUICK TYPE SELECTOR ══ */
+function setQuickType(lotId,type){
+  _quickTypes[lotId]=type;
+  ['remarque','flag','action'].forEach(t=>{
+    const btn=document.getElementById('qtype-'+lotId+'-'+t);
+    if(btn) btn.style.opacity=t===type?'1':'0.4';
+  });
+  const inp=document.getElementById('new-r-'+lotId);
+  if(inp){
+    inp.placeholder=type==='flag'?'Ajouter un point à suivre…':type==='action'?'Décrire l\'action…':'Ajouter une remarque…';
+    inp.focus();
+  }
+}
+
+/* ══ OVERRIDE addRemarque to handle quick type ══ */
+
+/* ══ LATE ACTIONS DETECTION ══ */
+function isLate(echeance){
+  if(!echeance||echeance==='Immédiat')return false;
+  const parts=echeance.split('/');
+  if(parts.length!==3)return false;
+  const d=new Date(parseInt(parts[2]),parseInt(parts[1])-1,parseInt(parts[0]));
+  return d<new Date();
+}
+function isSoon(echeance){
+  if(!echeance||echeance==='Immédiat')return false;
+  const parts=echeance.split('/');
+  if(parts.length!==3)return false;
+  const d=new Date(parseInt(parts[2]),parseInt(parts[1])-1,parseInt(parts[0]));
+  const diff=(d-new Date())/(1000*60*60*24);
+  return diff>=0&&diff<=7;
+}
+
+/* ══ RESET quickFilter on tab/CR switch ══ */
+const _origSwitchTab=switchTab;
+switchTab=function(tab,btn){
+  if(tab!=='remarques'){quickFilter='all';}
+  if(tab!=='actions'){actionFilter='';actionStatusFilter='all';}
+  _origSwitchTab(tab,btn);
+};
+const _origOpenCR=openCR;
+openCR=function(id){
+  quickFilter='all';
+  actionFilter='';
+  actionStatusFilter='all';
+  _origOpenCR(id);
+};
+
+/* ══ PDF PREVIEW ══ */
+function previewPDF(crId){
+  const cr=CRS.find(c=>c.id===crId);
+  if(!cr)return;
+
+  // Build full PDF content (reuse exportCR content generation)
+  // We call exportCR in "preview mode" — build pages then show in iframe modal
+  const s=PDF_SETTINGS;
+
+  function pageHeaderHTML(){
+    const fLeft=s.showLogoLeft?(s.logoLeft?`<img src="${s.logoLeft}" style="max-width:${(s.logoLeftWidth||60)-8}px;max-height:44px;object-fit:contain;display:block;margin:0 auto">`:`<div style="font-weight:700;font-size:12pt">${e(s.firmName||'PS')}</div>${s.firmSub?`<div style="font-size:6pt;color:#555">${e(s.firmSub)}</div>`:''}`):' ';
+    const fRight=s.showLogoRight?(s.logoRight?`<img src="${s.logoRight}" style="max-width:${(s.logoRightWidth||60)-8}px;max-height:44px;object-fit:contain;display:block;margin:0 auto">`:`<div style="font-weight:700;font-size:12pt">${e(s.firmName||'PS')}</div>`):' ';
+    return `<table style="width:100%;border-collapse:collapse;margin-bottom:0">
+      <tr>
+        <td style="width:${s.logoLeftWidth||60}px;border:1px solid #000;padding:5px;text-align:center;vertical-align:middle">${fLeft}</td>
+        <td style="padding:8px 16px;border:1px solid #000;border-left:none;text-align:center"><div style="font-weight:700;font-size:12pt;letter-spacing:2px">${e(s.headerTitle||'COMPTE RENDU')}</div></td>
+        <td style="width:${s.logoRightWidth||60}px;border:1px solid #000;border-left:none;padding:5px;text-align:center;vertical-align:middle">${fRight}</td>
+      </tr>
+    </table>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:12px">
+      <tr><td colspan="2" style="padding:5px 8px;border:1px solid #000;border-top:none;font-size:9pt"><strong>PROJET: ${e(cr.projet)}</strong>&nbsp;&nbsp;&nbsp;${e(cr.adresse)}</td></tr>
+      <tr>
+        <td style="padding:5px 8px;border:1px solid #000;border-top:none;font-size:9pt;width:50%"><strong>DATE:</strong> ${e(cr.date)}.</td>
+        <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;font-size:9pt"><strong>DATE PROCHAINE RÉUNION:</strong> ${e(cr.dateProchaine)}</td>
+      </tr>
+    </table>`;
+  }
+
+  // Generate full HTML for the print document
+  const fullHTML=`<!DOCTYPE html><html><head>
+    <meta charset="UTF-8">
+    <style>
+      body{font-family:Arial,sans-serif;font-size:9pt;color:#000;margin:0;padding:0;background:#fff}
+      table{border-collapse:collapse}
+      .page{padding:18px;page-break-after:always;max-width:800px;margin:0 auto}
+      .page:last-child{page-break-after:avoid}
+      @media print{body{margin:0}; .page{padding:12mm}}
+    </style>
+  </head><body>
+  ${(function(){
+    const moa=cr.intervenants.filter(i=>i.lot.toLowerCase().includes('ouvrage'));
+    const moe=cr.intervenants.filter(i=>i.lot.toLowerCase().includes('oeuvre'));
+    const others=cr.intervenants.filter(i=>!moa.includes(i)&&!moe.includes(i));
+    let p1=`<div class="page">${pageHeaderHTML()}
+    <table style="width:100%;border-collapse:collapse">
+      <tr style="background:#e0e0e0">
+        <td colspan="2" style="padding:5px 8px;border:1px solid #000;font-weight:600;font-size:9pt">Intervenant</td>
+        <td style="padding:5px 8px;border:1px solid #000;border-left:none;font-weight:600;font-size:9pt">Contact</td>
+        <td style="padding:5px 8px;border:1px solid #000;border-left:none;font-weight:600;font-size:9pt;width:55px;text-align:center">Convoqué</td>
+        <td style="padding:5px 8px;border:1px solid #000;border-left:none;font-weight:600;font-size:9pt;width:55px;text-align:center">Présent</td>
+        <td style="padding:5px 8px;border:1px solid #000;border-left:none;font-weight:600;font-size:9pt;width:85px;text-align:center">Conv. prochain RDV</td>
+      </tr>`;
+    const allInts=[...moa,...moe,...others];
+    allInts.forEach(function(i){
+      p1+=`<tr>
+        <td style="padding:4px 7px;border:1px solid #000;border-top:none;font-size:8.5pt;font-weight:700;vertical-align:top">${e(i.lot.toUpperCase())}</td>
+        <td style="padding:4px 7px;border:1px solid #000;border-top:none;border-left:none;font-size:8.5pt;vertical-align:top">${e(i.entreprise)}</td>
+        <td style="padding:4px 7px;border:1px solid #000;border-top:none;border-left:none;font-size:8pt;vertical-align:top;white-space:pre-line">${e(i.contacts)}</td>
+        <td style="padding:4px 7px;border:1px solid #000;border-top:none;border-left:none;text-align:center;font-size:9pt">${i.convoque!==false?'X':''}</td>
+        <td style="padding:4px 7px;border:1px solid #000;border-top:none;border-left:none;text-align:center;font-size:9pt;font-weight:700">${i.present?'X':''}</td>
+        <td style="padding:4px 7px;border:1px solid #000;border-top:none;border-left:none;text-align:center;font-size:9pt">☐</td>
+      </tr>`;
+    });
+    p1+=`</table><div style="text-align:right;font-size:7pt;color:#666;margin-top:4px">1</div></div>`;
+
+    // Remarques pages
+    let p2=`<div class="page">${pageHeaderHTML()}`;
+    cr.lots.forEach(function(lot){
+      const active=lot.remarques.filter(r=>!r.archived);
+      if(!active.length)return;
+      const col=getColor(lot,cr);
+      function hexToLight(hex){const c2=(hex||'#ccc').replace('#','');if(c2.length<6)return '#f0f0f0';const r=parseInt(c2.substr(0,2),16),g=parseInt(c2.substr(2,2),16),b=parseInt(c2.substr(4,2),16);return `rgb(${Math.round(r*.2+255*.8)},${Math.round(g*.2+255*.8)},${Math.round(b*.2+255*.8)})`;}
+      p2+=`<table style="width:100%;border-collapse:collapse;margin-bottom:8px;page-break-inside:avoid">
+        <tr><td style="background:${hexToLight(col)};padding:4px 8px;border:1px solid #000;font-weight:700;font-size:9pt;color:${col};text-transform:uppercase">REMARQUES — ${e(lot.titre.toUpperCase())}</td></tr>
+        <tr><td style="border:1px solid #000;border-top:none;padding:7px 10px">${active.map(r=>`<div style="padding:3px 0;font-size:8.5pt;${r.done?'color:#aaa;text-decoration:line-through;':''}border-bottom:1px solid #f0f0f0;margin-bottom:2px">
+          <div>- ${e(r.texte)}</div>
+          ${(r.images&&r.images.length)?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;page-break-inside:avoid">${r.images.map(img=>`<div style="display:inline-block"><img src="${img.data}" style="max-width:110px;max-height:90px;object-fit:contain;border:1px solid #ccc;border-radius:3px;display:block">${img.caption?`<div style="font-size:7pt;color:#666;margin-top:1px">${e(img.caption)}</div>`:''}</div>`).join('')}</div>`:''}
+        </div>`).join('')}</td></tr>
+      </table>`;
+    });
+    p2+=`<div style="text-align:right;font-size:7pt;color:#666;margin-top:4px">2</div></div>`;
+
+    // Actions page
+    let p3='';
+    if(cr.actions.length){
+      p3=`<div class="page">${pageHeaderHTML()}
+      <table style="width:100%;border-collapse:collapse">
+        <tr style="background:#e0e0e0">
+          <td style="padding:4px 7px;border:1px solid #000;font-weight:600;font-size:8.5pt;width:30px">N°</td>
+          <td style="padding:4px 7px;border:1px solid #000;border-left:none;font-weight:600;font-size:8.5pt">Action</td>
+          <td style="padding:4px 7px;border:1px solid #000;border-left:none;font-weight:600;font-size:8.5pt;width:100px">Responsable</td>
+          <td style="padding:4px 7px;border:1px solid #000;border-left:none;font-weight:600;font-size:8.5pt;width:80px">Échéance</td>
+          <td style="padding:4px 7px;border:1px solid #000;border-left:none;font-weight:600;font-size:8.5pt;width:60px;text-align:center">Statut</td>
+        </tr>`;
+      cr.actions.forEach(function(a,ai){
+        p3+=`<tr style="${a.done?'color:#999;':''}">
+          <td style="padding:4px 7px;border:1px solid #000;border-top:none;font-size:8.5pt;text-align:center;vertical-align:top">${ai+1}</td>
+          <td style="padding:4px 7px;border:1px solid #000;border-top:none;border-left:none;font-size:8.5pt;vertical-align:top">
+            ${e(a.texte)}
+            ${(a.images&&a.images.length)?`<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:4px">${a.images.map(img=>`<div style="display:inline-block"><img src="${img.data}" style="max-width:90px;max-height:70px;object-fit:contain;border:1px solid #ccc;border-radius:3px;display:block">${img.caption?`<div style="font-size:7pt;color:#666">${e(img.caption)}</div>`:''}</div>`).join('')}</div>`:''}
+          </td>
+          <td style="padding:4px 7px;border:1px solid #000;border-top:none;border-left:none;font-size:8.5pt;vertical-align:top">${e(a.responsable)}</td>
+          <td style="padding:4px 7px;border:1px solid #000;border-top:none;border-left:none;font-size:8.5pt;vertical-align:top">${e(a.echeance)}</td>
+          <td style="padding:4px 7px;border:1px solid #000;border-top:none;border-left:none;font-size:8.5pt;text-align:center;vertical-align:top">${a.done?'✓':'En cours'}</td>
+        </tr>`;
+      });
+      p3+=`</table><div style="text-align:right;font-size:7pt;color:#666;margin-top:4px">3</div></div>`;
+    }
+    return p1+p2+p3;
+  })()}
+  </body></html>`;
+
+  // Show in modal with A4 page viewer
+  const modalHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;background:var(--bg2);padding:8px 12px;border-radius:var(--r);border:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:6px">
+        <button class="btn btn-sm" onclick="pdfViewPage(-1)" title="Page precedente">◀</button>
+        <span id="pdf-page-counter" style="font-size:11px;color:var(--text3);min-width:60px;text-align:center">Page 1 / ?</span>
+        <button class="btn btn-sm" onclick="pdfViewPage(1)" title="Page suivante">▶</button>
+        <button class="btn btn-sm" onclick="pdfZoom(-0.15)" title="Zoom -">−</button>
+        <button class="btn btn-sm" onclick="pdfZoom(0.15)" title="Zoom +">+</button>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm" onclick="downloadPreviewHTML('${crId}')">
+          <svg class="ico ico-xs"><use href="#i-download"/></svg> HTML
+        </button>
+        <button class="btn btn-p btn-sm" onclick="printFromPreview('${crId}')">
+          <svg class="ico ico-xs"><use href="#i-printer"/></svg> Imprimer / PDF
+        </button>
+        <button class="btn btn-sm" onclick="closeModal()">Fermer</button>
+      </div>
+    </div>
+    <div id="pdf-viewer-container" style="background:#555;border-radius:var(--r);overflow:auto;height:72vh;display:flex;flex-direction:column;align-items:center;padding:16px;gap:16px">
+    </div>`;
+
+  // Use a wide modal
+  document.getElementById('modal-root').innerHTML=`<div class="mo-ov" onclick="if(event.target===this)closeModal()">
+    <div onclick="event.stopPropagation()" style="background:var(--panel);border-radius:var(--r2);padding:20px;width:min(900px,97vw);max-height:95vh;overflow-y:auto;box-shadow:var(--shadow2);border:1px solid var(--border)">
+      ${modalHTML}
+    </div>
+  </div>`;
+
+  // Set iframe content after render
+  window._pdfPreviewHTML=fullHTML;
+  window._pdfPreviewCrId=crId;
+  window._pdfZoom=1.0;
+
+  setTimeout(function(){
+    // Parse pages from fullHTML and render as A4 divs in the viewer
+    const container=document.getElementById('pdf-viewer-container');
+    if(!container)return;
+
+    // Extract page divs from the HTML
+    const parser=new DOMParser();
+    const doc=parser.parseFromString(fullHTML,'text/html');
+    const pages=doc.querySelectorAll('.page');
+    window._pdfPages=Array.from(pages).map(p=>p.outerHTML);
+    window._pdfCurrentPage=0;
+
+    function renderPages(){
+      container.innerHTML='';
+      const zoom=window._pdfZoom||1;
+      window._pdfPages.forEach(function(pageHTML,i){
+        const wrapper=document.createElement('div');
+        wrapper.style.cssText=`background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.4);border-radius:2px;width:${Math.round(794*zoom)}px;min-height:${Math.round(1123*zoom)}px;overflow:hidden;flex-shrink:0;transform-origin:top left;position:relative`;
+        const inner=document.createElement('div');
+        inner.style.cssText=`transform:scale(${zoom});transform-origin:top left;width:794px;min-height:1123px;font-family:Arial,sans-serif;font-size:9pt;color:#000;padding:18px;box-sizing:border-box`;
+        inner.innerHTML=pageHTML;
+        wrapper.appendChild(inner);
+        container.appendChild(wrapper);
+      });
+      const counter=document.getElementById('pdf-page-counter');
+      if(counter)counter.textContent=window._pdfPages.length+' page'+(window._pdfPages.length>1?'s':'');
+    }
+
+    window.pdfViewPage=function(dir){
+      // Scroll to next/prev page
+      const pages2=container.children;
+      window._pdfCurrentPage=Math.max(0,Math.min(pages2.length-1,(window._pdfCurrentPage||0)+dir));
+      if(pages2[window._pdfCurrentPage])pages2[window._pdfCurrentPage].scrollIntoView({behavior:'smooth',block:'start'});
+    };
+    window.pdfZoom=function(delta){
+      window._pdfZoom=Math.max(0.4,Math.min(2,(window._pdfZoom||1)+delta));
+      renderPages();
+    };
+
+    renderPages();
+  },50);
+}
+
+function printFromPreview(crId){
+  const html=window._pdfPreviewHTML;
+  if(!html){exportCR(crId);return;}
+  markClean();
+  savePrintSnapshot(crId||window._pdfPreviewCrId);
+  const w=window.open('','_blank','width=900,height=700');
+  if(w){w.document.write(html);w.document.close();setTimeout(function(){w.print();},400);}
+}
+
+function downloadPreviewHTML(crId){
+  const html=window._pdfPreviewHTML;
+  if(!html)return;
+  const cr=CRS.find(c=>c.id===crId);
+  const blob=new Blob([html],{type:'text/html;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='CR_'+(cr?cr.projet.replace(/[^a-z0-9]/gi,'_'):'export')+'_'+(cr?cr.date.replace(/\//g,'-'):'')+'.html';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Fichier HTML téléchargé ✓');
+}
+
+/* ══ IMAGES ══ */
+function openAddImage(crId, lotId, rId){
+  const cr=CRS.find(c=>c.id===crId);
+  const lot=cr?.lots.find(l=>l.id===lotId);
+  const r=lot?.remarques.find(x=>x.id===rId);
+  if(!r)return;
+  if(!r.images)r.images=[];
+  showModal(`<h3 style="margin-bottom:14px">Ajouter une image</h3>
+    <div class="fi"><label>Image (JPG, PNG, GIF…)</label>
+      <input type="file" id="img-file" accept="image/*" style="font-size:12px">
+    </div>
+    <div class="fi"><label>Legende (optionnel)</label>
+      <input id="img-caption" placeholder="Ex: Vue facade nord" style="width:100%">
+    </div>
+    <div class="mo-foot">
+      <button class="btn" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-p" onclick="confirmAddImage('${crId}','${lotId}','${rId}')">Ajouter</button>
+    </div>`);
+}
+
+function confirmAddImage(crId,lotId,rId){
+  const file=document.getElementById('img-file')?.files?.[0];
+  const caption=document.getElementById('img-caption')?.value?.trim()||'';
+  if(!file){alert('Choisissez une image');return;}
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const cr=CRS.find(c=>c.id===crId);
+    const lot=cr?.lots.find(l=>l.id===lotId);
+    const r=lot?.remarques.find(x=>x.id===rId);
+    if(!r)return;
+    if(!r.images)r.images=[];
+    r.images.push({id:'img'+(uid++),data:e.target.result,caption:caption,name:file.name});
+    closeModal();markDirty();renderCR();
+    toast('Image ajoutee');
+  };
+  reader.readAsDataURL(file);
+}
+
+function deleteImage(crId,lotId,rId,imgId){
+  const cr=CRS.find(c=>c.id===crId);
+  const lot=cr?.lots.find(l=>l.id===lotId);
+  const r=lot?.remarques.find(x=>x.id===rId);
+  if(!r||!r.images)return;
+  r.images=r.images.filter(i=>i.id!==imgId);
+  markDirty();renderCR();
+}
+
+function openAddActionImage(crId,aId){
+  const cr=CRS.find(c=>c.id===crId);
+  const a=cr?.actions.find(x=>x.id===aId);
+  if(!a)return;
+  if(!a.images)a.images=[];
+  showModal(`<h3 style="margin-bottom:14px">Ajouter une image</h3>
+    <div class="fi"><label>Image (JPG, PNG, GIF…)</label>
+      <input type="file" id="aimg-file" accept="image/*" style="font-size:12px">
+    </div>
+    <div class="fi"><label>Legende (optionnel)</label>
+      <input id="aimg-caption" placeholder="Legende" style="width:100%">
+    </div>
+    <div class="mo-foot">
+      <button class="btn" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-p" onclick="confirmAddActionImage('${crId}','${aId}')">Ajouter</button>
+    </div>`);
+}
+
+function confirmAddActionImage(crId,aId){
+  const file=document.getElementById('aimg-file')?.files?.[0];
+  const caption=document.getElementById('aimg-caption')?.value?.trim()||'';
+  if(!file){alert('Choisissez une image');return;}
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const cr=CRS.find(c=>c.id===crId);
+    const a=cr?.actions.find(x=>x.id===aId);
+    if(!a)return;
+    if(!a.images)a.images=[];
+    a.images.push({id:'img'+(uid++),data:e.target.result,caption:caption,name:file.name});
+    closeModal();markDirty();renderCR();
+    toast('Image ajoutee');
+  };
+  reader.readAsDataURL(file);
+}
+
+function deleteActionImage(crId,aId,imgId){
+  const cr=CRS.find(c=>c.id===crId);
+  const a=cr?.actions.find(x=>x.id===aId);
+  if(!a||!a.images)return;
+  a.images=a.images.filter(i=>i.id!==imgId);
+  markDirty();renderCR();
+}
+
+function renderImageGrid(images,deleteFn){
+  if(!images||!images.length)return '';
+  return `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">`+
+    images.map(img=>`
+      <div style="position:relative;border-radius:6px;overflow:hidden;border:1px solid var(--border)">
+        <img src="${img.data}" style="width:90px;height:70px;object-fit:cover;display:block" title="${e(img.caption||img.name)}">
+        ${img.caption?`<div style="padding:2px 5px;font-size:9px;color:var(--text3);background:var(--bg2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px">${e(img.caption)}</div>`:''}
+        <button onclick="${deleteFn}('${img.id}')" style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,.5);border:none;color:#fff;border-radius:50%;width:18px;height:18px;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">x</button>
+      </div>`).join('')+
+  `</div>`;
+}
+
+function renderImageGridPDF(images){
+  if(!images||!images.length)return '';
+  return `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;page-break-inside:avoid">`+
+    images.map(img=>`<div style="display:inline-block">
+      <img src="${img.data}" style="max-width:120px;max-height:100px;object-fit:contain;border:1px solid #ccc;border-radius:4px;display:block">
+      ${img.caption?`<div style="font-size:7pt;color:#666;margin-top:2px;max-width:120px">${e(img.caption)}</div>`:''}
+    </div>`).join('')+
+  `</div>`;
+}
+
 /* ══ INIT ══ */
 
 // Initialize color + auto-link lots to intervenants
@@ -2943,6 +3635,7 @@ CRS.forEach(function(cr){
 });
 renderList();
 updateSidebarLogo();
+initAuth();
 </script>
 </body>
 </html>
