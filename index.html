@@ -162,12 +162,12 @@ body{background:var(--bg);height:100vh;overflow:hidden;font-family:inherit}
 <div class="app">
   <!-- SIDEBAR -->
   <aside class="sidebar">
-    <div class="sb-head">
-      <div class="logo">
-        <div class="logo-mark">PS</div>
+    <div class="sb-head" style="cursor:pointer" onclick="openPdfSettings()" title="Paramètres du cabinet / PDF">
+      <div class="logo" id="sb-logo">
+        <div class="logo-mark" id="sb-logo-mark">PS</div>
         <div>
-          <div style="font-weight:600;font-size:14px;letter-spacing:-.2px">PlanSync</div>
-          <div style="font-size:10px;color:var(--text3)">Compte Rendus</div>
+          <div style="font-weight:600;font-size:14px;letter-spacing:-.2px" id="sb-firm-name">PlanSync</div>
+          <div style="font-size:10px;color:var(--text3)" id="sb-firm-sub">Compte Rendus</div>
         </div>
       </div>
     </div>
@@ -189,6 +189,9 @@ body{background:var(--bg);height:100vh;overflow:hidden;font-family:inherit}
         </button>
         <button class="btn" style="padding:7px 10px;flex-shrink:0" onclick="openTemplates()" title="Modèles">
           <svg class="ico ico-sm"><use href="#i-file"/></svg>
+        </button>
+        <button class="btn" style="padding:7px 10px;flex-shrink:0" onclick="openPdfSettings()" title="Paramètres PDF / Cabinet">
+          <svg class="ico ico-sm"><use href="#i-settings"/></svg>
         </button>
       </div>
     </div>
@@ -419,6 +422,174 @@ let CRS = [
       {id:'a9',texte:'Sèche-serviette Acova – modifier avec modèle chrome pour chambres étage',responsable:'ADELEC',intId:'i7',echeance:'21/05/2026',done:false},
       {id:'a10',texte:'RDV avec menuisier pour volets (à partir du 8 juin)',responsable:'GB Stores',intId:'i12',echeance:'08/06/2026',done:false},
     ]
+  },
+  {
+    id:'cr2',
+    projet:'Jundi',
+    adresse:'97 route de la Peyrière, 06250 Mougins',
+    date:'12/05/2026',
+    dateProchaine:'19/05/2026',
+    numero:1,
+    redacteur:'Mme Bell — Bell Architecture',
+    statut:'published',
+    intervenants:[
+      {id:'j1',lot:'Maîtrise d\'Ouvrage',entreprise:'',contacts:'M. et Mme Jundi',present:false},
+      {id:'j2',lot:'Maîtrise d\'Œuvre',entreprise:'Bell Architecture',contacts:'Mme Bell — 06 13 45 17 99',present:true},
+      {id:'j3',lot:'Ingénieur',entreprise:'ISTRUCTURE',contacts:'M. Rosso Grégory — 06 70 07 69 49 — contact@istructure.fr',present:false},
+      {id:'j4',lot:'Géologue',entreprise:'B.E.G.T',contacts:'04 94 40 08 29 — contact.begt@gmail.com',present:false},
+      {id:'j5',lot:'Lot Maçonnerie',entreprise:'NBR',contacts:'M. Novellini Alexandre — 06 87 38 37 96\nM. Novellini Christophe — 06 72 46 10 06 — n-b-r@wanadoo.fr',present:false},
+      {id:'j6',lot:'Lot Isolation Intérieur / Peinture',entreprise:'Nuance Décoration Peinture',contacts:'L\'Huillier Cyrille — 06 27 26 20 73 — contact@nuancedecorationpeinture.fr',present:false},
+      {id:'j7',lot:'Lot Électricité',entreprise:'ADELEC',contacts:'Delabroye Laurent — 06 81 70 04 97 — contact@adelec.me',present:false},
+      {id:'j8',lot:'Lot Climatisation / Plomberie',entreprise:'TORAL',contacts:'Toral Olivier — 06 16 44 76 87 — toral.olivier@gmail.com',present:false},
+      {id:'j9',lot:'Lot Menuiserie Extérieure',entreprise:'QUINTANE',contacts:'Duhamel Antoine — 04 93 60 16 28 — menuiserie@quintane.fr',present:false},
+      {id:'j10',lot:'Lot Velux',entreprise:'SGARD',contacts:'Sgard Yannick — 06 26 32 86 39 — Sgard.yannick@orange.fr',present:false},
+      {id:'j11',lot:'Lot Cuisine',entreprise:'Siematic Nice',contacts:'Mme Alphonsine — 04 93 56 66 00 — contact@albalat-agencement.fr',present:false},
+      {id:'j12',lot:'Lot Peinture',entreprise:'Nuance Décoration Peinture',contacts:'L\'Huillier Cyrille — 06 27 26 20 73 — contact@nuancedecorationpeinture.fr',present:true},
+      {id:'j13',lot:'Lot Garde Corps / Ferronerie',entreprise:'',contacts:'',present:false},
+      {id:'j14',lot:'Lot Pergola',entreprise:'',contacts:'',present:false},
+      {id:'j15',lot:'Lot Alarme',entreprise:'',contacts:'M. Satge — 06 60 76 00 92 — aataSatge@gmail.com',present:false},
+      {id:'j16',lot:'Lot Cours en Pavés',entreprise:'Europavage',contacts:'',present:false},
+      {id:'j17',lot:'Lot Cheminée',entreprise:'ATRYHOME',contacts:'',present:false},
+      {id:'j18',lot:'Lot Porte Cuisine',entreprise:'RIMADESIO',contacts:'nice@rimadesio.com',present:false},
+      {id:'j19',lot:'Lot Piscine',entreprise:'AQUAREVE',contacts:'M. Bellito Jonathan — 06 58 79 29 39 — direction@aquarevepiscines.fr',present:false},
+      {id:'j20',lot:'Lot Revêtement Sol',entreprise:'',contacts:'',present:false},
+      {id:'j21',lot:'Client',entreprise:'',contacts:'M. et Mme Jundi',present:false},
+    ],
+    lots:[
+      {id:'jl1',titre:'Maîtrise d\'Œuvre',ouvert:false,intId:'j2',remarques:[
+        {id:'jr1',texte:'Prendre un RDV avec Aquareve.',done:false,flag:true,createdAt:'12/05/2026'},
+        {id:'jr2',texte:'Plan pour la plage de la piscine – revêtement – EP – local technique. Revêtements choisis: carrelage Perla et margelles 120x30.',done:false,flag:false,createdAt:'12/05/2026'},
+      ]},
+      {id:'jl2',titre:'Ingénieur',ouvert:false,intId:'j3',remarques:[
+        {id:'jr3',texte:'SDB Studio: reprise en sous-œuvre pour 3 côtés.',done:false,flag:true,createdAt:'12/05/2026'},
+        {id:'jr4',texte:'Studio extérieur: à faire un trottoir – niveau -0,15cm de l\'intérieur.',done:false,flag:false,createdAt:'12/05/2026'},
+        {id:'jr5',texte:'Fitness: on ne peut pas garder la banquette → reprise en sous-œuvre.',done:false,flag:true,createdAt:'12/05/2026'},
+        {id:'jr6',texte:'À prévoir les contre-cloisons pour les murs contre terre et les ventiler.',done:false,flag:true,createdAt:'12/05/2026'},
+        {id:'jr7',texte:'Agrandissement plage: démolir le local technique pour un niveau de plancher uniforme et agrandir le local technique.',done:false,flag:true,createdAt:'12/05/2026'},
+      ]},
+      {id:'jl3',titre:'Géologue',ouvert:false,intId:'j4',remarques:[
+        {id:'jr8',texte:'Rapport reçu le 24.11.',done:true,archived:false,flag:false,createdAt:'12/05/2026'},
+      ]},
+      {id:'jl4',titre:'Lot Maçonnerie',ouvert:false,intId:'j5',remarques:[
+        {id:'jr9',texte:'La pose du velux à vérifier (condensation).',done:false,flag:true,createdAt:'12/05/2026'},
+        {id:'jr10',texte:'Quand les VRD seront-ils réalisés ? Pour le plombier.',done:false,flag:true,createdAt:'12/05/2026'},
+        {id:'jr11',texte:'RDCH – Préparation pour la porte coulissante de la cuisine (email envoyé le 6 mai).',done:false,flag:false,createdAt:'12/05/2026'},
+        {id:'jr12',texte:'Le trou existant dans la dalle du sol de la cuisine arrière est à reboucher.',done:false,flag:true,createdAt:'12/05/2026'},
+        {id:'jr13',texte:'Mise en place d\'un isolant thermique + acoustique.',done:false,flag:false,createdAt:'12/05/2026'},
+        {id:'jr14',texte:'Balcon: à vérifier le nombre des évacuations EP.',done:false,flag:true,createdAt:'12/05/2026'},
+        {id:'jr15',texte:'A garder le store et à déposer l\'auvent métallique.',done:false,flag:false,createdAt:'12/05/2026'},
+        {id:'jr16',texte:'Conduit cheminée: à contrôler l\'étanchéité.',done:false,flag:true,createdAt:'12/05/2026'},
+        {id:'jr17',texte:'Toiture plate: à vérifier le tuyau d\'évacuation.',done:false,flag:true,createdAt:'12/05/2026'},
+        {id:'jr18',texte:'2 appareils clim à déposer (façade entrée).',done:false,flag:false,createdAt:'12/05/2026'},
+        {id:'jr19',texte:'Trous façades à boucher.',done:false,flag:true,createdAt:'12/05/2026'},
+        {id:'jr20',texte:'RDJ – SDB studio: le tuyau EU doit être modifié → à refaire l\'étanchéité.',done:false,flag:true,createdAt:'12/05/2026'},
+        {id:'jr21',texte:'Terrasse chambre 1 et 2: à refaire la forme de pente du tuyau EU.',done:false,flag:true,createdAt:'12/05/2026'},
+        {id:'jr22',texte:'Dalle pour la PAC à créer.',done:false,flag:true,createdAt:'12/05/2026'},
+        {id:'jr23',texte:'RDJ: porte vers le studio – à enlever/modifier la cunette à cet endroit.',done:false,flag:false,createdAt:'12/05/2026'},
+        {id:'jr24',texte:'Les jardinières de l\'entrée sont conservées. Les pots de fleurs déplacés au fond du jardin pendant le chantier.',done:false,flag:false,createdAt:'12/05/2026'},
+        {id:'jr25',texte:'Le chemin d\'accès à la piscine sera protégé. La grille devra être déposée, remise en place, poncée et repeinte.',done:false,flag:false,createdAt:'12/05/2026'},
+        {id:'jr26',texte:'Portail d\'entrée (3m): à déconnecter avant dépose. Deviendra manuel et stocké dans la cour.',done:false,flag:true,createdAt:'12/05/2026'},
+        {id:'jr27',texte:'La terrasse de la piscine sera refaite.',done:false,flag:false,createdAt:'12/05/2026'},
+      ]},
+      {id:'jl5',titre:'Europavage',ouvert:false,intId:'j16',remarques:[
+        {id:'jr28',texte:'Devis reçu.',done:true,archived:false,flag:false,createdAt:'12/05/2026'},
+        {id:'jr29',texte:'3 semaines de travaux + 1 semaine séchage.',done:false,flag:false,createdAt:'12/05/2026'},
+      ]},
+      {id:'jl6',titre:'Lot Électricité',ouvert:false,intId:'j7',remarques:[
+        {id:'jr30',texte:'Ne pas percer le cuvelage.',done:false,flag:true,createdAt:'12/05/2026'},
+        {id:'jr31',texte:'Les plans actuels du cuisiniste seront encore transmis.',done:false,flag:true,createdAt:'12/05/2026'},
+        {id:'jr32',texte:'À enlever les 3 paraboles et l\'antenne.',done:false,flag:false,createdAt:'12/05/2026'},
+        {id:'jr33',texte:'Devis en cours: sèches-serviettes, amplificateur Wi-Fi (reçu 30 mars), appareillage (reçu 15 mai).',done:false,flag:false,createdAt:'12/05/2026'},
+        {id:'jr34',texte:'Doorbird: installé dans une nouvelle niche à l\'emplacement précédent. Clavier côté intérieur sur le poteau droit du portail.',done:false,flag:false,createdAt:'12/05/2026'},
+        {id:'jr35',texte:'Suppléments: 3 miroirs cosmétiques (SDB maître, SDB 1 et 2). Alimentation électrique stores fenêtres chambre maître, dressing et SDB.',done:false,flag:true,createdAt:'12/05/2026'},
+        {id:'jr36',texte:'Alimentation panneaux photovoltaïques à prévoir par la cuisine.',done:false,flag:true,createdAt:'12/05/2026'},
+        {id:'jr37',texte:'À prévoir l\'alimentation du sauna (emplacement dans le jardin).',done:false,flag:true,createdAt:'12/05/2026'},
+        {id:'jr38',texte:'Tableau électrique et baie de brassage dans le RDJ (fitness). Cat 6a câble internet.',done:false,flag:false,createdAt:'12/05/2026'},
+      ]},
+      {id:'jl7',titre:'Lot Climatisation / Plomberie',ouvert:false,intId:'j8',remarques:[
+        {id:'jr39',texte:'SDB studio: le tuyau EU doit être modifié. NBR va refaire l\'étanchéité.',done:false,flag:true,createdAt:'12/05/2026'},
+        {id:'jr40',texte:'Les informations pour le raccordement au gaz ont été envoyées.',done:true,archived:false,flag:false,createdAt:'12/05/2026'},
+        {id:'jr41',texte:'VMC studio et SDB: coffrage à réaliser.',done:false,flag:true,createdAt:'12/05/2026'},
+        {id:'jr42',texte:'À prévoir une VMC dans la partie RDJ (double cloison) → devis supplémentaire.',done:false,flag:true,createdAt:'12/05/2026'},
+        {id:'jr43',texte:'Tuyaux d\'eau – diamètre 32. Passage eaux pluviales jardin bas à définir clairement.',done:false,flag:false,createdAt:'12/05/2026'},
+      ]},
+      {id:'jl8',titre:'Lot Menuiserie Extérieure',ouvert:false,intId:'j9',remarques:[
+        {id:'jr44',texte:'Liste de réservations reçue.',done:true,archived:false,flag:false,createdAt:'12/05/2026'},
+        {id:'jr45',texte:'La vitre de la porte-fenêtre (PF 01.13.01) chambre maître est endommagée.',done:false,flag:true,createdAt:'12/05/2026'},
+        {id:'jr46',texte:'Moustiquaires et volets: communiquer les informations manquantes pour la commande définitive.',done:false,flag:true,createdAt:'12/05/2026'},
+        {id:'jr47',texte:'Préparation pour pose volets? Date pose fenêtres fixes à communiquer.',done:false,flag:true,createdAt:'12/05/2026'},
+        {id:'jr48',texte:'Devis en attente pour les modifications des verres → chambres RDJ.',done:false,flag:true,createdAt:'12/05/2026'},
+      ]},
+      {id:'jl9',titre:'Lot Menuiserie Intérieure',ouvert:false,intId:'j5',remarques:[
+        {id:'jr49',texte:'Dimension pour le plaquiste concernant les portes: porte 83/204 → 90/209.',done:false,flag:false,createdAt:'12/05/2026'},
+        {id:'jr50',texte:'Dressing chambre maître – reçu.',done:true,archived:false,flag:false,createdAt:'12/05/2026'},
+      ]},
+      {id:'jl10',titre:'Lot Velux',ouvert:false,intId:'j10',remarques:[
+        {id:'jr51',texte:'Un verre a été abîmé – remplacé fin semaine 10 (à vérifier condensation).',done:false,flag:true,createdAt:'12/05/2026'},
+        {id:'jr52',texte:'À fournir la notice / mode d\'emploi.',done:false,flag:false,createdAt:'12/05/2026'},
+      ]},
+      {id:'jl11',titre:'Lot Isolation / Doublage',ouvert:false,intId:'j6',remarques:[
+        {id:'jr53',texte:'Studio RDJ: utiliser les plaques orange. Mur à droite: ajouter un doublage pour l\'électricien (prises profondes 40mm).',done:false,flag:true,createdAt:'12/05/2026'},
+        {id:'jr54',texte:'Là où se trouve le cuvelage: ne pas percer, montants à coller.',done:false,flag:true,createdAt:'12/05/2026'},
+        {id:'jr55',texte:'Double cloison pour mur contre terre: extrudé entre montants + mousse + ventilation haute/basse. Renforts pour meubles SDB et cave à vin.',done:false,flag:true,createdAt:'12/05/2026'},
+      ]},
+      {id:'jl12',titre:'Lot Peinture',ouvert:false,intId:'j12',remarques:[
+        {id:'jr56',texte:'À ajouter: grilles fenêtres, garde-corps balcon, porte d\'entrée, fenêtres fixes (couleur RAL 7016).',done:false,flag:true,createdAt:'12/05/2026'},
+        {id:'jr57',texte:'Plâtre plafond: studio, chambre 1 et 2.',done:false,flag:false,createdAt:'12/05/2026'},
+      ]},
+      {id:'jl13',titre:'Lot Cuisine / Arrière-cuisine',ouvert:false,intId:'j11',remarques:[
+        {id:'jr58',texte:'Plans techniques reçus le 5 mars. Mesures à prendre sur place, plans à adapter.',done:false,flag:true,createdAt:'12/05/2026'},
+        {id:'jr59',texte:'Le mur au niveau de la porte coulissante: réaliser en BA25 avec renforts.',done:false,flag:false,createdAt:'12/05/2026'},
+      ]},
+      {id:'jl14',titre:'Lot Cheminée',ouvert:false,intId:'j17',remarques:[
+        {id:'jr60',texte:'Cheminée déposée le 10 février.',done:true,archived:false,flag:false,createdAt:'12/05/2026'},
+      ]},
+      {id:'jl15',titre:'Lot Porte Cuisine (Rimadesio)',ouvert:false,intId:'j18',remarques:[
+        {id:'jr61',texte:'Détail porte cuisine – reçu.',done:true,archived:false,flag:false,createdAt:'12/05/2026'},
+      ]},
+      {id:'jl16',titre:'Lot Piscine',ouvert:false,intId:'j19',remarques:[
+        {id:'jr62',texte:'Étanchéité et pose mosaïque prévues pour le 22 juin. Prévenir au moins 3 semaines à l\'avance.',done:false,flag:true,createdAt:'12/05/2026'},
+      ]},
+      {id:'jl17',titre:'Lot Revêtement Sol',ouvert:false,intId:'j20',remarques:[
+        {id:'jr63',texte:'Devis carrelage et margelles – acceptés.',done:true,archived:false,flag:false,createdAt:'12/05/2026'},
+        {id:'jr64',texte:'Devis parquet – accepté. Parquet 15mm + colle 2mm = 17mm. Si ragréage +20mm.',done:true,archived:false,flag:false,createdAt:'12/05/2026'},
+        {id:'jr65',texte:'PARQUET: chambre maître, atelier, bureau.',done:false,flag:false,createdAt:'12/05/2026'},
+      ]},
+      {id:'jl18',titre:'Lot Ferronerie / Garde-Corps',ouvert:false,intId:'j13',remarques:[
+        {id:'jr66',texte:'Portail – Grilles terrasse à réutiliser.',done:false,flag:false,createdAt:'12/05/2026'},
+        {id:'jr67',texte:'Garde-corps du balcon à rehausser? Peinture Zolpan 3 couches. Restauration sablage éléments déformés. Prix au ml, longueur environ 33m.',done:false,flag:true,createdAt:'12/05/2026'},
+      ]},
+      {id:'jl19',titre:'Lot Alarme',ouvert:false,intId:'j15',remarques:[
+        {id:'jr68',texte:'Alarme radio installée sur les murs. Anciens contacts inutilisables. Couleur des contacts à harmoniser avec les cadres de fenêtre.',done:false,flag:true,createdAt:'12/05/2026'},
+      ]},
+      {id:'jl20',titre:'Client',ouvert:false,intId:'j21',remarques:[
+        {id:'jr69',texte:'Mur entre salon TV et escalier → fenêtre de 50cm et télévision de 190cm.',done:false,flag:false,createdAt:'12/05/2026'},
+        {id:'jr70',texte:'Séparation salon/cuisine (Rimadesio): plans techniques reçus.',done:true,archived:false,flag:false,createdAt:'12/05/2026'},
+        {id:'jr71',texte:'Chambre maître: pas de portes invisibles.',done:false,flag:false,createdAt:'12/05/2026'},
+        {id:'jr72',texte:'Buanderie: 1 machine à laver avec sèche-linge intégré + 1 machine et 1 sèche-linge (voir plan cuisiniste).',done:false,flag:false,createdAt:'12/05/2026'},
+        {id:'jr73',texte:'Cuisine et BBQ piscine: prévoir le gaz. Puissance donnée au plombier.',done:false,flag:false,createdAt:'12/05/2026'},
+        {id:'jr74',texte:'Fitness: ouverture au plafond ne sera pas conservée.',done:false,flag:false,createdAt:'12/05/2026'},
+        {id:'jr75',texte:'Isolation acoustique aux bruits d\'impact entre RDC et chambres RDJ (PU ou PST), 13€/m².',done:false,flag:true,createdAt:'12/05/2026'},
+        {id:'jr76',texte:'Margelles piscine et carreaux antidérapants – devis signé.',done:true,archived:false,flag:false,createdAt:'12/05/2026'},
+        {id:'jr77',texte:'Pergola – devis signé.',done:true,archived:false,flag:false,createdAt:'12/05/2026'},
+        {id:'jr78',texte:'Aucun doublage contre terre pour le mur de l\'escalier – client confirmera par écrit.',done:false,flag:true,createdAt:'12/05/2026'},
+        {id:'jr79',texte:'Stores électriques pour chambre maître.',done:false,flag:false,createdAt:'12/05/2026'},
+        {id:'jr80',texte:'Faux plafond rampant dans la cuisine pour dissimuler gaine climatisation.',done:false,flag:false,createdAt:'12/05/2026'},
+        {id:'jr81',texte:'Éléments à réparer/protéger: feu arrière, porte local technique, embout tuyau arrosage, échelle, dommages pilier/portail/lumière, bacs plantes cassés, condenseur clim abîmé, programmateur arrosage Rainbird disparu, projecteur retiré, barre inox piscine endommagée, garde-corps balcon tordu, pompe à chaleur avec pierres, 2 couvercles skimmer disparus.',done:false,flag:true,createdAt:'12/05/2026'},
+      ]},
+    ],
+    actions:[
+      {id:'ja1',texte:'Prendre RDV avec Aquareve pour la plage piscine',responsable:'Bell Architecture',intId:'j2',echeance:'19/05/2026',done:false},
+      {id:'ja2',texte:'VRD: confirmer date de réalisation pour le plombier',responsable:'NBR',intId:'j5',echeance:'19/05/2026',done:false},
+      {id:'ja3',texte:'Communiquer informations manquantes pour commande définitive volets/moustiquaires',responsable:'QUINTANE',intId:'j9',echeance:'19/05/2026',done:false},
+      {id:'ja4',texte:'Fournir notice/mode d\'emploi Velux',responsable:'SGARD',intId:'j10',echeance:'19/05/2026',done:false},
+      {id:'ja5',texte:'Devis supplémentaire VMC partie RDJ',responsable:'TORAL',intId:'j8',echeance:'19/05/2026',done:false},
+      {id:'ja6',texte:'Mesures à prendre sur place pour le cuisiniste – adapter plans',responsable:'Siematic Nice',intId:'j11',echeance:'19/05/2026',done:false},
+      {id:'ja7',texte:'Transmettre plans actuels cuisiniste à l\'électricien',responsable:'ADELEC',intId:'j7',echeance:'19/05/2026',done:false},
+      {id:'ja8',texte:'Devis modifications verres chambres RDJ',responsable:'QUINTANE',intId:'j9',echeance:'19/05/2026',done:false},
+      {id:'ja9',texte:'Prévenir Aquareve au moins 3 semaines avant le 22 juin (piscine)',responsable:'Bell Architecture',intId:'j2',echeance:'01/06/2026',done:false},
+      {id:'ja10',texte:'Client à confirmer par écrit: aucun doublage mur escalier contre terre',responsable:'M. et Mme Jundi',intId:'j21',echeance:'19/05/2026',done:false},
+    ]
   }
 ];
 
@@ -432,6 +603,30 @@ try {
 
 function saveTemplatesToStorage() {
   try { localStorage.setItem('plansync_cr_templates', JSON.stringify(TEMPLATES)); } catch(e) {}
+}
+
+/* ══ PDF SETTINGS ══ */
+let PDF_SETTINGS = {
+  firmName: 'BELL ARCHITECTURE',
+  firmSub: 'Architecte',
+  logoLeft: null,   // base64 image data URL
+  logoRight: null,  // base64 image data URL
+  logoLeftWidth: 60,
+  logoRightWidth: 60,
+  showLogoLeft: true,
+  showLogoRight: true,
+  headerTitle: 'COMPTE RENDU',
+  accentColor: '#C0B7B6',
+};
+try {
+  const saved = localStorage.getItem('plansync_pdf_settings');
+  if (saved) PDF_SETTINGS = Object.assign(PDF_SETTINGS, JSON.parse(saved));
+} catch(e) {}
+function savePdfSettings() {
+  try {
+    const toSave = Object.assign({}, PDF_SETTINGS);
+    localStorage.setItem('plansync_pdf_settings', JSON.stringify(toSave));
+  } catch(e) {}
 }
 
 let activeCR=null;
@@ -1327,18 +1522,30 @@ function exportCR(crId){
 
   // Page header repeated on every page
   function pageHeader(){
+    const s = PDF_SETTINGS;
+    const logoCell = (imgData, width, show) => {
+      if (!show) return `<td style="width:${width}px;border:1px solid #000;border-left:none;padding:4px"></td>`;
+      if (imgData) return `<td style="width:${width}px;border:1px solid #000;border-left:none;padding:4px;text-align:center;vertical-align:middle">
+        <img src="${imgData}" style="max-width:${width-8}px;max-height:40px;object-fit:contain;display:block;margin:0 auto">
+      </td>`;
+      return `<td style="width:${width}px;border:1px solid #000;border-left:none;padding:6px;text-align:center;vertical-align:middle">
+        <div style="font-weight:700;font-size:13pt;color:#000">${e(s.firmName||'PS')}</div>
+        ${s.firmSub?`<div style="font-size:6pt;color:#555;text-transform:uppercase;letter-spacing:.05em">${e(s.firmSub)}</div>`:''}
+      </td>`;
+    };
     return `<table style="width:100%;border-collapse:collapse;margin-bottom:0">
       <tr>
-        <td style="width:60px;padding:8px;border:1px solid #000;vertical-align:middle;text-align:center">
-          <div style="font-weight:700;font-size:14pt;letter-spacing:-1px">PS</div>
-          <div style="font-size:6pt;color:#555">PLANSYNC</div>
+        ${s.showLogoLeft ? (s.logoLeft
+          ? `<td style="width:${s.logoLeftWidth}px;border:1px solid #000;padding:4px;text-align:center;vertical-align:middle"><img src="${s.logoLeft}" style="max-width:${s.logoLeftWidth-8}px;max-height:44px;object-fit:contain;display:block;margin:0 auto"></td>`
+          : `<td style="width:${s.logoLeftWidth}px;border:1px solid #000;padding:6px;text-align:center;vertical-align:middle"><div style="font-weight:700;font-size:13pt">${e(s.firmName||'PS')}</div>${s.firmSub?`<div style="font-size:6pt;color:#555">${e(s.firmSub)}</div>`:''}</td>`)
+          : `<td style="width:${s.logoLeftWidth||60}px;border:1px solid #000;padding:6px"></td>`}
+        <td style="padding:8px 16px;border:1px solid #000;border-left:none;text-align:center">
+          <div style="font-weight:700;font-size:13pt;letter-spacing:2px">${e(s.headerTitle||'COMPTE RENDU')}</div>
         </td>
-        <td style="padding:8px 16px;border:1px solid #000;border-left:none">
-          <div style="font-weight:700;font-size:13pt;letter-spacing:1px">COMPTE RENDU</div>
-        </td>
-        <td style="padding:8px;border:1px solid #000;border-left:none;text-align:right;width:60px">
-          <div style="font-weight:700;font-size:14pt;letter-spacing:-1px">PS</div>
-        </td>
+        ${s.showLogoRight ? (s.logoRight
+          ? `<td style="width:${s.logoRightWidth}px;border:1px solid #000;border-left:none;padding:4px;text-align:center;vertical-align:middle"><img src="${s.logoRight}" style="max-width:${s.logoRightWidth-8}px;max-height:44px;object-fit:contain;display:block;margin:0 auto"></td>`
+          : `<td style="width:${s.logoRightWidth||60}px;border:1px solid #000;border-left:none;padding:6px;text-align:center;vertical-align:middle"><div style="font-weight:700;font-size:13pt">${e(s.firmName||'PS')}</div></td>`)
+          : `<td style="width:${s.logoRightWidth||60}px;border:1px solid #000;border-left:none;padding:6px"></td>`}
       </tr>
     </table>
     <table style="width:100%;border-collapse:collapse;margin-bottom:12px">
@@ -2558,6 +2765,139 @@ function confirmCopyRemarque(crId,lotId,rId){
   toast((isMove?'Remarque déplacée':'Remarque copiée')+' vers "'+destLot.titre+'" ✓');
 }
 
+/* ══ PDF SETTINGS MODAL ══ */
+function updateSidebarLogo(){
+  const s=PDF_SETTINGS;
+  const mark=document.getElementById('sb-logo-mark');
+  const nameEl=document.getElementById('sb-firm-name');
+  const subEl=document.getElementById('sb-firm-sub');
+  if(!mark)return;
+  if(s.logoLeft){
+    // Show custom logo image in sidebar
+    mark.style.cssText='width:34px;height:34px;border-radius:6px;overflow:hidden;padding:0;background:none;display:flex;align-items:center;justify-content:center';
+    mark.innerHTML='<img src="'+s.logoLeft+'" style="width:100%;height:100%;object-fit:contain">';
+  } else {
+    // Show firm initials
+    const initials=(s.firmName||'PS').split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase()||'PS';
+    mark.style.cssText='width:26px;height:26px;background:var(--blue);border-radius:7px;display:flex;align-items:center;justify-content:center;color:#3d3533;font-size:11px;font-weight:700';
+    mark.innerHTML=initials;
+  }
+  if(nameEl)nameEl.textContent=s.firmName||'Cabinet';
+  if(subEl)subEl.textContent=s.firmSub||'Compte Rendus';
+}
+
+function openPdfSettings(){
+  const s=PDF_SETTINGS;
+  var html=''
+    +'<h3 style="display:flex;align-items:center;gap:8px"><svg class="ico" style="color:var(--blue)"><use href="#i-settings"/></svg> Paramètres cabinet & PDF</h3>'
+
+    // Firm info
+    +'<div style="border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:12px">'
+      +'<div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Identité du cabinet</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+        +'<div class="fi"><label>Nom du cabinet</label><input id="ps-firm" value="'+e(s.firmName)+'" placeholder="Bell Architecture"></div>'
+        +'<div class="fi"><label>Sous-titre</label><input id="ps-sub" value="'+e(s.firmSub)+'" placeholder="Architecte"></div>'
+      +'</div>'
+      +'<div class="fi"><label>Titre en-tête PDF</label><input id="ps-title" value="'+e(s.headerTitle)+'" placeholder="COMPTE RENDU"></div>'
+    +'</div>'
+
+    // Logo left
+    +'<div style="border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:12px">'
+      +'<div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Logo gauche (PDF + app)</div>'
+      +'<div style="display:flex;gap:12px;align-items:flex-start">'
+        +'<div style="width:80px;height:60px;border:1px dashed var(--border2);border-radius:6px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--bg2);flex-shrink:0" id="logo-left-preview">'
+          +(s.logoLeft?'<img src="'+s.logoLeft+'" style="max-width:76px;max-height:56px;object-fit:contain">':'<svg class="ico" style="color:var(--text3)"><use href="#i-upload"/></svg>')
+        +'</div>'
+        +'<div style="flex:1">'
+          +'<label class="btn btn-sm" style="cursor:pointer;display:inline-flex;align-items:center;gap:5px"><svg class="ico ico-xs"><use href="#i-upload"/></svg> Choisir une image<input type="file" accept="image/*" style="display:none" onchange="loadLogoImg(event,\'left\')"></label>'
+          +(s.logoLeft?'<button class="btn btn-sm" style="margin-left:6px;color:var(--red)" onclick="clearLogo(\'left\')">Supprimer</button>':'')
+          +'<div style="margin-top:8px;display:flex;align-items:center;gap:8px">'
+            +'<label style="font-size:11px;color:var(--text3)">Largeur</label>'
+            +'<input type="range" id="ps-lw" min="40" max="120" value="'+( s.logoLeftWidth||60)+'" style="flex:1" oninput="document.getElementById(\'ps-lw-val\').textContent=this.value+\'px\'">'
+            +'<span id="ps-lw-val" style="font-size:11px;color:var(--text3);width:30px">'+(s.logoLeftWidth||60)+'px</span>'
+          +'</div>'
+          +'<label style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="ps-ll" '+(s.showLogoLeft?'checked':'')+' style="width:14px;height:14px"> Afficher dans le PDF</label>'
+        +'</div>'
+      +'</div>'
+    +'</div>'
+
+    // Logo right
+    +'<div style="border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:14px">'
+      +'<div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Logo droit (PDF uniquement)</div>'
+      +'<div style="display:flex;gap:12px;align-items:flex-start">'
+        +'<div style="width:80px;height:60px;border:1px dashed var(--border2);border-radius:6px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--bg2);flex-shrink:0" id="logo-right-preview">'
+          +(s.logoRight?'<img src="'+s.logoRight+'" style="max-width:76px;max-height:56px;object-fit:contain">':'<svg class="ico" style="color:var(--text3)"><use href="#i-upload"/></svg>')
+        +'</div>'
+        +'<div style="flex:1">'
+          +'<label class="btn btn-sm" style="cursor:pointer;display:inline-flex;align-items:center;gap:5px"><svg class="ico ico-xs"><use href="#i-upload"/></svg> Choisir une image<input type="file" accept="image/*" style="display:none" onchange="loadLogoImg(event,\'right\')"></label>'
+          +(s.logoRight?'<button class="btn btn-sm" style="margin-left:6px;color:var(--red)" onclick="clearLogo(\'right\')">Supprimer</button>':'')
+          +'<div style="margin-top:8px;display:flex;align-items:center;gap:8px">'
+            +'<label style="font-size:11px;color:var(--text3)">Largeur</label>'
+            +'<input type="range" id="ps-rw" min="40" max="120" value="'+(s.logoRightWidth||60)+'" style="flex:1" oninput="document.getElementById(\'ps-rw-val\').textContent=this.value+\'px\'">'
+            +'<span id="ps-rw-val" style="font-size:11px;color:var(--text3);width:30px">'+(s.logoRightWidth||60)+'px</span>'
+          +'</div>'
+          +'<label style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="ps-rl" '+(s.showLogoRight?'checked':'')+' style="width:14px;height:14px"> Afficher dans le PDF</label>'
+        +'</div>'
+      +'</div>'
+    +'</div>'
+
+    +'<div class="mo-foot">'
+      +'<button class="btn" onclick="closeModal()">Annuler</button>'
+      +'<button class="btn btn-p" onclick="savePdfSettingsForm()"><svg class="ico ico-sm"><use href="#i-save"/></svg> Enregistrer</button>'
+    +'</div>';
+
+  showModal(html);
+}
+
+function loadLogoImg(event, side){
+  const file=event.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const data=e.target.result;
+    if(side==='left'){
+      PDF_SETTINGS.logoLeft=data;
+      const prev=document.getElementById('logo-left-preview');
+      if(prev) prev.innerHTML='<img src="'+data+'" style="max-width:76px;max-height:56px;object-fit:contain">';
+      updateSidebarLogo();
+    } else {
+      PDF_SETTINGS.logoRight=data;
+      const prev=document.getElementById('logo-right-preview');
+      if(prev) prev.innerHTML='<img src="'+data+'" style="max-width:76px;max-height:56px;object-fit:contain">';
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearLogo(side){
+  if(side==='left'){
+    PDF_SETTINGS.logoLeft=null;
+    const prev=document.getElementById('logo-left-preview');
+    if(prev) prev.innerHTML='<svg class="ico" style="color:var(--text3)"><use href="#i-upload"/></svg>';
+    updateSidebarLogo();
+  } else {
+    PDF_SETTINGS.logoRight=null;
+    const prev=document.getElementById('logo-right-preview');
+    if(prev) prev.innerHTML='<svg class="ico" style="color:var(--text3)"><use href="#i-upload"/></svg>';
+  }
+  savePdfSettings();
+  openPdfSettings(); // refresh to remove delete button
+}
+
+function savePdfSettingsForm(){
+  PDF_SETTINGS.firmName=document.getElementById('ps-firm')?.value||PDF_SETTINGS.firmName;
+  PDF_SETTINGS.firmSub=document.getElementById('ps-sub')?.value||'';
+  PDF_SETTINGS.headerTitle=document.getElementById('ps-title')?.value||'COMPTE RENDU';
+  PDF_SETTINGS.logoLeftWidth=parseInt(document.getElementById('ps-lw')?.value)||60;
+  PDF_SETTINGS.logoRightWidth=parseInt(document.getElementById('ps-rw')?.value)||60;
+  PDF_SETTINGS.showLogoLeft=document.getElementById('ps-ll')?.checked??true;
+  PDF_SETTINGS.showLogoRight=document.getElementById('ps-rl')?.checked??true;
+  savePdfSettings();
+  updateSidebarLogo();
+  closeModal();
+  toast('Paramètres enregistrés ✓');
+}
+
 /* ══ INIT ══ */
 
 // Initialize color + auto-link lots to intervenants
@@ -2602,6 +2942,7 @@ CRS.forEach(function(cr){
   });
 });
 renderList();
+updateSidebarLogo();
 </script>
 </body>
 </html>
