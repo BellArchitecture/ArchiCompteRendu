@@ -372,6 +372,9 @@ try {
 } catch(e) { TEMPLATES = []; }
 
 function saveCRS() {
+  // Horodater chaque CR pour le merge multi-appareil
+  const now = new Date().toISOString();
+  CRS.forEach(function(cr){ cr._updatedAt = now; });
   // 1. localStorage immédiat
   try { localStorage.setItem('plansync_crs', JSON.stringify(CRS)); }
   catch(e) { console.warn('PlanSync: localStorage save error:', e); }
@@ -384,6 +387,7 @@ const SUPA_URL = 'https://voeumoqxsdbdmhhbnomb.supabase.co';
 const SUPA_KEY = 'sb_publishable_4mB_iISGtX3heD2Viu7w3Q_JBb5ipL5';
 const SUPA_USER = 'bell-architecture';
 let _supa = null;
+let _pendingSync = false;
 
 function getSupabase(){
   if(_supa) return _supa;
@@ -396,6 +400,7 @@ function getSupabase(){
 async function _syncToSupabase(){
   const sb = getSupabase();
   if(!sb) return;
+  _pendingSync = true;
   try {
     const upserts = CRS.map(function(cr){
       return { id: cr.id, user_id: SUPA_USER, data: cr, updated_at: new Date().toISOString() };
@@ -403,6 +408,7 @@ async function _syncToSupabase(){
     const { error } = await sb.from('crs').upsert(upserts);
     if(error) console.warn('PlanSync: Supabase sync error:', error.message);
   } catch(e) { console.warn('PlanSync: Supabase unreachable:', e.message); }
+  finally { _pendingSync = false; }
 }
 
 async function _deleteFromSupabase(crId){
@@ -416,17 +422,49 @@ async function _deleteFromSupabase(crId){
 async function refreshFromStorage(){
   const sb = getSupabase();
   if(sb){
+    // Si un sync est en cours, l'attendre d'abord (max 3s)
+    if(_pendingSync){
+      await new Promise(function(resolve){setTimeout(resolve, 3000);});
+    }
     try {
       const { data, error } = await sb
         .from('crs')
-        .select('data')
+        .select('id, data, updated_at')
         .eq('user_id', SUPA_USER)
         .order('updated_at', { ascending: false });
       if(!error && data && data.length){
-        CRS = data.map(function(row){ return row.data; });
+        // Merge: pour chaque CR, prendre la version la plus récente
+        // entre Supabase et localStorage (par updated_at)
+        const localRaw = localStorage.getItem('plansync_crs');
+        const localCRS = localRaw ? JSON.parse(localRaw) : [];
+        const localMap = {};
+        localCRS.forEach(function(cr){ localMap[cr.id] = cr; });
+
+        const merged = [];
+        const seenIds = new Set();
+
+        data.forEach(function(row){
+          const remoteUpdated = new Date(row.updated_at).getTime();
+          const local = localMap[row.id];
+          // Si version locale existe et est plus récente, la garder
+          if(local && local._updatedAt && new Date(local._updatedAt).getTime() > remoteUpdated){
+            merged.push(local);
+          } else {
+            merged.push(row.data);
+          }
+          seenIds.add(row.id);
+        });
+
+        // Ajouter les CRs locaux qui ne sont pas encore dans Supabase
+        localCRS.forEach(function(cr){
+          if(!seenIds.has(cr.id)) merged.push(cr);
+        });
+
+        CRS = merged;
         localStorage.setItem('plansync_crs', JSON.stringify(CRS));
+        // Pousser les CRs locaux manquants vers Supabase
+        _syncToSupabase();
       } else {
-        // Supabase vide ou erreur — fallback localStorage
         const saved = localStorage.getItem('plansync_crs');
         if(saved) CRS = JSON.parse(saved);
       }
