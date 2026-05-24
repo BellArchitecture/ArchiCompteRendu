@@ -1609,7 +1609,7 @@ function renderHistorique(currentCR){
   const pid=currentCR.projetId;
   const siblings=CRS
     .filter(c=>pid ? c.projetId===pid : c.projet===currentCR.projet)
-    .sort((a,b)=>a.numero-b.numero);
+    .sort((a,b)=>b.numero-a.numero); // newest first
 
   if(siblings.length<=1){
     document.getElementById('content').innerHTML=`
@@ -1617,7 +1617,6 @@ function renderHistorique(currentCR){
         <svg class="ico" style="width:38px;height:38px"><use href="#i-calendar"/></svg>
         <div style="font-weight:500">Aucun autre PV</div>
         <div style="font-size:12px">Créez un nouveau PV pour voir l'historique</div>
-        <button class="btn btn-p btn-sm" onclick="openNewCR()">${ico('plus','ico-sm')} Nouveau CR</button>
       </div>`;
     return;
   }
@@ -1719,7 +1718,6 @@ function renderHistorique(currentCR){
 
     <!-- New CR button -->
     <div style="display:flex;justify-content:center;margin-top:8px;padding-left:56px">
-      <button class="btn btn-p btn-sm" onclick="openNewCR()">${ico('plus','ico-sm')} Nouveau compte rendu</button>
     </div>
 
     <!-- Print History -->
@@ -2248,7 +2246,7 @@ function exportCR(crId){
     const bgColor=hexToLightBg(fullColor);
     const textColor=fullColor;
 
-    const block=`<table style="width:100%;border-collapse:collapse;margin-bottom:10px;page-break-inside:avoid">
+    const block=`<table style="width:100%;border-collapse:collapse;margin-bottom:10px">
       <tr>
         <td style="background:${bgColor};padding:5px 8px;border:1px solid #000;font-weight:700;font-size:9pt;text-transform:uppercase;color:${textColor};letter-spacing:.03em">
           REMARQUES INTERVENANTS — ${e(lot.titre.toUpperCase())}
@@ -4281,8 +4279,8 @@ function previewPDF(crId){
       if(!active.length)return;
       const col=getColor(lot,cr);
       function hexToLight(hex){const c2=(hex||'#ccc').replace('#','');if(c2.length<6)return '#f0f0f0';const r=parseInt(c2.substr(0,2),16),g=parseInt(c2.substr(2,2),16),b=parseInt(c2.substr(4,2),16);return `rgb(${Math.round(r*.2+255*.8)},${Math.round(g*.2+255*.8)},${Math.round(b*.2+255*.8)})`;}
-      p2+=`<table style="width:100%;border-collapse:collapse;margin-bottom:8px;page-break-inside:avoid">
-        <tr><td style="background:${hexToLight(col)};padding:4px 8px;border:1px solid #000;font-weight:700;font-size:9pt;color:${col};text-transform:uppercase">REMARQUES — ${e(lot.titre.toUpperCase())}</td></tr>
+      p2+=`<table style="width:100%;border-collapse:collapse;margin-bottom:8px;">
+        <tr style="page-break-inside:avoid"><td style="background:${hexToLight(col)};padding:4px 8px;border:1px solid #000;font-weight:700;font-size:9pt;color:${col};text-transform:uppercase;page-break-after:avoid">REMARQUES — ${e(lot.titre.toUpperCase())}</td></tr>
         <tr><td style="border:1px solid #000;border-top:none;padding:7px 10px">${active.map(r=>`<div style="padding:3px 0;font-size:8.5pt;${r.done?'color:#aaa;text-decoration:line-through;':''}border-bottom:1px solid #f0f0f0;margin-bottom:2px">
           <div>- ${e(r.texte)}</div>
           ${(r.images&&r.images.length)?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;page-break-inside:avoid">${r.images.map(img=>`<div style="display:inline-block"><img src="${img.data}" style="max-width:110px;max-height:90px;object-fit:contain;border:1px solid #ccc;border-radius:3px;display:block">${img.caption?`<div style="font-size:7pt;color:#666;margin-top:1px">${e(img.caption)}</div>`:''}</div>`).join('')}</div>`:''}
@@ -4357,15 +4355,68 @@ function previewPDF(crId){
   window._pdfZoom=1.0;
 
   setTimeout(function(){
-    // Parse pages from fullHTML and render as A4 divs in the viewer
     const container=document.getElementById('pdf-viewer-container');
     if(!container)return;
 
-    // Extract page divs from the HTML
+    const A4_H=1123; // px at 96dpi
+    const A4_W=794;
+    const PADDING=18;
+    const CONTENT_H=A4_H-(PADDING*2); // usable height per page
+
+    // Step 1: render full content linearly into a hidden measuring div
+    const measurer=document.createElement('div');
+    measurer.style.cssText='position:fixed;left:-9999px;top:0;width:'+A4_W+'px;font-family:Arial,sans-serif;font-size:9pt;color:#000;padding:'+PADDING+'px;box-sizing:border-box;visibility:hidden';
+    // Extract body content from fullHTML (strip outer html/head/style tags)
     const parser=new DOMParser();
     const doc=parser.parseFromString(fullHTML,'text/html');
-    const pages=doc.querySelectorAll('.page');
-    window._pdfPages=Array.from(pages).map(p=>p.outerHTML);
+    Array.from(doc.body.childNodes).forEach(function(n){measurer.appendChild(document.importNode(n,true));});
+    document.body.appendChild(measurer);
+
+    // Step 2: measure every block element's top/bottom relative to measurer
+    // and split into pages based on A4 content height
+    const allBlocks=Array.from(measurer.querySelectorAll('div.page,table,tr,div'));
+    // Find top-level sections (the .page divs) — each may span multiple A4 pages
+    const topSections=Array.from(measurer.querySelectorAll('div.page'));
+
+    // Step 3: for each top-level section, measure its real height
+    // and paginate accordingly
+    const realPages=[];
+    const measTop=measurer.getBoundingClientRect().top;
+
+    if(topSections.length===0){
+      // Fallback: treat whole content as one page
+      realPages.push(measurer.innerHTML);
+    } else {
+      topSections.forEach(function(section){
+        const sectionH=section.getBoundingClientRect().height;
+        const numSubPages=Math.max(1,Math.ceil(sectionH/CONTENT_H));
+        if(numSubPages<=1){
+          realPages.push(section.outerHTML);
+        } else {
+          // Split this section's children into A4-sized chunks
+          const children=Array.from(section.children);
+          let currentChunk=[];
+          let currentH=0;
+          const sectionTop=section.getBoundingClientRect().top;
+          children.forEach(function(child){
+            const childH=child.getBoundingClientRect().height;
+            if(currentH+childH>CONTENT_H&&currentChunk.length>0){
+              realPages.push('<div class="page">'+currentChunk.map(function(n){return n.outerHTML;}).join('')+'</div>');
+              currentChunk=[];
+              currentH=0;
+            }
+            currentChunk.push(child);
+            currentH+=childH;
+          });
+          if(currentChunk.length){
+            realPages.push('<div class="page">'+currentChunk.map(function(n){return n.outerHTML;}).join('')+'</div>');
+          }
+        }
+      });
+    }
+    document.body.removeChild(measurer);
+
+    window._pdfPages=realPages;
     window._pdfCurrentPage=0;
 
     function updateCounter(){
@@ -4376,12 +4427,12 @@ function previewPDF(crId){
     function renderPages(){
       container.innerHTML='';
       const zoom=window._pdfZoom||1;
-      window._pdfPages.forEach(function(pageHTML,i){
+      window._pdfPages.forEach(function(pageHTML){
         const wrapper=document.createElement('div');
         wrapper.className='pdf-page-wrapper';
-        wrapper.style.cssText='background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.4);border-radius:2px;width:'+Math.round(794*zoom)+'px;min-height:'+Math.round(1123*zoom)+'px;overflow:hidden;flex-shrink:0;position:relative';
+        wrapper.style.cssText='background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.4);border-radius:2px;width:'+Math.round(A4_W*zoom)+'px;min-height:'+Math.round(A4_H*zoom)+'px;overflow:hidden;flex-shrink:0;position:relative;margin:0 auto';
         const inner=document.createElement('div');
-        inner.style.cssText='transform:scale('+zoom+');transform-origin:top left;width:794px;min-height:1123px;font-family:Arial,sans-serif;font-size:9pt;color:#000;padding:18px;box-sizing:border-box';
+        inner.style.cssText='transform:scale('+zoom+');transform-origin:top left;width:'+A4_W+'px;min-height:'+A4_H+'px;font-family:Arial,sans-serif;font-size:9pt;color:#000;padding:'+PADDING+'px;box-sizing:border-box;overflow:hidden';
         inner.innerHTML=pageHTML;
         wrapper.appendChild(inner);
         container.appendChild(wrapper);
@@ -4402,7 +4453,7 @@ function previewPDF(crId){
     };
 
     renderPages();
-  },50);
+  },100);
 }
 
 function printFromPreview(crId){
