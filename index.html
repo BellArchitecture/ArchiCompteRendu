@@ -12,6 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.mjs" type="module" id="pdfjs-script"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -220,6 +221,7 @@ body{background:var(--bg);height:100vh;overflow:hidden;font-family:inherit}
         <button class="btn btn-p" style="flex:1;justify-content:center" onclick="openNewCR()">
           <svg class="ico ico-sm"><use href="#i-plus"/></svg> Nouveau CR
         </button>
+        <button class="btn" style="padding:7px 10px;flex-shrink:0;font-size:14px;line-height:1" onclick="refreshFromStorage()" title="Actualiser la liste depuis le stockage local">↺</button>
         <button class="btn" style="padding:7px 10px;flex-shrink:0" onclick="openTemplates()" title="Modèles">
           <svg class="ico ico-sm"><use href="#i-file"/></svg>
         </button>
@@ -370,9 +372,115 @@ try {
 } catch(e) { TEMPLATES = []; }
 
 function saveCRS() {
+  // 1. localStorage immédiat
   try { localStorage.setItem('plansync_crs', JSON.stringify(CRS)); }
-  catch(e) { console.warn('PlanSync: could not save CRs:', e); }
+  catch(e) { console.warn('PlanSync: localStorage save error:', e); }
+  // 2. Supabase en arrière-plan
+  _syncToSupabase();
 }
+
+/* ══ SUPABASE ══ */
+const SUPA_URL = 'https://voeumoqxsdbdmhhbnomb.supabase.co';
+const SUPA_KEY = 'sb_publishable_4mB_iISGtX3heD2Viu7w3Q_JBb5ipL5';
+const SUPA_USER = 'bell-architecture';
+let _supa = null;
+
+function getSupabase(){
+  if(_supa) return _supa;
+  if(window.supabase && window.supabase.createClient){
+    _supa = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+  }
+  return _supa;
+}
+
+async function _syncToSupabase(){
+  const sb = getSupabase();
+  if(!sb) return;
+  try {
+    const upserts = CRS.map(function(cr){
+      return { id: cr.id, user_id: SUPA_USER, data: cr, updated_at: new Date().toISOString() };
+    });
+    const { error } = await sb.from('crs').upsert(upserts);
+    if(error) console.warn('PlanSync: Supabase sync error:', error.message);
+  } catch(e) { console.warn('PlanSync: Supabase unreachable:', e.message); }
+}
+
+async function _deleteFromSupabase(crId){
+  const sb = getSupabase();
+  if(!sb) return;
+  try {
+    await sb.from('crs').delete().eq('id', crId).eq('user_id', SUPA_USER);
+  } catch(e) {}
+}
+
+async function refreshFromStorage(){
+  const sb = getSupabase();
+  if(sb){
+    try {
+      const { data, error } = await sb
+        .from('crs')
+        .select('data')
+        .eq('user_id', SUPA_USER)
+        .order('updated_at', { ascending: false });
+      if(!error && data && data.length){
+        CRS = data.map(function(row){ return row.data; });
+        localStorage.setItem('plansync_crs', JSON.stringify(CRS));
+      } else {
+        // Supabase vide ou erreur — fallback localStorage
+        const saved = localStorage.getItem('plansync_crs');
+        if(saved) CRS = JSON.parse(saved);
+      }
+    } catch(e) {
+      const saved = localStorage.getItem('plansync_crs');
+      if(saved) CRS = JSON.parse(saved);
+    }
+  } else {
+    const saved = localStorage.getItem('plansync_crs');
+    if(saved) CRS = JSON.parse(saved);
+  }
+  // Re-read templates + PDF settings
+  try {
+    const tpl = localStorage.getItem('plansync_cr_templates');
+    if(tpl) TEMPLATES = JSON.parse(tpl);
+  } catch(e) {}
+  try {
+    const ps = localStorage.getItem('plansync_pdf_settings');
+    if(ps) Object.assign(PDF_SETTINGS, JSON.parse(ps));
+  } catch(e) {}
+  // Keep activeCR if still exists
+  if(activeCR && !CRS.find(function(c){return c.id===activeCR;})){
+    activeCR = CRS.length ? CRS[0].id : null;
+  } else if(!activeCR && CRS.length){
+    activeCR = CRS[0].id;
+  }
+  updateSidebarLogo();
+  renderList();
+  if(activeCR) renderCR();
+  else {
+    const content = document.getElementById('content');
+    if(content) content.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text3);font-size:13px">Sélectionnez un CR ou créez-en un nouveau.</div>';
+    const tabbar = document.getElementById('tabbar');
+    if(tabbar) tabbar.style.display = 'none';
+  }
+}
+
+// Temps réel : recharger si un autre onglet/appareil modifie les données
+function _initSupabaseRealtime(){
+  const sb = getSupabase();
+  if(!sb) return;
+  sb.channel('crs-realtime')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'crs',
+        filter: 'user_id=eq.'+SUPA_USER },
+      function(){ refreshFromStorage(); })
+    .subscribe();
+}
+
+// Écoute aussi les changements localStorage (autre onglet même navigateur)
+window.addEventListener('storage', function(e){
+  if(e.key==='plansync_crs'||e.key==='plansync_cr_templates'||e.key==='plansync_pdf_settings'){
+    refreshFromStorage();
+  }
+});
 
 function saveTemplatesToStorage() {
   try { localStorage.setItem('plansync_cr_templates', JSON.stringify(TEMPLATES)); } catch(e) {}
@@ -428,8 +536,9 @@ async function checkAuth(){
       isAuthenticated=true;
       sessionStorage.setItem('ps_auth','1');
       document.getElementById('auth-overlay').classList.add('hidden');
-      renderList();
       updateSidebarLogo();
+      await refreshFromStorage(); // charge depuis Supabase en priorité
+      _initSupabaseRealtime();
     } else {
       showAuthError('Mot de passe incorrect');
       document.getElementById('auth-pwd').value='';
@@ -450,7 +559,7 @@ function initAuth(){
     isAuthenticated=true;
     const overlay=document.getElementById('auth-overlay');
     if(overlay)overlay.classList.add('hidden');
-    renderList();
+    refreshFromStorage().then(function(){ _initSupabaseRealtime(); });
   } else {
     // Focus password field
     setTimeout(()=>document.getElementById('auth-pwd')?.focus(),100);
@@ -2377,6 +2486,7 @@ function deleteCR(crId){
   ))return;
   CRS=CRS.filter(function(c){return c.id!==crId;});
   saveCRS();
+  _deleteFromSupabase(crId);
   if(activeCR===crId){
     activeCR=CRS.length?CRS[0].id:null;
   }
@@ -2940,22 +3050,46 @@ function confirmRemarkToAction(crId,lotId,rId){
 function exportCSV(crId){
   const cr=CRS.find(c=>c.id===crId);
   if(!cr)return;
-  const rows=[['Lot','Intervenant','Remarque','Statut','Ajouté le','Traité le','À suivre']];
+
+  function esc(s){ return '"'+(s||'').replace(/"/g,'""')+'"'; }
+
+  // Build rows
+  const data=[];
   cr.lots.forEach(function(lot){
-    const iv=lot.intId?cr.intervenants.find(i=>i.id===lot.intId):null;
+    const iv=lot.intId?cr.intervenants.find(function(i){return i.id===lot.intId;}):null;
+    const intervenant=iv?iv.entreprise||iv.lot:'';
     lot.remarques.forEach(function(r){
-      rows.push([
-        '"'+lot.titre.replace(/"/g,'""')+'"',
-        '"'+(iv?iv.entreprise||iv.lot:'').replace(/"/g,'""')+'"',
-        '"'+r.texte.replace(/"/g,'""')+'"',
-        r.done?'Traité':'En cours',
-        r.createdAt||'',
-        r.archivedAt||'',
-        r.flag?'oui':''
-      ]);
+      const isClasse=r.done||r.archived;
+      data.push({
+        lot:     lot.titre,
+        iv:      intervenant,
+        texte:   r.texte,
+        statut:  r.archived?'Archivé':r.done?'Classé':'En cours',
+        asuivre: r.flag&&!isClasse?'oui':'',
+        createdAt: r.createdAt||'',
+        classeAt:  r.archivedAt||r.doneAt||'',
+        _done: isClasse,
+        _flag: r.flag&&!isClasse
+      });
     });
   });
-  const csv=rows.map(r=>r.join(',')).join('\n');
+
+  // Sort: À suivre first, then en cours, then classés — alphabetical by lot within each group
+  data.sort(function(a,b){
+    // Group: 0=À suivre, 1=En cours, 2=Classé
+    const ga=a._flag?0:!a._done?1:2;
+    const gb=b._flag?0:!b._done?1:2;
+    if(ga!==gb)return ga-gb;
+    if(a.lot<b.lot)return -1;if(a.lot>b.lot)return 1;
+    return 0;
+  });
+
+  const rows=[['Lot','Intervenant','Remarque','Statut','À suivre','Ajouté le','Classé le']];
+  data.forEach(function(d){
+    rows.push([esc(d.lot),esc(d.iv),esc(d.texte),d.statut,d.asuivre,d.createdAt,d.classeAt]);
+  });
+
+  const csv=rows.map(function(r){return r.join(',');}).join('\n');
   const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
