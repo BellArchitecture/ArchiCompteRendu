@@ -34,7 +34,7 @@ body{background:var(--bg);height:100vh;overflow:hidden;font-family:inherit}
 .sidebar{width:260px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
 .sb-head{padding:14px 14px 10px;border-bottom:1px solid var(--border)}
 .logo{display:flex;align-items:center;gap:9px;margin-bottom:4px}
-.logo-mark{width:26px;height:26px;background:var(--blue);border-radius:7px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700}
+.logo-mark{width:34px;height:34px;background:var(--blue);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;flex-shrink:0;letter-spacing:-.5px}
 .sb-list{flex:1;overflow-y:auto;padding:8px}
 .cr-item{padding:10px 12px;border-radius:var(--r);cursor:pointer;border:1px solid transparent;margin-bottom:4px;transition:all .12s}
 .cr-item.cr-arch{opacity:.6;border-left:3px solid var(--amber)}
@@ -197,7 +197,7 @@ body{background:var(--bg);height:100vh;overflow:hidden;font-family:inherit}
   <aside class="sidebar">
     <div class="sb-head" style="cursor:pointer" onclick="openPdfSettings()" title="Paramètres du cabinet / PDF">
       <div class="logo" id="sb-logo">
-        <div class="logo-mark" id="sb-logo-mark">PS</div>
+        <div class="logo-mark" id="sb-logo-mark" style="width:34px;height:34px;border-radius:8px;font-size:12px;flex-shrink:0">PS</div>
         <div>
           <div style="font-weight:600;font-size:14px;letter-spacing:-.2px" id="sb-firm-name">PlanSync</div>
           <div style="font-size:10px;color:var(--text3)" id="sb-firm-sub">Compte Rendus</div>
@@ -407,7 +407,7 @@ let activeTab='remarques';
 let searchQuery='';
 let showHistory=false;
 let remarqueSearch='';
-let quickFilter='all'; // all | flag | open | done | action
+let quickFilter='all'; // all | flag | open | done
 let isDirty=false; // tracks unsaved changes
 let isAuthenticated=false;
 let actionFilter='';         // filter by intId
@@ -474,7 +474,34 @@ function initAuth(){
 function renderList(){
   const el=document.getElementById('cr-list');
   const q=searchQuery;
-  const matches=cr=>!q||cr.projet.toLowerCase().includes(q)||cr.date.includes(q)||cr.adresse.toLowerCase().includes(q);
+  const matches=cr=>{
+    if(!q)return true;
+    // Basic fields
+    if(cr.projet.toLowerCase().includes(q))return true;
+    if(cr.date.includes(q))return true;
+    if((cr.adresse||'').toLowerCase().includes(q))return true;
+    if((cr.redacteur||'').toLowerCase().includes(q))return true;
+    // Intervenants
+    if(cr.intervenants&&cr.intervenants.some(function(iv){
+      return (iv.lot||'').toLowerCase().includes(q)||
+             (iv.entreprise||'').toLowerCase().includes(q)||
+             (iv.contacts||'').toLowerCase().includes(q);
+    }))return true;
+    // Lots and remarks
+    if(cr.lots&&cr.lots.some(function(lot){
+      if((lot.titre||'').toLowerCase().includes(q))return true;
+      if(lot.remarques&&lot.remarques.some(function(r){
+        return (r.texte||'').toLowerCase().includes(q);
+      }))return true;
+      return false;
+    }))return true;
+    // Actions
+    if(cr.actions&&cr.actions.some(function(a){
+      return (a.texte||'').toLowerCase().includes(q)||
+             (a.responsable||'').toLowerCase().includes(q);
+    }))return true;
+    return false;
+  };
 
   const active=CRS.filter(cr=>cr.statut!=='archived'&&matches(cr));
   const archived=CRS.filter(cr=>cr.statut==='archived'&&matches(cr));
@@ -489,7 +516,7 @@ function renderList(){
       <div class="cr-item-proj">${cr.projet}</div>
       <div style="font-size:11px;color:var(--text3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${cr.adresse}</div>
       <div class="cr-item-sub">
-        <span class="badge ${allDone?'bgreen':'bgray'}" style="font-size:9px">${doneCount}/${total}</span>
+        <span class="badge ${allDone?'bgreen':'bgray'}" style="font-size:9px">${total} pt${total!==1?'s':''} ${doneCount?'· '+doneCount+'✓':''}</span>
         ${flagCount?`<span class="badge bamber" style="font-size:9px">${flagCount} À suivre</span>`:''}
         <span style="font-size:10px;color:var(--text3);margin-left:auto">CR n°${cr.numero}</span>
       </div>
@@ -538,8 +565,11 @@ function openCR(id){
   activeCR=id;
   activeTab='remarques';
   remarqueSearch='';
+  quickFilter='all';
   actionFilter='';
+  actionStatusFilter='all';
   lotsSortedByFlags=false;
+  if(window._datesState&&window._datesState.crId!==id) window._datesState=null;
   renderList();
   renderCR();
 }
@@ -556,18 +586,18 @@ function renderCR(){
   // Archived banner inside content if needed
   const existingBanner=document.getElementById('arch-banner');
   if(cr.statut==='archived'){
-    if(!existingBanner){
-      const banner=document.createElement('div');
-      banner.id='arch-banner';
-      banner.style.cssText='background:var(--amber-bg);border-bottom:1px solid var(--amber);padding:8px 20px;font-size:12px;color:var(--amber);display:flex;align-items:center;gap:8px;flex-shrink:0';
-      banner.innerHTML=`<svg class="ico ico-sm"><use href="#i-archive"/></svg> Ce compte rendu est archivé — il est en lecture seule dans l'historique.
-        <div style="display:flex;gap:10px;align-items:center;margin-left:auto">
-          <button onclick="toggleArchiveCR('${cr.id}')" style="background:none;border:none;cursor:pointer;color:var(--blue);font-size:12px;font-family:inherit;text-decoration:underline">Désarchiver</button>
-          <button onclick="deleteCR('${cr.id}')" style="background:none;border:1px solid var(--red);color:var(--red);border-radius:var(--r);padding:3px 10px;font-size:11px;cursor:pointer;font-family:inherit">Supprimer définitivement</button>
-        </div>`;
-      const tabbar=document.getElementById('tabbar');
-      tabbar.parentNode.insertBefore(banner,tabbar);
-    }
+    // Always refresh banner so buttons reference the current CR id
+    if(existingBanner) existingBanner.remove();
+    const banner=document.createElement('div');
+    banner.id='arch-banner';
+    banner.style.cssText='background:var(--amber-bg);border-bottom:1px solid var(--amber);padding:8px 20px;font-size:12px;color:var(--amber);display:flex;align-items:center;gap:8px;flex-shrink:0';
+    banner.innerHTML=`<svg class="ico ico-sm"><use href="#i-archive"/></svg> Ce compte rendu est archivé — il est en lecture seule dans l'historique.
+      <div style="display:flex;gap:10px;align-items:center;margin-left:auto">
+        <button onclick="toggleArchiveCR('${cr.id}')" style="background:none;border:none;cursor:pointer;color:var(--blue);font-size:12px;font-family:inherit;text-decoration:underline">Désarchiver</button>
+        <button onclick="deleteCR('${cr.id}')" style="background:none;border:1px solid var(--red);color:var(--red);border-radius:var(--r);padding:3px 10px;font-size:11px;cursor:pointer;font-family:inherit">Supprimer définitivement</button>
+      </div>`;
+    const tabbar=document.getElementById('tabbar');
+    tabbar.parentNode.insertBefore(banner,tabbar);
   } else {
     if(existingBanner)existingBanner.remove();
   }
@@ -645,8 +675,8 @@ function renderRemarques(cr){
     ${[
       ['all','Tous',all.length,'var(--text2)','var(--bg2)'],
       ['flag','À suivre',flagR.length,'var(--amber)','var(--amber-bg)'],
-      ['open','Non traités',openR.length,'var(--text2)','var(--bg2)'],
-      ['done','Traités',doneR.length,'var(--green)','var(--green-bg)'],
+      ['open','Non traités',openR.length,'var(--red)','var(--red-bg, #fff0f0)'],
+      ['done','Classés',doneR.length,'var(--green)','var(--green-bg)'],
     ].map(([k,label,count,col,bg])=>`
       <button onclick="quickFilter='${k}';renderRemarques(CRS.find(c=>c.id==='${cr.id}'))"
         style="padding:5px 12px;border-radius:20px;border:1.5px solid ${quickFilter===k?col:'var(--border)'};background:${quickFilter===k?bg:'transparent'};color:${quickFilter===k?col:'var(--text3)'};font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .12s">
@@ -683,7 +713,7 @@ function renderRemarques(cr){
           ${linkedLabel?`<span class="lot-int-badge" style="font-size:10px;color:${color};background:${color}18;padding:2px 7px;border-radius:10px;font-weight:500">${linkedLabel}</span>`:''}
         </div>
         <div style="display:flex;align-items:center;gap:6px">
-          <span class="badge ${lotDone===lot.remarques.length&&lot.remarques.length>0?'bgreen':'bgray'}" style="font-size:9px">${lotDone}/${lot.remarques.length}</span>
+          <span class="badge ${lotDone===lot.remarques.length&&lot.remarques.length>0?'bgreen':'bgray'}" style="font-size:9px">${lot.remarques.length}${lotDone?" · "+lotDone+"✓":""}</span>
           <button class="btn-g" style="padding:3px" onclick="event.stopPropagation();renameLot('${cr.id}','${lot.id}')" title="Renommer">${ico('edit','ico-xs')}</button>
           <button class="btn-g" style="padding:3px" onclick="event.stopPropagation();deleteLot('${cr.id}','${lot.id}')" title="Supprimer le lot"><svg class="ico ico-xs" style="color:var(--red)"><use href="#i-trash"/></svg></button>
           ${ico(lot.ouvert?'chevron-up':'chevron-down','ico-sm')}
@@ -697,8 +727,6 @@ function renderRemarques(cr){
           if(quickFilter==='flag') active=active.filter(r=>r.flag);
           else if(quickFilter==='open') active=active.filter(r=>!r.done);
           else if(quickFilter==='done') active=active.filter(r=>r.done);
-          else if(quickFilter==='action') active=[];// actions shown in Actions tab
-
           // Sort: flags first, then open, then done
           active.sort((a,b)=>{
             const scoreA=(a.flag&&!a.done)?2:(!a.done)?1:0;
@@ -999,123 +1027,196 @@ function renderActions(cr){
 
 /* ══ DATES ══ */
 function renderDates(cr){
-  // Collect all remarques with dates across all lots
-  const rows=[];
+  // Persistent filter/search state — survives re-renders within the same CR
+  if(!window._datesState) window._datesState={};
+  const ds=window._datesState;
+  if(ds.crId!==cr.id){ds.crId=cr.id;ds.filter='all';ds.q='';ds.lot='';}
+
+  // Build action lookup: remark id → action(s) mentioning it
+  const actionsByRemark={};
+  (cr.actions||[]).forEach(function(a){
+    if(a.linkedRId){
+      if(!actionsByRemark[a.linkedRId]) actionsByRemark[a.linkedRId]=[];
+      actionsByRemark[a.linkedRId].push(a);
+    }
+  });
+
+  // Collect all rows
+  const allRows=[];
   cr.lots.forEach(function(lot){
     const color=getColor(lot,cr);
     const linked=lot.intId?cr.intervenants.find(function(i){return i.id===lot.intId;}):null;
     lot.remarques.forEach(function(r){
-      rows.push({r:r,lot:lot,color:color,linked:linked});
+      allRows.push({r:r,lot:lot,color:color,linked:linked,actions:actionsByRemark[r.id]||[]});
     });
   });
 
-  if(!rows.length){
-    document.getElementById('content').innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text3);font-size:13px">Aucune remarque</div>';
+  if(!allRows.length){
+    document.getElementById('content').innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text3);font-size:13px">Aucun point dans ce CR</div>';
     return;
   }
 
-  // Sort: active first (by createdAt desc), then archived (by archivedAt desc)
-  const active=rows.filter(function(x){return !x.r.archived;});
-  const archived=rows.filter(function(x){return x.r.archived;});
-
-  function dateSort(a,b){
-    const da=a.r.createdAt||'';const db=b.r.createdAt||'';
-    // dd/mm/yyyy → sort descending
-    const pa=da.split('/');const pb=db.split('/');
-    const ta=pa.length===3?new Date(pa[2],pa[1]-1,pa[0]).getTime():0;
-    const tb=pb.length===3?new Date(pb[2],pb[1]-1,pb[0]).getTime():0;
-    return tb-ta;
-  }
-  active.sort(dateSort);
-  archived.sort(function(a,b){
-    const da=a.r.archivedAt||'';const db=b.r.archivedAt||'';
-    const pa=da.split('/');const pb=db.split('/');
-    const ta=pa.length===3?new Date(pa[2],pa[1]-1,pa[0]).getTime():0;
-    const tb=pb.length===3?new Date(pb[2],pb[1]-1,pb[0]).getTime():0;
-    return tb-ta;
+  // Build lot chips (only lots with ≥1 remark)
+  const lotIds=[];const lotMap={};
+  cr.lots.forEach(function(lot){
+    if(lot.remarques.length){lotIds.push(lot.id);lotMap[lot.id]=lot;}
   });
 
-  function tableRow(x,isArchived){
+  // Filter by status + lot + search
+  const q=(ds.q||'').toLowerCase().trim();
+  function matchesSearch(x){
+    if(!q)return true;
+    const lbl=(x.linked?x.linked.entreprise||x.linked.lot:x.lot.titre)||'';
+    const lot=x.lot.titre||'';
+    const contacts=(x.linked?x.linked.contacts||'':'');
+    const actText=x.actions.map(function(a){return (a.texte||'')+' '+(a.responsable||'');}).join(' ');
+    return (x.r.texte||'').toLowerCase().includes(q)
+      ||lbl.toLowerCase().includes(q)
+      ||lot.toLowerCase().includes(q)
+      ||(x.linked?x.linked.entreprise||'':'').toLowerCase().includes(q)
+      ||contacts.toLowerCase().includes(q)
+      ||actText.toLowerCase().includes(q);
+  }
+  let rows=allRows.filter(matchesSearch);
+  if(ds.filter==='encours')   rows=rows.filter(function(x){return !x.r.done&&!x.r.archived;});
+  else if(ds.filter==='asuivre') rows=rows.filter(function(x){return x.r.flag&&!x.r.done&&!x.r.archived;});
+  else if(ds.filter==='classe')  rows=rows.filter(function(x){return x.r.done||x.r.archived;});
+  if(ds.lot) rows=rows.filter(function(x){return x.lot.id===ds.lot;});
+
+  // Stats on all rows (pre-filter)
+  const totalAll=allRows.length;
+  const enCours=allRows.filter(function(x){return !x.r.done&&!x.r.archived;}).length;
+  const asuivre=allRows.filter(function(x){return x.r.flag&&!x.r.done&&!x.r.archived;}).length;
+  const classe=allRows.filter(function(x){return x.r.done||x.r.archived;}).length;
+
+  // Sort: active first (newest first), then classés (most recently treated first)
+  function parseFR(s){const p=(s||'').split('/');return p.length===3?new Date(p[2],p[1]-1,p[0]).getTime():0;}
+  rows.sort(function(a,b){
+    const aDone=a.r.done||a.r.archived;const bDone=b.r.done||b.r.archived;
+    if(aDone&&!bDone)return 1;if(!aDone&&bDone)return -1;
+    if(aDone){return parseFR(b.r.archivedAt||b.r.doneAt)-parseFR(a.r.archivedAt||a.r.doneAt);}
+    return parseFR(b.r.createdAt)-parseFR(a.r.createdAt);
+  });
+
+  function tableRow(x){
     const r=x.r;const lot=x.lot;const color=x.color;const linked=x.linked;
-    return '<tr style="'+(isArchived?'opacity:.6;background:var(--green-bg)':'')+'">'
-      +'<td style="padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top;white-space:nowrap">'
-        +'<span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;background:'+color+'18;color:'+color+'">'+(linked?linked.entreprise||linked.lot:lot.titre)+'</span>'
+    const isDone=r.done||r.archived;
+    const lbl=linked?linked.entreprise||linked.lot:lot.titre;
+    const linkedActs=x.actions;
+    return '<tr style="'+(isDone?'opacity:.6;background:var(--green-bg)':'')+'">'
+      +'<td style="padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:top;white-space:nowrap">'
+        +'<span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;background:'+color+'18;color:'+color+'">'+e(lbl)+'</span>'
       +'</td>'
-      +'<td style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:12.5px;vertical-align:top">'
-        +(isArchived?'<span style="text-decoration:line-through;color:var(--text3)">'+e(r.texte)+'</span>':e(r.texte))
-        +(r.flag?'<span style="margin-left:6px;font-size:10px;font-weight:600;padding:2px 5px;background:var(--amber-bg);color:var(--amber);border-radius:3px">À suivre</span>':'')
+      +'<td style="padding:7px 10px;border-bottom:1px solid var(--border);font-size:12px;vertical-align:top">'
+        +(isDone?'<span style="text-decoration:line-through;color:var(--text3)">'+e(r.texte)+'</span>':e(r.texte))
+        +(r.flag&&!isDone?'<span style="margin-left:6px;font-size:10px;font-weight:600;padding:2px 5px;background:var(--amber-bg);color:var(--amber);border-radius:3px">À suivre</span>':'')
+        +(linkedActs.length?'<div style="margin-top:3px">'
+          +linkedActs.map(function(a){
+            return '<span style="font-size:10px;color:var(--text3);background:var(--bg2);border-radius:3px;padding:1px 5px">'
+              +'Action'+(a.responsable?' — '+e(a.responsable):'')+''
+              +(a.done?' ✓':'')+'</span>';
+          }).join(' ')+'</div>':'')
       +'</td>'
-      +'<td style="padding:8px 10px;border-bottom:1px solid var(--border);white-space:nowrap;vertical-align:top">'
-        +'<div style="font-size:11px;color:var(--text3)">'+(r.createdAt||'—')+'</div>'
-        +(isArchived&&r.archivedAt?'<div style="font-size:10px;color:var(--green);margin-top:2px">Traité le '+r.archivedAt+'</div>':'')
+      +'<td style="padding:7px 10px;border-bottom:1px solid var(--border);white-space:nowrap;vertical-align:top;font-size:11px;color:var(--text3)">'
+        +'<div>'+(r.createdAt||'—')+'</div>'
+        +(isDone&&(r.archivedAt||r.doneAt)?'<div style="color:var(--green);margin-top:2px">Classé le '+(r.archivedAt||r.doneAt)+'</div>':'')
       +'</td>'
-      +'<td style="padding:8px 10px;border-bottom:1px solid var(--border);white-space:nowrap;vertical-align:top;text-align:center">'
-        +(isArchived
+      +'<td style="padding:7px 10px;border-bottom:1px solid var(--border);white-space:nowrap;vertical-align:top;text-align:center">'
+        +(isDone
           ?'<button class="btn-g" style="padding:2px" onclick="toggleDone(\''+cr.id+'\',\''+lot.id+'\',\''+r.id+'\')" title="Remettre en cours"><svg class="ico ico-xs" style="color:var(--green)"><use href="#i-check"/></svg></button>'
-          :'<button class="btn-g" style="padding:2px" onclick="toggleDone(\''+cr.id+'\',\''+lot.id+'\',\''+r.id+'\')" title="Archiver"><svg class="ico ico-xs" style="color:var(--text3)"><use href="#i-archive"/></svg></button>'
+          :'<button class="btn-g" style="padding:2px" onclick="toggleDone(\''+cr.id+'\',\''+lot.id+'\',\''+r.id+'\')" title="Classer (marquer traité)"><svg class="ico ico-xs" style="color:var(--text3)"><use href="#i-check"/></svg></button>'
         )
         +'<button class="btn-g" style="padding:2px" onclick="editRemarque(\''+cr.id+'\',\''+lot.id+'\',\''+r.id+'\')" title="Modifier"><svg class="ico ico-xs"><use href="#i-edit"/></svg></button>'
       +'</td>'
     +'</tr>';
   }
 
-  const activeCount=active.length;
-  const archivedCount=archived.length;
-  const crDate=cr.date||'—';
+  function filterBtn(key,label,count,col){
+    const active=ds.filter===key;
+    const c2=col||(active?'var(--blue)':'var(--text3)');
+    return '<button onclick="window._datesState.filter=\''+key+'\';renderCR()" style="'
+      +'padding:5px 11px;border-radius:20px;border:1.5px solid '+(active?c2:'var(--border2)')
+      +';background:'+(active?c2+'1a':'none')
+      +';color:'+(active?c2:'var(--text3)')
+      +';font-size:11px;cursor:pointer;font-family:inherit;white-space:nowrap">'
+      +label+(count!==undefined?' <span style="opacity:.7;font-size:10px">('+count+')</span>':'')+'</button>';
+  }
+
+  // Lot chip buttons (only if >1 lot)
+  const lotChips=lotIds.length>1
+    ?'<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px">'
+      +'<button onclick="window._datesState.lot=\'\';renderCR()" style="padding:3px 9px;border-radius:20px;border:1.5px solid '+(ds.lot?'var(--border2)':'var(--blue)')+';background:'+(ds.lot?'none':'var(--blue-bg)')+';color:'+(ds.lot?'var(--text3)':'var(--blue)')+';font-size:10px;cursor:pointer;font-family:inherit">Tous les lots</button>'
+      +lotIds.map(function(lid){
+        const lot=lotMap[lid];
+        const col=getColor(lot,cr);
+        const active=ds.lot===lid;
+        return '<button onclick="window._datesState.lot=\''+lid+'\';renderCR()" style="'
+          +'padding:3px 9px;border-radius:20px;border:1.5px solid '+(active?col:'var(--border2)')
+          +';background:'+(active?col+'22':'none')
+          +';color:'+(active?col:'var(--text3)')
+          +';font-size:10px;cursor:pointer;font-family:inherit">'+e(lot.titre)+'</button>';
+      }).join('')
+    +'</div>':'' ;
+
+  const noResults=rows.length===0;
 
   document.getElementById('content').innerHTML=''
-    +'<div style="padding:16px 24px">'
+    +'<div style="padding:14px 20px">'
 
-    // Header stats
-    +'<div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center">'
-      +'<div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:8px 14px;display:flex;gap:8px;align-items:center">'
-        +'<span style="font-size:18px;font-weight:600;color:var(--text)">'+rows.length+'</span>'
-        +'<span style="font-size:11px;color:var(--text3)">points total</span>'
+    // Status filter bar + search
+    +'<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px">'
+      +filterBtn('all','Tous',totalAll)
+      +filterBtn('encours','En cours',enCours,'var(--text2)')
+      +filterBtn('asuivre','À suivre',asuivre,'var(--amber)')
+      +filterBtn('classe','Classés',classe,'var(--green)')
+      +'<div style="display:flex;align-items:center;gap:5px;background:var(--bg2);border:1px solid var(--border2);border-radius:20px;padding:4px 10px;margin-left:auto">'
+        +'<svg class="ico" style="width:12px;height:12px;color:var(--text3);flex-shrink:0"><use href="#i-search"/></svg>'
+        +'<input id="dates-search" value="'+e(ds.q||'')+'" placeholder="Texte, lot, entreprise, action…" oninput="window._datesState.q=this.value;renderCR()" style="border:none;background:none;outline:none;font-size:11px;color:var(--text);width:190px;font-family:inherit">'
+        +(ds.q?'<button onclick="window._datesState.q=\'\';renderCR()" style="background:none;border:none;cursor:pointer;color:var(--text3);padding:0;font-size:13px;line-height:1">×</button>':'')
       +'</div>'
-      +'<div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:8px 14px;display:flex;gap:8px;align-items:center">'
-        +'<span style="font-size:18px;font-weight:600;color:var(--red)">'+activeCount+'</span>'
-        +'<span style="font-size:11px;color:var(--text3)">en cours</span>'
-      +'</div>'
-      +'<div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:8px 14px;display:flex;gap:8px;align-items:center">'
-        +'<span style="font-size:18px;font-weight:600;color:var(--green)">'+archivedCount+'</span>'
-        +'<span style="font-size:11px;color:var(--text3)">traités</span>'
-      +'</div>'
-      +'<div style="font-size:11px;color:var(--text3);margin-left:auto">CR du '+crDate+'</div>'
     +'</div>'
 
-    // Active table
-    +(activeCount?''
-      +'<div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Points en cours ('+activeCount+')</div>'
-      +'<div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:20px">'
+    // Lot chips
+    +lotChips
+
+    // Stats row
+    +'<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">'
+      +'<div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:5px 10px;display:flex;gap:5px;align-items:center">'
+        +'<span style="font-size:15px;font-weight:600;color:var(--text)">'+totalAll+'</span>'
+        +'<span style="font-size:11px;color:var(--text3)">points</span>'
+      +'</div>'
+      +(asuivre?'<div style="background:var(--amber-bg);border:1px solid var(--amber);border-radius:var(--r);padding:5px 10px;display:flex;gap:5px;align-items:center">'
+        +'<span style="font-size:15px;font-weight:600;color:var(--amber)">'+asuivre+'</span>'
+        +'<span style="font-size:11px;color:var(--amber)">à suivre</span>'
+      +'</div>':'')
+      +(classe?'<div style="background:var(--green-bg);border:1px solid var(--green);border-radius:var(--r);padding:5px 10px;display:flex;gap:5px;align-items:center">'
+        +'<span style="font-size:15px;font-weight:600;color:var(--green)">'+classe+'</span>'
+        +'<span style="font-size:11px;color:var(--green)">classés</span>'
+      +'</div>':'')
+      +'<div style="font-size:11px;color:var(--text3);margin-left:auto;align-self:center">CR du '+(cr.date||'—')+'</div>'
+    +'</div>'
+
+    // Table
+    +(noResults
+      ?'<div style="text-align:center;padding:30px;color:var(--text3);font-size:13px">Aucun point correspondant</div>'
+      :'<div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--r);overflow:hidden">'
         +'<table style="width:100%;border-collapse:collapse">'
           +'<thead><tr style="background:var(--bg2)">'
-            +'<th style="padding:7px 10px;text-align:left;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);white-space:nowrap">Lot</th>'
-            +'<th style="padding:7px 10px;text-align:left;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border)">Remarque</th>'
-            +'<th style="padding:7px 10px;text-align:left;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);white-space:nowrap">Ajouté le</th>'
+            +'<th style="padding:7px 10px;text-align:left;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);white-space:nowrap">Lot / Intervenant</th>'
+            +'<th style="padding:7px 10px;text-align:left;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border)">Point</th>'
+            +'<th style="padding:7px 10px;text-align:left;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);white-space:nowrap">Dates</th>'
             +'<th style="padding:7px 10px;text-align:center;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);white-space:nowrap">Options</th>'
           +'</tr></thead>'
-          +'<tbody>'+active.map(function(x){return tableRow(x,false);}).join('')+'</tbody>'
+          +'<tbody>'+rows.map(tableRow).join('')+'</tbody>'
         +'</table>'
       +'</div>'
-    :'')
-
-    // Archived table
-    +(archivedCount?''
-      +'<div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Points traités / archivés ('+archivedCount+')</div>'
-      +'<div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--r);overflow:hidden">'
-        +'<table style="width:100%;border-collapse:collapse">'
-          +'<thead><tr style="background:var(--bg2)">'
-            +'<th style="padding:7px 10px;text-align:left;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);white-space:nowrap">Lot</th>'
-            +'<th style="padding:7px 10px;text-align:left;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border)">Remarque</th>'
-            +'<th style="padding:7px 10px;text-align:left;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);white-space:nowrap">Ajouté / Traité le</th>'
-            +'<th style="padding:7px 10px;text-align:center;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border)">Options</th>'
-          +'</tr></thead>'
-          +'<tbody>'+archived.map(function(x){return tableRow(x,true);}).join('')+'</tbody>'
-        +'</table>'
-      +'</div>'
-    :'')
+    )
 
     +'</div>';
+
+  // Restore search focus without moving cursor
+  const si=document.getElementById('dates-search');
+  if(si&&document.activeElement!==si&&ds.q){si.focus();const v=si.value;si.setSelectionRange(v.length,v.length);}
 }
 
 /* ══ HISTORIQUE ══ */
@@ -1160,8 +1261,6 @@ function renderHistorique(currentCR){
         const s=crStats(cr);
         const isCurrent=cr.id===currentCR.id;
         const isArchived=cr.statut==='archived';
-        const pct=s.total>0?Math.round(s.done/s.total*100):0;
-
         return `<div style="display:flex;gap:16px;margin-bottom:18px;position:relative">
           <!-- Timeline dot -->
           <div style="width:40px;flex-shrink:0;display:flex;justify-content:center;padding-top:10px;position:relative;z-index:1">
@@ -1169,7 +1268,7 @@ function renderHistorique(currentCR){
           </div>
 
           <!-- Card -->
-          <div onclick="jumpToCR('${cr.id}')" style="flex:1;background:${isCurrent?'var(--blue-bg)':'var(--panel)'};border:${isCurrent?'1.5px solid var(--blue-lt)':'1px solid var(--border)'};border-radius:var(--r2);padding:14px 16px;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='var(--blue-lt)'" onmouseout="this.style.borderColor='${isCurrent?'var(--blue-lt)':'var(--border)'}'">
+          <div onclick="jumpToCR('${cr.id}')" style="flex:1;background:${isCurrent?'var(--blue-bg)':'var(--panel)'};border:${isCurrent?'1.5px solid var(--blue-lt)':isArchived?'1px solid var(--amber)':'1px solid var(--border)'};border-radius:var(--r2);padding:14px 16px;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='var(--blue-lt)'" onmouseout="this.style.borderColor='${isCurrent?'var(--blue-lt)':'var(--border)'}'">
 
             <!-- Header -->
             <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px">
@@ -1183,22 +1282,20 @@ function renderHistorique(currentCR){
                 ${cr.dateProchaine?`<div style="font-size:11px;color:var(--text3);margin-top:1px">Prochaine réunion : ${cr.dateProchaine}</div>`:''}
                 ${cr.redacteur?`<div style="font-size:11px;color:var(--text3)">Rédacteur : ${cr.redacteur}</div>`:''}
               </div>
-              <div style="text-align:right;flex-shrink:0">
-                <div style="font-size:20px;font-weight:700;color:${isCurrent?'var(--blue)':pct===100?'var(--green)':'var(--text2)'}">${pct}%</div>
-                <div style="font-size:10px;color:var(--text3)">traité</div>
-              </div>
-            </div>
 
-            <!-- Progress bar -->
-            <div style="height:4px;background:var(--bg2);border-radius:2px;overflow:hidden;margin-bottom:10px">
-              <div style="height:100%;border-radius:2px;background:${pct===100?'var(--green)':isCurrent?'var(--blue)':'var(--border2)'};width:${pct}%;transition:width .3s"></div>
             </div>
 
             <!-- Stats row -->
             <div style="display:flex;gap:10px;flex-wrap:wrap">
               <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text3)">
                 <svg class="ico ico-xs"><use href="#i-file"/></svg>
-                <span>${s.done}/${s.total} points</span>
+                <span>${s.total} point${s.total!==1?"s":""}</span>
+              </div>
+              ${s.done?`<div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--green)">
+                <svg class="ico ico-xs"><use href="#i-check"/></svg>
+                <span>${s.done} classé${s.done!==1?"s":""}</span>
+              </div>`:''}
+              <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text3)">
               </div>
               ${s.flags?`<div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--amber)">
                 <svg class="ico ico-xs"><use href="#i-flag"/></svg>
@@ -1206,7 +1303,13 @@ function renderHistorique(currentCR){
               </div>`:''}
               <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text3)">
                 <svg class="ico ico-xs"><use href="#i-check"/></svg>
-                <span>${s.actDone}/${s.actTodo+s.actDone} actions</span>
+<span>${s.actTodo} action${s.actTodo!==1?"s":""} ouverte${s.actTodo!==1?"s":""}</span>
+              </div>
+              ${s.actDone?`<div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--green)">
+                <svg class="ico ico-xs"><use href="#i-check"/></svg>
+                <span>${s.actDone} action${s.actDone!==1?"s":""} terminée${s.actDone!==1?"s":""}</span>
+              </div>`:''}
+              <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text3)">
               </div>
               <div style="margin-left:auto">
                 <span style="font-size:11px;color:${isCurrent?'var(--blue)':'var(--text3)'};font-weight:500">${isCurrent?'Vue actuelle →':'Ouvrir →'}</span>
@@ -1247,9 +1350,9 @@ function renderHistorique(currentCR){
             <div style="flex:1;min-width:0">
               <div style="font-size:12.5px;font-weight:500">Export du ${snap.printedAt}</div>
               <div style="font-size:11px;color:var(--text3);margin-top:2px;display:flex;gap:10px">
-                <span>${snap.doneRemarques}/${snap.totalRemarques} points traités</span>
+                <span>${snap.totalRemarques} points (${snap.doneRemarques} archivés)</span>
                 <span>·</span>
-                <span>${snap.doneActions}/${snap.totalActions} actions</span>
+                <span>${snap.totalActions-snap.doneActions} action${(snap.totalActions-snap.doneActions)!==1?"s":""} ouverte${(snap.totalActions-snap.doneActions)!==1?"s":""}${snap.doneActions?" · "+snap.doneActions+" terminée"+(snap.doneActions!==1?"s":""):""}</span>
               </div>
             </div>
             <span style="font-size:10px;color:var(--text3);white-space:nowrap">CR n°${snap.numero} — ${snap.date}</span>
@@ -1278,8 +1381,8 @@ function jumpToCR(id){
 /* ══ TABS ══ */
 function switchTab(tab,btn){
   activeTab=tab;
-  if(tab!=='remarques') remarqueSearch='';
-  if(tab!=='actions') actionFilter='';
+  if(tab!=='remarques'){remarqueSearch='';quickFilter='all';}
+  if(tab!=='actions'){actionFilter='';actionStatusFilter='all';}
   document.querySelectorAll('.tab').forEach(t=>{t.classList.remove('active');});
   btn.classList.add('active');
   renderCR();
@@ -1751,7 +1854,7 @@ function exportCR(crId){
       <tr>
         <td style="border:1px solid #000;border-top:none;padding:8px 12px">
           ${lot.remarques.filter(r=>!r.archived).map((r,i)=>`<div style="padding:3px 0;font-size:9pt;line-height:1.5;color:#000">- ${e(r.texte)}</div>`).join('')}
-          ${lot.remarques.filter(r=>r.archived).length?`<div style="margin-top:6px;padding-top:6px;border-top:1px dashed #ccc;font-size:8pt;color:#999"><em>Archive (${lot.remarques.filter(r=>r.archived).length} point(s) traités — non imprimés)</em></div>`:''}
+          ${lot.remarques.filter(r=>r.archived).length?`<div style="margin-top:6px;padding-top:6px;border-top:1px dashed #ccc;font-size:8pt;color:#999"><em>Archivés — ${lot.remarques.filter(r=>r.archived).length} point(s) non imprimés</em></div>`:''}
         </td>
       </tr>
     </table>`;
@@ -2086,10 +2189,10 @@ function openCRSettings(crId){
   // Init SortableJS on each panel list (needs timeout for DOM)
   setTimeout(function(){
     if(typeof Sortable==='undefined'){
-      // SortableJS not loaded — show a small warning, keep ▲▼ buttons as fallback
+      // SortableJS not loaded — show a warning
       var warn=document.createElement('div');
       warn.style.cssText='font-size:11px;color:var(--amber);padding:4px 8px;background:var(--amber-bg);border-radius:4px;margin-bottom:8px;text-align:center';
-      warn.textContent='Drag & drop non disponible (CDN) — utilisez les boutons ▲▼';
+      warn.textContent='Réorganisation non disponible (CDN introuvable). Vérifiez votre connexion.';
       var p0=document.getElementById('gs-p0');
       if(p0)p0.insertBefore(warn,p0.firstChild);
       return;
@@ -2284,9 +2387,6 @@ function deleteCR(crId){
 }
 
 /* ══ REORDER — up/down buttons (reliable in modals) ══ */
-let dragSrcIdx=null;
-let dragSrcType=null;
-
 // Save all visible settings field values into CR data (used before drag reorders DOM)
 function _saveSettingsFields(crId){
   var cr=CRS.find(c=>c.id===crId);
@@ -2360,14 +2460,7 @@ function moveItem(type, crId, fromIdx, dirOrTo, isAbsolute) {
 }
 
 // Keep stubs for compatibility
-function gsDragStart(){}
-function gsDragOver(e){e.preventDefault();}
-function gsDrop(){}
-function gsDragEnd(){}
-function gsDragStart2(){}
-function gsDragOver2(e){e.preventDefault();}
-function gsDrop2(){}
-function gsDragEnd2(){}
+// Drag handled by SortableJS
 
 /* ══ LIVE COLOR SYNC ══ */
 function syncIntColor(crId, ii, color) {
@@ -2686,7 +2779,7 @@ function cloneCR(crId){
     <div style="background:var(--blue-bg);border-radius:var(--r);padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--text2)">
       Reprend la structure complète et reporte automatiquement les
       <strong>${pendingOpen} points non traités</strong> et <strong>${pendingActions} actions non terminées</strong>.
-      <br><span style="color:var(--text3)">Les points traités et archivés ne sont pas repris.</span>
+      <br><span style="color:var(--text3)">Les points archivés/classés ne sont pas repris.</span>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div class="fi" style="grid-column:1/-1"><label>Nom du projet</label><input id="cl-proj" value="${e(cr.projet)}"></div>
@@ -3481,13 +3574,11 @@ function updateSidebarLogo(){
   const subEl=document.getElementById('sb-firm-sub');
   if(!mark)return;
   if(s.logoLeft){
-    // Show custom logo image in sidebar
-    mark.style.cssText='width:34px;height:34px;border-radius:6px;overflow:hidden;padding:0;background:none;display:flex;align-items:center;justify-content:center';
-    mark.innerHTML='<img src="'+s.logoLeft+'" style="width:100%;height:100%;object-fit:contain">';
+    mark.style.cssText='width:34px;height:34px;border-radius:6px;overflow:hidden;padding:0;background:none;display:flex;align-items:center;justify-content:center;flex-shrink:0';
+    mark.innerHTML='<img src="'+s.logoLeft+'" style="width:34px;height:34px;object-fit:contain;display:block">';
   } else {
-    // Show firm initials
-    const initials=(s.firmName||'PS').split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase()||'PS';
-    mark.style.cssText='width:26px;height:26px;background:var(--blue);border-radius:7px;display:flex;align-items:center;justify-content:center;color:#3d3533;font-size:11px;font-weight:700';
+    const initials=(s.firmName||'PS').split(' ').map(function(w){return w[0]||'';}).filter(Boolean).slice(0,2).join('').toUpperCase()||'PS';
+    mark.style.cssText='width:34px;height:34px;background:var(--blue);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;flex-shrink:0;letter-spacing:-.5px';
     mark.innerHTML=initials;
   }
   if(nameEl)nameEl.textContent=s.firmName||'Cabinet';
@@ -3642,19 +3733,7 @@ function isSoon(echeance){
 }
 
 /* ══ RESET quickFilter on tab/CR switch ══ */
-const _origSwitchTab=switchTab;
-switchTab=function(tab,btn){
-  if(tab!=='remarques'){quickFilter='all';}
-  if(tab!=='actions'){actionFilter='';actionStatusFilter='all';}
-  _origSwitchTab(tab,btn);
-};
-const _origOpenCR=openCR;
-openCR=function(id){
-  quickFilter='all';
-  actionFilter='';
-  actionStatusFilter='all';
-  _origOpenCR(id);
-};
+
 
 /* ══ PDF PREVIEW ══ */
 function previewPDF(crId){
