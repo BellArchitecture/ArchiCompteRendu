@@ -2113,210 +2113,198 @@ function saveEditCR(crId){
 }
 
 /* ══ EXPORT / PRINT ══ */
+
+/* ══ SHARED PDF PAGINATION ══ */
+function _estimateRmarkHeight(texte, images) {
+  const LINE_H = 17;
+  const CHARS_PER_LINE = 90;
+  const lines = Math.ceil((texte||'').length / CHARS_PER_LINE) || 1;
+  let h = lines * LINE_H + 8;
+  if (images && images.length) h += Math.ceil(images.length / 3) * 110 + 8;
+  return h;
+}
+
+function buildPDFPages(cr) {
+  const s = PDF_SETTINGS;
+  const A4_CONTENT_H = 1020;
+  const PAGE_STYLE = 'padding:20px;font-family:Arial,sans-serif;font-size:9pt;color:#000;page-break-after:always';
+
+  function pageHeader(pageNum) {
+    const leftCell = s.showLogoLeft
+      ? (s.logoLeft
+          ? `<td style="width:${s.logoLeftWidth||60}px;border:1px solid #000;padding:4px;text-align:center;vertical-align:middle"><img src="${s.logoLeft}" style="max-width:${(s.logoLeftWidth||60)-8}px;max-height:44px;object-fit:contain;display:block;margin:0 auto"></td>`
+          : `<td style="width:${s.logoLeftWidth||60}px;border:1px solid #000;padding:6px;text-align:center;vertical-align:middle"><div style="font-weight:700;font-size:12pt">${e(s.firmName||'PS')}</div>${s.firmSub?`<div style="font-size:6pt;color:#555">${e(s.firmSub)}</div>`:''}</td>`)
+      : `<td style="width:${s.logoLeftWidth||60}px;border:1px solid #000;padding:6px"></td>`;
+    const rightCell = s.showLogoRight
+      ? (s.logoRight
+          ? `<td style="width:${s.logoRightWidth||60}px;border:1px solid #000;border-left:none;padding:4px;text-align:center;vertical-align:middle"><img src="${s.logoRight}" style="max-width:${(s.logoRightWidth||60)-8}px;max-height:44px;object-fit:contain;display:block;margin:0 auto"></td>`
+          : `<td style="width:${s.logoRightWidth||60}px;border:1px solid #000;border-left:none;padding:6px;text-align:center;vertical-align:middle"><div style="font-weight:700;font-size:12pt">${e(s.firmName||'PS')}</div></td>`)
+      : `<td style="width:${s.logoRightWidth||60}px;border:1px solid #000;border-left:none;padding:6px"></td>`;
+    return `<table style="width:100%;border-collapse:collapse;margin-bottom:0">
+      <tr>${leftCell}
+        <td style="padding:8px 16px;border:1px solid #000;border-left:none;text-align:center">
+          <div style="font-weight:700;font-size:12pt;letter-spacing:2px">${e(s.headerTitle||'COMPTE RENDU')}</div>
+        </td>${rightCell}
+      </tr>
+    </table>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:10px">
+      <tr><td colspan="2" style="padding:5px 8px;border:1px solid #000;border-top:none;font-size:9pt"><strong>PROJET : ${e(cr.projet)}</strong>&nbsp;&nbsp;&nbsp;${e(cr.adresse)}</td></tr>
+      <tr>
+        <td style="padding:5px 8px;border:1px solid #000;border-top:none;font-size:9pt;width:50%"><strong>DATE :</strong> ${e(cr.date)}</td>
+        <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;font-size:9pt"><strong>PROCHAINE RÉUNION :</strong> ${e(cr.dateProchaine||'—')}</td>
+      </tr>
+    </table>
+    <div style="text-align:right;font-size:7pt;color:#888;margin-bottom:4px">Page ${pageNum} / __TOTAL__</div>`;
+  }
+
+  function hexToLight(hex) {
+    const h2=(hex||'#ccc').replace('#','');
+    if(h2.length<6) return '#f0f0f0';
+    const r=parseInt(h2.substr(0,2),16),g=parseInt(h2.substr(2,2),16),b=parseInt(h2.substr(4,2),16);
+    return `rgb(${Math.round(r*.2+255*.8)},${Math.round(g*.2+255*.8)},${Math.round(b*.2+255*.8)})`;
+  }
+
+  const pages = [];
+  let pageNum = 1;
+  let currentBlocks = [];
+  let currentH = 0;
+
+  function flushPage() {
+    if (!currentBlocks.length) return;
+    pages.push(`<div class="pr-page" style="${PAGE_STYLE}">${pageHeader(pageNum)}${currentBlocks.join('')}</div>`);
+    pageNum++;
+    currentBlocks = [];
+    currentH = 0;
+  }
+  function addBlock(html, estH) {
+    if (currentH + estH > A4_CONTENT_H && currentBlocks.length > 0) flushPage();
+    currentBlocks.push(html);
+    currentH += estH;
+  }
+
+  // ── Intervenants ──
+  const allInts = cr.intervenants;
+  const moa = allInts.filter(i=>i.lot.toLowerCase().includes('ouvrage')||i.lot.toLowerCase().includes('moa'));
+  const moe = allInts.filter(i=>i.lot.toLowerCase().includes('oeuvre')||i.lot.toLowerCase().includes('moe'));
+  const oth = allInts.filter(i=>!moa.includes(i)&&!moe.includes(i));
+  const grps = [{label:"MAÎTRISE D'OUVRAGE",rows:moa},{label:"MAÎTRISE D'ŒUVRE",rows:moe},{label:"INTERVENANTS ENTREPRISES",rows:oth}].filter(g=>g.rows.length);
+
+  let intHdr = `<table style="width:100%;border-collapse:collapse;margin-bottom:4px"><tr style="background:#e0e0e0">
+    <td colspan="2" style="padding:4px 7px;border:1px solid #000;font-weight:600;font-size:8.5pt">Intervenant / Lot</td>
+    <td style="padding:4px 7px;border:1px solid #000;border-left:none;font-weight:600;font-size:8.5pt">Contact</td>
+    <td style="padding:4px 7px;border:1px solid #000;border-left:none;font-weight:600;font-size:8.5pt;width:50px;text-align:center">Conv.</td>
+    <td style="padding:4px 7px;border:1px solid #000;border-left:none;font-weight:600;font-size:8.5pt;width:50px;text-align:center">Présent</td>
+    <td style="padding:4px 7px;border:1px solid #000;border-left:none;font-weight:600;font-size:8.5pt;width:70px;text-align:center">Prochain</td>
+  </tr>`;
+  let intRows = '';
+  grps.forEach(function(g){
+    intRows+=`<tr style="background:#e8e8e8"><td colspan="6" style="padding:4px 7px;border:1px solid #000;border-top:none;font-weight:600;font-size:8pt">${g.label}</td></tr>`;
+    g.rows.forEach(function(i){
+      intRows+=`<tr>
+        <td style="padding:3px 7px;border:1px solid #000;border-top:none;font-size:8pt;font-weight:600;vertical-align:top;width:95px">${e(i.lot.toUpperCase())}</td>
+        <td style="padding:3px 7px;border:1px solid #000;border-top:none;border-left:none;font-size:8pt;vertical-align:top">${e(i.entreprise)}</td>
+        <td style="padding:3px 7px;border:1px solid #000;border-top:none;border-left:none;font-size:7.5pt;vertical-align:top;white-space:pre-line">${e(i.contacts)}</td>
+        <td style="padding:3px 7px;border:1px solid #000;border-top:none;border-left:none;text-align:center;font-size:8.5pt">${i.convoque!==false?'X':''}</td>
+        <td style="padding:3px 7px;border:1px solid #000;border-top:none;border-left:none;text-align:center;font-size:8.5pt;font-weight:700">${i.present?'X':''}</td>
+        <td style="padding:3px 7px;border:1px solid #000;border-top:none;border-left:none;text-align:center;font-size:8.5pt">☐</td>
+      </tr>`;
+    });
+  });
+  addBlock(intHdr+intRows+'</table>', allInts.length*22+50);
+  flushPage();
+
+  // ── Remarques par lot ──
+  cr.lots.forEach(function(lot){
+    const active=lot.remarques.filter(function(r){return !r.archived;});
+    const archCnt=lot.remarques.filter(function(r){return r.archived;}).length;
+    if(!active.length&&!archCnt)return;
+    const col=getColor(lot,cr);
+    const bg=hexToLight(col);
+    const lotHdr=`<div style="background:${bg};padding:5px 8px;border:1px solid #000;font-weight:700;font-size:9pt;text-transform:uppercase;color:${col};page-break-after:avoid">REMARQUES — ${e(lot.titre.toUpperCase())}</div>`;
+    if(!active.length){
+      addBlock(lotHdr+`<div style="border:1px solid #000;border-top:none;padding:5px 10px;font-size:8pt;color:#999;font-style:italic">Aucune remarque active.</div>`, 52);
+    } else {
+      // First remark stays with header
+      const r0=active[0];
+      const r0html=`<div style="padding:3px 0;font-size:9pt;line-height:1.5;border-bottom:1px solid #f0f0f0">- ${e(r0.texte)}</div>`
+        +(r0.images&&r0.images.length?`<div style="display:flex;gap:5px;flex-wrap:wrap;margin:3px 0">${r0.images.map(img=>`<div style="display:inline-block"><img src="${img.data}" style="max-width:100px;max-height:80px;object-fit:contain;border:1px solid #ccc;border-radius:2px;display:block">${img.caption?`<div style="font-size:7pt;color:#666">${e(img.caption)}</div>`:''}</div>`).join('')}</div>`:'');
+      addBlock(lotHdr+`<div style="border:1px solid #000;border-top:none;padding:5px 10px">${r0html}</div>`, 46+_estimateRmarkHeight(r0.texte,r0.images));
+      active.slice(1).forEach(function(r){
+        const rh=`<div style="border:1px solid #000;border-top:none;padding:4px 10px">- ${e(r.texte)}`
+          +(r.images&&r.images.length?`<div style="display:flex;gap:5px;flex-wrap:wrap;margin:3px 0">${r.images.map(img=>`<div style="display:inline-block"><img src="${img.data}" style="max-width:100px;max-height:80px;object-fit:contain;border:1px solid #ccc;border-radius:2px;display:block">${img.caption?`<div style="font-size:7pt;color:#666">${e(img.caption)}</div>`:''}</div>`).join('')}</div>`:'')
+          +`</div>`;
+        addBlock(rh, _estimateRmarkHeight(r.texte,r.images)+10);
+      });
+      if(archCnt) addBlock(`<div style="border:1px solid #000;border-top:none;padding:4px 10px;font-size:8pt;color:#999;font-style:italic">Archivés : ${archCnt} point(s) non imprimés</div>`,22);
+    }
+    addBlock('<div style="height:6px"></div>',6);
+  });
+  flushPage();
+
+  // ── Actions ──
+  if(cr.actions.length){
+    const actHdr=`<div style="background:#d4d4d4;padding:4px 8px;border:1px solid #000;font-weight:700;font-size:9pt;margin-bottom:0">ACTIONS / DÉCISIONS</div>
+    <table style="width:100%;border-collapse:collapse"><tr style="background:#eee">
+      <td style="padding:4px 7px;border:1px solid #000;border-top:none;font-weight:600;font-size:8pt;width:25px">N°</td>
+      <td style="padding:4px 7px;border:1px solid #000;border-top:none;border-left:none;font-weight:600;font-size:8pt">Action</td>
+      <td style="padding:4px 7px;border:1px solid #000;border-top:none;border-left:none;font-weight:600;font-size:8pt;width:95px">Responsable</td>
+      <td style="padding:4px 7px;border:1px solid #000;border-top:none;border-left:none;font-weight:600;font-size:8pt;width:75px">Échéance</td>
+      <td style="padding:4px 7px;border:1px solid #000;border-top:none;border-left:none;font-weight:600;font-size:8pt;width:52px;text-align:center">Statut</td>
+    </tr>`;
+    addBlock(actHdr, 52);
+    const lastAi=cr.actions.length-1;
+    cr.actions.forEach(function(a,ai){
+      const ahtml=`<tr style="${a.done?'color:#999;text-decoration:line-through':''}">
+        <td style="padding:3px 7px;border:1px solid #000;border-top:none;font-size:8pt;text-align:center;vertical-align:top">${ai+1}</td>
+        <td style="padding:3px 7px;border:1px solid #000;border-top:none;border-left:none;font-size:8pt;vertical-align:top">${e(a.texte)}${(a.images&&a.images.length)?`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:2px">${a.images.map(img=>`<img src="${img.data}" style="max-width:70px;max-height:55px;object-fit:contain;border:1px solid #ccc;border-radius:2px">`).join('')}</div>`:''}</td>
+        <td style="padding:3px 7px;border:1px solid #000;border-top:none;border-left:none;font-size:8pt;vertical-align:top">${e(a.responsable)}</td>
+        <td style="padding:3px 7px;border:1px solid #000;border-top:none;border-left:none;font-size:8pt;vertical-align:top">${e(a.echeance)}</td>
+        <td style="padding:3px 7px;border:1px solid #000;border-top:none;border-left:none;font-size:8pt;text-align:center;vertical-align:top">${a.done?'✓':'En cours'}</td>
+      </tr>${ai===lastAi?'</table>':''}`;
+      addBlock(ahtml, _estimateRmarkHeight(a.texte,a.images)+10);
+    });
+    if(cr.dateProchaine){
+      addBlock(`<div style="margin-top:10px;padding:7px;border:1px solid #000;font-size:9pt;text-align:center"><strong>DATE PROCHAINE RÉUNION :</strong> ${e(cr.dateProchaine)}</div>`,38);
+    }
+    flushPage();
+  }
+
+  // Fix __TOTAL__ placeholder with real page count
+  const total=pages.length;
+  return pages.map(function(p){return p.replace(/__TOTAL__/g,String(total));});
+}
+
 function exportCR(crId){
-  const cr=CRS.find(c=>c.id===crId);
+  const cr=CRS.find(function(x){return x.id===crId;});
   if(!cr)return;
 
-  // Page header repeated on every page
-  function pageHeader(){
-    const s = PDF_SETTINGS;
-    const logoCell = (imgData, width, show) => {
-      if (!show) return `<td style="width:${width}px;border:1px solid #000;border-left:none;padding:4px"></td>`;
-      if (imgData) return `<td style="width:${width}px;border:1px solid #000;border-left:none;padding:4px;text-align:center;vertical-align:middle">
-        <img src="${imgData}" style="max-width:${width-8}px;max-height:40px;object-fit:contain;display:block;margin:0 auto">
-      </td>`;
-      return `<td style="width:${width}px;border:1px solid #000;border-left:none;padding:6px;text-align:center;vertical-align:middle">
-        <div style="font-weight:700;font-size:13pt;color:#000">${e(s.firmName||'PS')}</div>
-        ${s.firmSub?`<div style="font-size:6pt;color:#555;text-transform:uppercase;letter-spacing:.05em">${e(s.firmSub)}</div>`:''}
-      </td>`;
-    };
-    return `<table style="width:100%;border-collapse:collapse;margin-bottom:0">
-      <tr>
-        ${s.showLogoLeft ? (s.logoLeft
-          ? `<td style="width:${s.logoLeftWidth}px;border:1px solid #000;padding:4px;text-align:center;vertical-align:middle"><img src="${s.logoLeft}" style="max-width:${s.logoLeftWidth-8}px;max-height:44px;object-fit:contain;display:block;margin:0 auto"></td>`
-          : `<td style="width:${s.logoLeftWidth}px;border:1px solid #000;padding:6px;text-align:center;vertical-align:middle"><div style="font-weight:700;font-size:13pt">${e(s.firmName||'PS')}</div>${s.firmSub?`<div style="font-size:6pt;color:#555">${e(s.firmSub)}</div>`:''}</td>`)
-          : `<td style="width:${s.logoLeftWidth||60}px;border:1px solid #000;padding:6px"></td>`}
-        <td style="padding:8px 16px;border:1px solid #000;border-left:none;text-align:center">
-          <div style="font-weight:700;font-size:13pt;letter-spacing:2px">${e(s.headerTitle||'COMPTE RENDU')}</div>
-        </td>
-        ${s.showLogoRight ? (s.logoRight
-          ? `<td style="width:${s.logoRightWidth}px;border:1px solid #000;border-left:none;padding:4px;text-align:center;vertical-align:middle"><img src="${s.logoRight}" style="max-width:${s.logoRightWidth-8}px;max-height:44px;object-fit:contain;display:block;margin:0 auto"></td>`
-          : `<td style="width:${s.logoRightWidth||60}px;border:1px solid #000;border-left:none;padding:6px;text-align:center;vertical-align:middle"><div style="font-weight:700;font-size:13pt">${e(s.firmName||'PS')}</div></td>`)
-          : `<td style="width:${s.logoRightWidth||60}px;border:1px solid #000;border-left:none;padding:6px"></td>`}
-      </tr>
-    </table>
-    <table style="width:100%;border-collapse:collapse;margin-bottom:12px">
-      <tr>
-        <td colspan="2" style="padding:5px 8px;border:1px solid #000;border-top:none;font-size:9pt">
-          <strong>PROJET: ${e(cr.projet)}</strong>&nbsp;&nbsp;&nbsp;&nbsp;${e(cr.adresse)}
-        </td>
-      </tr>
-      <tr>
-        <td style="padding:5px 8px;border:1px solid #000;border-top:none;font-size:9pt;width:50%">
-          <strong>DATE:</strong> ${e(cr.date)}.
-        </td>
-        <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;font-size:9pt">
-          <strong>DATE PROCHAINE RÉUNION:</strong> ${e(cr.dateProchaine)}
-        </td>
-      </tr>
-    </table>`;
-  }
+  const pages=buildPDFPages(cr);
+  const fullHTML='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'
+    +'body{font-family:Arial,sans-serif;font-size:9pt;color:#000;margin:0;padding:0}'
+    +'table{border-collapse:collapse}'
+    +'.pr-page{padding:20px;page-break-after:always}'
+    +'.pr-page:last-child{page-break-after:avoid}'
+    +'@media print{.pr-page{padding:12mm}}'
+    +'</style></head><body>'+pages.join('')+'</body></html>';
 
-  // ── Page 1: Intervenants ──
-  let page1=`<div class="pr-page" style="padding:20px;font-family:Arial,sans-serif;font-size:9pt;color:#000">
-    ${pageHeader()}
-    <table style="width:100%;border-collapse:collapse;margin-bottom:4px">
-      <tr style="background:#e0e0e0">
-        <td colspan="2" style="padding:5px 8px;border:1px solid #000;font-weight:600;font-size:9pt">MAÎTRISE D'OUVRAGE</td>
-        <td style="padding:5px 8px;border:1px solid #000;border-left:none;font-weight:600;font-size:9pt">Contact</td>
-        <td style="padding:5px 8px;border:1px solid #000;border-left:none;font-weight:600;font-size:9pt;width:60px;text-align:center">Convoqué</td>
-        <td style="padding:5px 8px;border:1px solid #000;border-left:none;font-weight:600;font-size:9pt;width:55px;text-align:center">Présent</td>
-        <td style="padding:5px 8px;border:1px solid #000;border-left:none;font-weight:600;font-size:9pt;width:90px;text-align:center">Convocation<br>prochain RDV</td>
-      </tr>`;
-
-  // MOA rows
-  const moa=cr.intervenants.filter(i=>i.lot.toLowerCase().includes('ouvrage')||i.lot.toLowerCase().includes('moa'));
-  const moe=cr.intervenants.filter(i=>i.lot.toLowerCase().includes('oeuvre')||i.lot.toLowerCase().includes('moe'));
-  const others=cr.intervenants.filter(i=>!moa.includes(i)&&!moe.includes(i));
-
-  moa.forEach(i=>{
-    const name=i.entreprise||i.contacts.split('\n')[0]||'';
-    page1+=`<tr>
-      <td colspan="2" style="padding:5px 8px;border:1px solid #000;border-top:none;font-size:9pt">${e(name)}</td>
-      <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;font-size:9pt">${e(i.contacts.replace(/\n/g,' — '))}</td>
-      <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;text-align:center;font-size:9pt">${i.convoque!==false?'X':''}</td>
-      <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;text-align:center;font-size:9pt;font-weight:700">${i.present?'X':''}</td>
-      <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;text-align:center;font-size:9pt">☐</td>
-    </tr>`;
-  });
-
-  if(moe.length){
-    page1+=`<tr style="background:#e0e0e0">
-      <td colspan="6" style="padding:5px 8px;border:1px solid #000;border-top:none;font-weight:600;font-size:9pt">MAÎTRISE D'ŒUVRE</td>
-    </tr>`;
-    moe.forEach(i=>{
-      page1+=`<tr>
-        <td style="padding:5px 8px;border:1px solid #000;border-top:none;font-size:9pt;width:120px;font-weight:600">${e(i.lot.toUpperCase())}</td>
-        <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;font-size:9pt">${e(i.entreprise)}</td>
-        <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;font-size:9pt;white-space:pre-line">${e(i.contacts)}</td>
-        <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;text-align:center;font-size:9pt">${i.convoque!==false?'X':''}</td>
-        <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;text-align:center;font-size:9pt;font-weight:700">${i.present?'X':''}</td>
-        <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;text-align:center;font-size:9pt">☐</td>
-      </tr>`;
-    });
-  }
-
-  if(others.length){
-    page1+=`<tr style="background:#e0e0e0">
-      <td colspan="6" style="padding:5px 8px;border:1px solid #000;border-top:none;font-weight:600;font-size:9pt">INTERVENANTS ENTREPRISES</td>
-    </tr>`;
-    others.forEach(i=>{
-      page1+=`<tr>
-        <td style="padding:5px 8px;border:1px solid #000;border-top:none;font-size:9pt;font-weight:700;vertical-align:top;width:120px">${e(i.lot.toUpperCase())}</td>
-        <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;font-size:9pt;vertical-align:top">${e(i.entreprise)}</td>
-        <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;font-size:8.5pt;vertical-align:top;white-space:pre-line">${e(i.contacts)}</td>
-        <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;text-align:center;vertical-align:top;font-size:9pt">${i.convoque!==false?'X':''}</td>
-        <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;text-align:center;vertical-align:top;font-size:9pt;font-weight:700">${i.present?'X':''}</td>
-        <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;text-align:center;vertical-align:top;font-size:9pt">☐</td>
-      </tr>`;
-    });
-  }
-
-  page1+=`</table><div style="text-align:right;font-size:8pt;color:#666;margin-top:4px">1</div></div>`;
-
-  // ── Remarques pages ──
-  let remarquesPages='';
-  cr.lots.forEach((lot,lotIdx)=>{
-    if(!lot.remarques.length)return;
-    // Use stored color or derive from title — convert to a light print-safe bg
-    const fullColor=getColor(lot,cr);
-    // Convert hex to RGB and make a light background (15% opacity on white)
-    function hexToLightBg(hex){
-      const c=hex.replace('#','');
-      if(c.length!==6)return '#e0e0e0';
-      const r=parseInt(c.substr(0,2),16);
-      const g=parseInt(c.substr(2,2),16);
-      const b=parseInt(c.substr(4,2),16);
-      // mix with white at 15%
-      const lr=Math.round(r*0.22+255*0.78);
-      const lg=Math.round(g*0.22+255*0.78);
-      const lb=Math.round(b*0.22+255*0.78);
-      return `rgb(${lr},${lg},${lb})`;
-    }
-    const bgColor=hexToLightBg(fullColor);
-    const textColor=fullColor;
-
-    const block=`<table style="width:100%;border-collapse:collapse;margin-bottom:10px">
-      <tr>
-        <td style="background:${bgColor};padding:5px 8px;border:1px solid #000;font-weight:700;font-size:9pt;text-transform:uppercase;color:${textColor};letter-spacing:.03em">
-          REMARQUES INTERVENANTS — ${e(lot.titre.toUpperCase())}
-        </td>
-      </tr>
-      <tr>
-        <td style="border:1px solid #000;border-top:none;padding:8px 12px">
-          ${lot.remarques.filter(r=>!r.archived).map((r,i)=>`<div style="padding:3px 0;font-size:9pt;line-height:1.5;color:#000">- ${e(r.texte)}</div>`).join('')}
-          ${lot.remarques.filter(r=>r.archived).length?`<div style="margin-top:6px;padding-top:6px;border-top:1px dashed #ccc;font-size:8pt;color:#999"><em>Archivés — ${lot.remarques.filter(r=>r.archived).length} point(s) non imprimés</em></div>`:''}
-        </td>
-      </tr>
-    </table>`;
-    remarquesPages+=block;
-  });
-
-  const page2=`<div class="pr-page" style="padding:20px;font-family:Arial,sans-serif;font-size:9pt;color:#000">
-    ${pageHeader()}
-    ${remarquesPages}
-    <div style="text-align:right;font-size:8pt;color:#666;margin-top:8px">2</div>
-  </div>`;
-
-  // ── Actions page ──
-  const page3=cr.actions.length?`<div class="pr-page" style="padding:20px;font-family:Arial,sans-serif;font-size:9pt;color:#000">
-    ${pageHeader()}
-    <div style="background:#d4d4d4;padding:4px 8px;border:1px solid #000;font-weight:700;font-size:9pt;margin-bottom:0">
-      ACTIONS / DÉCISIONS
-    </div>
-    <table style="width:100%;border-collapse:collapse">
-      <tr style="background:#eeeeee">
-        <td style="padding:5px 8px;border:1px solid #000;border-top:none;font-weight:600;font-size:8.5pt">N°</td>
-        <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;font-weight:600;font-size:8.5pt">Action</td>
-        <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;font-weight:600;font-size:8.5pt;width:120px">Responsable</td>
-        <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;font-weight:600;font-size:8.5pt;width:90px">Échéance</td>
-        <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;font-weight:600;font-size:8.5pt;width:60px;text-align:center">Statut</td>
-      </tr>
-      ${cr.actions.map((a,i)=>`<tr style="${a.done?'color:#999;text-decoration:line-through':''}">
-        <td style="padding:5px 8px;border:1px solid #000;border-top:none;font-size:8.5pt;text-align:center">${i+1}</td>
-        <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;font-size:8.5pt">${e(a.texte)}</td>
-        <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;font-size:8.5pt">${e(a.responsable)}</td>
-        <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;font-size:8.5pt">${e(a.echeance)}</td>
-        <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;font-size:8.5pt;text-align:center">${a.done?'✓':'En cours'}</td>
-      </tr>`).join('')}
-    </table>
-    ${cr.dateProchaine?`<div style="margin-top:16px;padding:8px;border:1px solid #000;font-size:9pt;text-align:center">
-      <strong>DATE PROCHAINE RÉUNION :</strong> ${e(cr.dateProchaine)}
-    </div>`:''}
-    <div style="text-align:right;font-size:8pt;color:#666;margin-top:8px">3</div>
-  </div>`:'';
-
-  // Inject into print area and print
   const printArea=document.getElementById('print-area');
-  printArea.innerHTML=page1+page2+page3;
+  printArea.innerHTML=pages.join('');
   printArea.style.display='block';
   document.getElementById('content').style.display='none';
   document.querySelector('.app').style.display='none';
 
-  // Save a snapshot to history before printing
   markClean();
   savePrintSnapshot(crId);
-
   window.print();
 
-  // Restore after print
-  setTimeout(()=>{
+  setTimeout(function(){
     printArea.style.display='none';
     printArea.innerHTML='';
     document.getElementById('content').style.display='';
     document.querySelector('.app').style.display='flex';
   },1000);
 }
+
 
 function savePrintSnapshot(crId){
   const cr=CRS.find(c=>c.id===crId);
@@ -4209,124 +4197,32 @@ function isSoon(echeance){
 
 /* ══ PDF PREVIEW ══ */
 function previewPDF(crId){
-  const cr=CRS.find(c=>c.id===crId);
+  const cr=CRS.find(function(x){return x.id===crId;});
   if(!cr)return;
 
-  // Build full PDF content (reuse exportCR content generation)
-  // We call exportCR in "preview mode" — build pages then show in iframe modal
-  const s=PDF_SETTINGS;
+  const pages=buildPDFPages(cr);
+  const fullHTML='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'
+    +'body{font-family:Arial,sans-serif;font-size:9pt;color:#000;margin:0;padding:0}'
+    +'table{border-collapse:collapse}'
+    +'.pr-page{padding:20px}'
+    +'@media print{.pr-page{padding:12mm;page-break-after:always}}'
+    +'</style></head><body>'+pages.join('')+'</body></html>';
 
-  function pageHeaderHTML(){
-    const fLeft=s.showLogoLeft?(s.logoLeft?`<img src="${s.logoLeft}" style="max-width:${(s.logoLeftWidth||60)-8}px;max-height:44px;object-fit:contain;display:block;margin:0 auto">`:`<div style="font-weight:700;font-size:12pt">${e(s.firmName||'PS')}</div>${s.firmSub?`<div style="font-size:6pt;color:#555">${e(s.firmSub)}</div>`:''}`):' ';
-    const fRight=s.showLogoRight?(s.logoRight?`<img src="${s.logoRight}" style="max-width:${(s.logoRightWidth||60)-8}px;max-height:44px;object-fit:contain;display:block;margin:0 auto">`:`<div style="font-weight:700;font-size:12pt">${e(s.firmName||'PS')}</div>`):' ';
-    return `<table style="width:100%;border-collapse:collapse;margin-bottom:0">
-      <tr>
-        <td style="width:${s.logoLeftWidth||60}px;border:1px solid #000;padding:5px;text-align:center;vertical-align:middle">${fLeft}</td>
-        <td style="padding:8px 16px;border:1px solid #000;border-left:none;text-align:center"><div style="font-weight:700;font-size:12pt;letter-spacing:2px">${e(s.headerTitle||'COMPTE RENDU')}</div></td>
-        <td style="width:${s.logoRightWidth||60}px;border:1px solid #000;border-left:none;padding:5px;text-align:center;vertical-align:middle">${fRight}</td>
-      </tr>
-    </table>
-    <table style="width:100%;border-collapse:collapse;margin-bottom:12px">
-      <tr><td colspan="2" style="padding:5px 8px;border:1px solid #000;border-top:none;font-size:9pt"><strong>PROJET: ${e(cr.projet)}</strong>&nbsp;&nbsp;&nbsp;${e(cr.adresse)}</td></tr>
-      <tr>
-        <td style="padding:5px 8px;border:1px solid #000;border-top:none;font-size:9pt;width:50%"><strong>DATE:</strong> ${e(cr.date)}.</td>
-        <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;font-size:9pt"><strong>DATE PROCHAINE RÉUNION:</strong> ${e(cr.dateProchaine)}</td>
-      </tr>
-    </table>`;
-  }
+  window._pdfPreviewHTML=fullHTML;
+  window._pdfPreviewCrId=crId;
+  window._pdfZoom=1.0;
+  window._pdfPages=pages;
+  window._pdfCurrentPage=0;
 
-  // Generate full HTML for the print document
-  const fullHTML=`<!DOCTYPE html><html><head>
-    <meta charset="UTF-8">
-    <style>
-      body{font-family:Arial,sans-serif;font-size:9pt;color:#000;margin:0;padding:0;background:#fff}
-      table{border-collapse:collapse}
-      .page{padding:18px;page-break-after:always;max-width:800px;margin:0 auto}
-      .page:last-child{page-break-after:avoid}
-      @media print{body{margin:0}; .page{padding:12mm}}
-    </style>
-  </head><body>
-  ${(function(){
-    const moa=cr.intervenants.filter(i=>i.lot.toLowerCase().includes('ouvrage'));
-    const moe=cr.intervenants.filter(i=>i.lot.toLowerCase().includes('oeuvre'));
-    const others=cr.intervenants.filter(i=>!moa.includes(i)&&!moe.includes(i));
-    let p1=`<div class="page">${pageHeaderHTML()}
-    <table style="width:100%;border-collapse:collapse">
-      <tr style="background:#e0e0e0">
-        <td colspan="2" style="padding:5px 8px;border:1px solid #000;font-weight:600;font-size:9pt">Intervenant</td>
-        <td style="padding:5px 8px;border:1px solid #000;border-left:none;font-weight:600;font-size:9pt">Contact</td>
-        <td style="padding:5px 8px;border:1px solid #000;border-left:none;font-weight:600;font-size:9pt;width:55px;text-align:center">Convoqué</td>
-        <td style="padding:5px 8px;border:1px solid #000;border-left:none;font-weight:600;font-size:9pt;width:55px;text-align:center">Présent</td>
-        <td style="padding:5px 8px;border:1px solid #000;border-left:none;font-weight:600;font-size:9pt;width:85px;text-align:center">Conv. prochain RDV</td>
-      </tr>`;
-    const allInts=[...moa,...moe,...others];
-    allInts.forEach(function(i){
-      p1+=`<tr>
-        <td style="padding:4px 7px;border:1px solid #000;border-top:none;font-size:8.5pt;font-weight:700;vertical-align:top">${e(i.lot.toUpperCase())}</td>
-        <td style="padding:4px 7px;border:1px solid #000;border-top:none;border-left:none;font-size:8.5pt;vertical-align:top">${e(i.entreprise)}</td>
-        <td style="padding:4px 7px;border:1px solid #000;border-top:none;border-left:none;font-size:8pt;vertical-align:top;white-space:pre-line">${e(i.contacts)}</td>
-        <td style="padding:4px 7px;border:1px solid #000;border-top:none;border-left:none;text-align:center;font-size:9pt">${i.convoque!==false?'X':''}</td>
-        <td style="padding:4px 7px;border:1px solid #000;border-top:none;border-left:none;text-align:center;font-size:9pt;font-weight:700">${i.present?'X':''}</td>
-        <td style="padding:4px 7px;border:1px solid #000;border-top:none;border-left:none;text-align:center;font-size:9pt">☐</td>
-      </tr>`;
-    });
-    p1+=`</table><div style="text-align:right;font-size:7pt;color:#666;margin-top:4px">1</div></div>`;
-
-    // Remarques pages
-    let p2=`<div class="page">${pageHeaderHTML()}`;
-    cr.lots.forEach(function(lot){
-      const active=lot.remarques.filter(r=>!r.archived);
-      if(!active.length)return;
-      const col=getColor(lot,cr);
-      function hexToLight(hex){const c2=(hex||'#ccc').replace('#','');if(c2.length<6)return '#f0f0f0';const r=parseInt(c2.substr(0,2),16),g=parseInt(c2.substr(2,2),16),b=parseInt(c2.substr(4,2),16);return `rgb(${Math.round(r*.2+255*.8)},${Math.round(g*.2+255*.8)},${Math.round(b*.2+255*.8)})`;}
-      p2+=`<table style="width:100%;border-collapse:collapse;margin-bottom:8px;">
-        <tr style="page-break-inside:avoid"><td style="background:${hexToLight(col)};padding:4px 8px;border:1px solid #000;font-weight:700;font-size:9pt;color:${col};text-transform:uppercase;page-break-after:avoid">REMARQUES — ${e(lot.titre.toUpperCase())}</td></tr>
-        <tr><td style="border:1px solid #000;border-top:none;padding:7px 10px">${active.map(r=>`<div style="padding:3px 0;font-size:8.5pt;${r.done?'color:#aaa;text-decoration:line-through;':''}border-bottom:1px solid #f0f0f0;margin-bottom:2px">
-          <div>- ${e(r.texte)}</div>
-          ${(r.images&&r.images.length)?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;page-break-inside:avoid">${r.images.map(img=>`<div style="display:inline-block"><img src="${img.data}" style="max-width:110px;max-height:90px;object-fit:contain;border:1px solid #ccc;border-radius:3px;display:block">${img.caption?`<div style="font-size:7pt;color:#666;margin-top:1px">${e(img.caption)}</div>`:''}</div>`).join('')}</div>`:''}
-        </div>`).join('')}</td></tr>
-      </table>`;
-    });
-    p2+=`<div style="text-align:right;font-size:7pt;color:#666;margin-top:4px">2</div></div>`;
-
-    // Actions page
-    let p3='';
-    if(cr.actions.length){
-      p3=`<div class="page">${pageHeaderHTML()}
-      <table style="width:100%;border-collapse:collapse">
-        <tr style="background:#e0e0e0">
-          <td style="padding:4px 7px;border:1px solid #000;font-weight:600;font-size:8.5pt;width:30px">N°</td>
-          <td style="padding:4px 7px;border:1px solid #000;border-left:none;font-weight:600;font-size:8.5pt">Action</td>
-          <td style="padding:4px 7px;border:1px solid #000;border-left:none;font-weight:600;font-size:8.5pt;width:100px">Responsable</td>
-          <td style="padding:4px 7px;border:1px solid #000;border-left:none;font-weight:600;font-size:8.5pt;width:80px">Échéance</td>
-          <td style="padding:4px 7px;border:1px solid #000;border-left:none;font-weight:600;font-size:8.5pt;width:60px;text-align:center">Statut</td>
-        </tr>`;
-      cr.actions.forEach(function(a,ai){
-        p3+=`<tr style="${a.done?'color:#999;':''}">
-          <td style="padding:4px 7px;border:1px solid #000;border-top:none;font-size:8.5pt;text-align:center;vertical-align:top">${ai+1}</td>
-          <td style="padding:4px 7px;border:1px solid #000;border-top:none;border-left:none;font-size:8.5pt;vertical-align:top">
-            ${e(a.texte)}
-            ${(a.images&&a.images.length)?`<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:4px">${a.images.map(img=>`<div style="display:inline-block"><img src="${img.data}" style="max-width:90px;max-height:70px;object-fit:contain;border:1px solid #ccc;border-radius:3px;display:block">${img.caption?`<div style="font-size:7pt;color:#666">${e(img.caption)}</div>`:''}</div>`).join('')}</div>`:''}
-          </td>
-          <td style="padding:4px 7px;border:1px solid #000;border-top:none;border-left:none;font-size:8.5pt;vertical-align:top">${e(a.responsable)}</td>
-          <td style="padding:4px 7px;border:1px solid #000;border-top:none;border-left:none;font-size:8.5pt;vertical-align:top">${e(a.echeance)}</td>
-          <td style="padding:4px 7px;border:1px solid #000;border-top:none;border-left:none;font-size:8.5pt;text-align:center;vertical-align:top">${a.done?'✓':'En cours'}</td>
-        </tr>`;
-      });
-      p3+=`</table><div style="text-align:right;font-size:7pt;color:#666;margin-top:4px">3</div></div>`;
-    }
-    return p1+p2+p3;
-  })()}
-  </body></html>`;
-
-  // Show in modal with A4 page viewer
+  // Build modal
+  const totalPages=pages.length;
   const modalHTML=`
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;background:var(--bg2);padding:8px 12px;border-radius:var(--r);border:1px solid var(--border)">
       <div style="display:flex;align-items:center;gap:6px">
-        <button class="btn btn-sm" onclick="pdfViewPage(-1)" title="Page precedente">◀</button>
-        <span id="pdf-page-counter" style="font-size:11px;color:var(--text3);min-width:60px;text-align:center">Page 1 / ?</span>
+        <button class="btn btn-sm" onclick="pdfViewPage(-1)" title="Page précédente">◀</button>
+        <span id="pdf-page-counter" style="font-size:11px;color:var(--text3);min-width:80px;text-align:center">Page 1 / ${totalPages}</span>
         <button class="btn btn-sm" onclick="pdfViewPage(1)" title="Page suivante">▶</button>
-        <button class="btn btn-sm" onclick="pdfZoom(-0.15)" title="Zoom -">−</button>
+        <button class="btn btn-sm" onclick="pdfZoom(-0.15)" title="Zoom −">−</button>
         <button class="btn btn-sm" onclick="pdfZoom(0.15)" title="Zoom +">+</button>
       </div>
       <div style="display:flex;gap:6px">
@@ -4342,82 +4238,16 @@ function previewPDF(crId){
     <div id="pdf-viewer-container" style="background:#555;border-radius:var(--r);overflow:auto;height:72vh;display:flex;flex-direction:column;align-items:center;padding:16px;gap:16px">
     </div>`;
 
-  // Use a wide modal
   document.getElementById('modal-root').innerHTML=`<div class="mo-ov" onclick="if(event.target===this)closeModal()">
     <div onclick="event.stopPropagation()" style="background:var(--panel);border-radius:var(--r2);padding:20px;width:min(900px,97vw);max-height:95vh;overflow-y:auto;box-shadow:var(--shadow2);border:1px solid var(--border)">
       ${modalHTML}
     </div>
   </div>`;
 
-  // Set iframe content after render
-  window._pdfPreviewHTML=fullHTML;
-  window._pdfPreviewCrId=crId;
-  window._pdfZoom=1.0;
-
   setTimeout(function(){
     const container=document.getElementById('pdf-viewer-container');
     if(!container)return;
-
-    const A4_H=1123; // px at 96dpi
-    const A4_W=794;
-    const PADDING=18;
-    const CONTENT_H=A4_H-(PADDING*2); // usable height per page
-
-    // Step 1: render full content linearly into a hidden measuring div
-    const measurer=document.createElement('div');
-    measurer.style.cssText='position:fixed;left:-9999px;top:0;width:'+A4_W+'px;font-family:Arial,sans-serif;font-size:9pt;color:#000;padding:'+PADDING+'px;box-sizing:border-box;visibility:hidden';
-    // Extract body content from fullHTML (strip outer html/head/style tags)
-    const parser=new DOMParser();
-    const doc=parser.parseFromString(fullHTML,'text/html');
-    Array.from(doc.body.childNodes).forEach(function(n){measurer.appendChild(document.importNode(n,true));});
-    document.body.appendChild(measurer);
-
-    // Step 2: measure every block element's top/bottom relative to measurer
-    // and split into pages based on A4 content height
-    const allBlocks=Array.from(measurer.querySelectorAll('div.page,table,tr,div'));
-    // Find top-level sections (the .page divs) — each may span multiple A4 pages
-    const topSections=Array.from(measurer.querySelectorAll('div.page'));
-
-    // Step 3: for each top-level section, measure its real height
-    // and paginate accordingly
-    const realPages=[];
-    const measTop=measurer.getBoundingClientRect().top;
-
-    if(topSections.length===0){
-      // Fallback: treat whole content as one page
-      realPages.push(measurer.innerHTML);
-    } else {
-      topSections.forEach(function(section){
-        const sectionH=section.getBoundingClientRect().height;
-        const numSubPages=Math.max(1,Math.ceil(sectionH/CONTENT_H));
-        if(numSubPages<=1){
-          realPages.push(section.outerHTML);
-        } else {
-          // Split this section's children into A4-sized chunks
-          const children=Array.from(section.children);
-          let currentChunk=[];
-          let currentH=0;
-          const sectionTop=section.getBoundingClientRect().top;
-          children.forEach(function(child){
-            const childH=child.getBoundingClientRect().height;
-            if(currentH+childH>CONTENT_H&&currentChunk.length>0){
-              realPages.push('<div class="page">'+currentChunk.map(function(n){return n.outerHTML;}).join('')+'</div>');
-              currentChunk=[];
-              currentH=0;
-            }
-            currentChunk.push(child);
-            currentH+=childH;
-          });
-          if(currentChunk.length){
-            realPages.push('<div class="page">'+currentChunk.map(function(n){return n.outerHTML;}).join('')+'</div>');
-          }
-        }
-      });
-    }
-    document.body.removeChild(measurer);
-
-    window._pdfPages=realPages;
-    window._pdfCurrentPage=0;
+    const A4_W=794,A4_H=1123;
 
     function updateCounter(){
       const counter=document.getElementById('pdf-page-counter');
@@ -4432,7 +4262,7 @@ function previewPDF(crId){
         wrapper.className='pdf-page-wrapper';
         wrapper.style.cssText='background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.4);border-radius:2px;width:'+Math.round(A4_W*zoom)+'px;min-height:'+Math.round(A4_H*zoom)+'px;overflow:hidden;flex-shrink:0;position:relative;margin:0 auto';
         const inner=document.createElement('div');
-        inner.style.cssText='transform:scale('+zoom+');transform-origin:top left;width:'+A4_W+'px;min-height:'+A4_H+'px;font-family:Arial,sans-serif;font-size:9pt;color:#000;padding:'+PADDING+'px;box-sizing:border-box;overflow:hidden';
+        inner.style.cssText='transform:scale('+zoom+');transform-origin:top left;width:'+A4_W+'px;min-height:'+A4_H+'px;font-family:Arial,sans-serif;font-size:9pt;color:#000;padding:20px;box-sizing:border-box';
         inner.innerHTML=pageHTML;
         wrapper.appendChild(inner);
         container.appendChild(wrapper);
@@ -4443,18 +4273,18 @@ function previewPDF(crId){
     window.pdfViewPage=function(dir){
       const total=window._pdfPages.length;
       window._pdfCurrentPage=Math.max(0,Math.min(total-1,(window._pdfCurrentPage||0)+dir));
-      const pages2=container.querySelectorAll('.pdf-page-wrapper');
-      if(pages2[window._pdfCurrentPage]) pages2[window._pdfCurrentPage].scrollIntoView({behavior:'smooth',block:'start'});
+      const wrappers=container.querySelectorAll('.pdf-page-wrapper');
+      if(wrappers[window._pdfCurrentPage]) wrappers[window._pdfCurrentPage].scrollIntoView({behavior:'smooth',block:'start'});
       updateCounter();
     };
     window.pdfZoom=function(delta){
       window._pdfZoom=Math.max(0.4,Math.min(2,(window._pdfZoom||1)+delta));
       renderPages();
     };
-
     renderPages();
-  },100);
+  },50);
 }
+
 
 function printFromPreview(crId){
   const html=window._pdfPreviewHTML;
