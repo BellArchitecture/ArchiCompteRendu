@@ -94,8 +94,8 @@ body{background:var(--bg);height:100vh;overflow:hidden;font-family:inherit}
 .ar-status{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;font-weight:600;cursor:pointer}
 /* Tabs */
 .tabbar{display:flex;background:var(--panel);border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto}
-.tab{padding:10px 16px;font-size:12px;font-weight:500;border:none;background:none;cursor:pointer;color:var(--text3);border-bottom:2px solid transparent;font-family:inherit;white-space:nowrap}
-.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.tab{padding:15px 20px;font-size:14px;font-weight:500;border:none;background:none;cursor:pointer;color:var(--text3);border-bottom:2px solid transparent;font-family:inherit;white-space:nowrap}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:600}
 /* New CR form */
 .form-section{background:var(--panel);border:1px solid var(--border);border-radius:var(--r2);padding:18px;margin-bottom:14px}
 .form-section-title{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px;display:flex;align-items:center;gap:7px}
@@ -130,7 +130,7 @@ body{background:var(--bg);height:100vh;overflow:hidden;font-family:inherit}
 .ico-sm{width:14px;height:14px}
 .ico-xs{width:12px;height:12px}
 .sortable-ghost{opacity:.3;background:var(--blue-bg)!important;border-color:var(--blue)!important}
-.sort-handle{cursor:grab}.sort-handle:active{cursor:grabbing}
+.sort-handle{cursor:grab;user-select:none;display:inline-flex;align-items:center}.sort-handle:active{cursor:grabbing}
 
 /* ══ AUTH ══ */
 #auth-overlay{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column}
@@ -244,11 +244,12 @@ body{background:var(--bg);height:100vh;overflow:hidden;font-family:inherit}
       <div style="display:flex;gap:6px" id="tb-actions"></div>
     </div>
     <div class="tabbar" id="tabbar" style="display:none">
-      <button class="tab active" onclick="switchTab('remarques',this)">Remarques par lot</button>
-      <button class="tab" onclick="switchTab('intervenants',this)">Intervenants</button>
+      <button class="tab active" onclick="switchTab('remarques',this)">PV</button>
       <button class="tab" onclick="switchTab('actions',this)">Actions / Décisions</button>
+      <button class="tab" onclick="switchTab('intervenants',this)">Intervenants</button>
       <button class="tab" onclick="switchTab('dates',this)">Dates</button>
       <button class="tab" onclick="switchTab('historique',this)">Historique</button>
+      <button class="tab" onclick="openCRSettings(activeCR)" style="margin-left:auto">Réglages</button>
     </div>
     <div class="content" id="content">
       <div style="display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:12px;color:var(--text3)">
@@ -269,7 +270,7 @@ body{background:var(--bg);height:100vh;overflow:hidden;font-family:inherit}
 /* ══ UTILS ══ */
 function ico(id,cls=''){return`<svg class="ico ${cls}"><use href="#i-${id}"/></svg>`;}
 function e(s){return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
-function markDirty(){isDirty=true;const d=document.getElementById('dirty-dot');if(d)d.style.display='block';}
+function markDirty(){isDirty=true;const d=document.getElementById('dirty-dot');if(d)d.style.display='block';saveCRS();}
 function markClean(){isDirty=false;const d=document.getElementById('dirty-dot');if(d)d.style.display='none';}
 function toast(msg,color='var(--green)'){const t=document.getElementById('toast');t.textContent=msg;t.style.background=color;t.style.opacity='1';setTimeout(()=>t.style.opacity='0',2200);}
 function showModal(html){document.getElementById('modal-root').innerHTML=`<div class="mo-ov" onclick="if(event.target===this)closeModal()"><div class="mo-box" onclick="event.stopPropagation()">${html}</div></div>`;}
@@ -307,322 +308,55 @@ function getColor(obj, cr){
 }
 
 /* ══ DATA ══ */
-let CRS = [
-  {
-    id:'cr1',
-    projet:'Henderson-Williams',
-    adresse:'641 Allée de la Roseraie, 06250 Mougins',
-    date:'14/05/2026',
-    dateProchaine:'21/05/2026 14:00',
-    numero:1,
-    redacteur:'Mme Bell — Bell Architecture',
-    statut:'published',
-    intervenants:[
-      {id:'i1',lot:'Maîtrise d\'Ouvrage',entreprise:'',contacts:'M. et Mme Henderson-Williams',convoque:true,present:true},
-      {id:'i2',lot:'Maîtrise d\'Œuvre',entreprise:'Bell Architecture',contacts:'Mme Bell — 06 13 45 17 99',convoque:true,present:true},
-      {id:'i3',lot:'Ingénieur',entreprise:'AZIMUT ING.',contacts:'M. Bahari Saeid — 06 23 47 25 39 — azimutingco@gmail.com',convoque:true,present:false},
-      {id:'i4',lot:'Géologue',entreprise:'OGEO',contacts:'Mme Parsy-Cotisson Amandine — 06 49 95 69 — a.parsy-cotisson@be-ogeo.fr',convoque:true,present:false},
-      {id:'i5',lot:'Lot Maçonnerie',entreprise:'NBR',contacts:'M. Novellini Alexandre — 06 87 38 37 96\nM. Novellini Christophe — 06 72 46 10 06 — n-b-r@wanadoo.fr',convoque:true,present:false},
-      {id:'i6',lot:'Lot Micropieux',entreprise:'Provence Géotechnique et Fondations',contacts:'Perriard Lionel — 06 67 10 39 05 — provence.gf@gmail.com',convoque:true,present:false},
-      {id:'i7',lot:'Lot Électricité',entreprise:'ADELEC',contacts:'Delabroye Laurent — 06 81 70 04 97 — contact@adelec.me',convoque:true,present:false},
-      {id:'i8',lot:'Lot Climatisation / Plomberie',entreprise:'TORAL',contacts:'Toral Olivier — 06 16 44 76 87 — toral.olivier@gmail.com',convoque:true,present:false},
-      {id:'i9',lot:'Lot Menuiserie Extérieure',entreprise:'QUINTANE',contacts:'Duhamel Antoine — 04 93 60 16 28 — menuiserie@quintane.fr\nPoseur Rudy — 07 85 43 01 97',convoque:true,present:false},
-      {id:'i10',lot:'Lot Peinture',entreprise:'Nuance Peinture Décoration',contacts:'L\'Huillier Cyrille — 06 27 26 20 73 — contact@nuancedecorationpeinture.fr',convoque:true,present:false},
-      {id:'i11',lot:'Lot Ferronerie',entreprise:'SAS LEO',contacts:'Masci Anthony — 06 12 78 99 61 — sasleo@orange.fr',convoque:true,present:false},
-      {id:'i12',lot:'Volets Automatiques',entreprise:'GB Stores Bozzano',contacts:'M. Billan Philippe — 06 16 29 50 79 — gbstores@wanadoo.fr',convoque:true,present:false},
-      {id:'i13',lot:'Lot Cuve à Mazout',entreprise:'Fuel Littoral',contacts:'Christophe — 04 92 08 48 90 — fuel-littoral.thermique@eslc.fr',convoque:true,present:false},
-      {id:'i14',lot:'Lot Cuisine / Buanderie',entreprise:'Howdens Aubagne',contacts:'',convoque:true,present:false},
-      {id:'i15',lot:'Lot Carrelage',entreprise:'Quintane',contacts:'',convoque:true,present:false},
-    ],
-    lots:[
-      {id:'l1',titre:'Maîtrise d\'Œuvre',ouvert:true,intId:'i2',remarques:[
-        {id:'r1',texte:'La vidéo de l\'étude du site a été réalisée le 2 juin 2025 et envoyée au client.',done:false,flag:false},
-        {id:'r2',texte:'BD dans le dressing master 2, dans le dressing master 1.',done:false,flag:true},
-        {id:'r3',texte:'Position bouches VMC.',done:false,flag:true},
-        {id:'r4',texte:'Devis signés: GB stores (motorisation volets, vidéophone, portail); Houwdens cuisine et buanderie; Adelec spots et spots WC.',done:true,flag:false},
-        {id:'r5',texte:'SDB 4: sens d\'ouverture porte. Position WC.',done:false,flag:true},
-        {id:'r6',texte:'SDB niches pour toutes les douches, avec bandeaux LED.',done:false,flag:false},
-        {id:'r7',texte:'SDB maître – tête de douche.',done:false,flag:false},
-        {id:'r8',texte:'EDF: à modifier l\'adresse sur les factures.',done:false,flag:false},
-      ]},
-      {id:'l2',titre:'Ingénieur',ouvert:false,intId:'i3',remarques:[
-        {id:'r9',texte:'Mur parking: détail reçu.',done:true,flag:false},
-        {id:'r10',texte:'Agrandir le parking vers le mur du poolhouse – confirmé.',done:true,flag:false},
-        {id:'r11',texte:'Dimensions des fermettes. Hauteur à l\'égout max. 7m (façade ouest).',done:false,flag:true},
-        {id:'r12',texte:'Les dimensions et la position de la machine de climatisation dans les combles → Ces informations seront fournies par M. Toral.',done:false,flag:true},
-      ]},
-      {id:'l3',titre:'Géologue',ouvert:false,intId:'i4',remarques:[
-        {id:'r13',texte:'Sondages pressiométriques effectués le 7 juillet 2025.',done:true,flag:false},
-        {id:'r14',texte:'Étude G2pro reçue.',done:true,flag:false},
-        {id:'r15',texte:'Gravier avec géomembrane possible au lieu des trottoirs. Géomembrane permettra une barrière étanche et évacuera l\'eau loin des façades.',done:false,flag:false},
-      ]},
-      {id:'l4',titre:'Lot Maçonnerie',ouvert:false,intId:'i5',remarques:[
-        {id:'r16',texte:'Mettre en place la clôture de chantier et sécuriser l\'accès avec un code.',done:false,flag:true},
-        {id:'r17',texte:'Travaux VRD – le plombier et l\'électricien doivent d\'abord installer les raccordements de la maison.',done:false,flag:true},
-        {id:'r18',texte:'Dalle PAC.',done:false,flag:false},
-        {id:'r19',texte:'Façade: couleur 03.',done:false,flag:false},
-        {id:'r20',texte:'Trappes faux plafond 50cm x 50cm – 6 trappes.',done:false,flag:false},
-        {id:'r21',texte:'Chambre 2: fenêtre côté sud endommagée.',done:false,flag:true},
-        {id:'r22',texte:'Si la chape est suffisamment sèche, le carreleur devrait commencer le 25 mai.',done:false,flag:false},
-        {id:'r23',texte:'Marches et contremarches carrelées. Profil Schlueter J110TSBG, alu finition structurée gris beige.',done:false,flag:false},
-        {id:'r24',texte:'DEVIS À FINALISER: Lot VRD, Semelle portail.',done:false,flag:true},
-        {id:'r25',texte:'Isolation murale parties nouvelles R=3,75 m²/KW | Combles R=10 m²/KW | Plafond sous terrasse R=6,85 m²/KW | Plancher bas RDCH R=4,65 m²/KW.',done:false,flag:false},
-        {id:'r26',texte:'Choix des tuiles: TERREAL CASTELNAUDARY.',done:true,flag:false},
-      ]},
-      {id:'l5',titre:'Lot Électricité',ouvert:false,intId:'i7',remarques:[
-        {id:'r27',texte:'Prises tête de lits: Côté gauche: 2 prises standard + USB-C. Côté droit: 1 prise standard + 1 prise anglaise.',done:false,flag:false},
-        {id:'r28',texte:'Connection TV: satellite et RJ45. Variateurs pour chambres, salons, cuisine.',done:false,flag:false},
-        {id:'r29',texte:'Position WIFI dans le local technique au RDJ. Répéteurs dans les greniers.',done:false,flag:false},
-        {id:'r30',texte:'Alimentation portail, éclairage poteaux, vidéophone.',done:false,flag:true},
-        {id:'r31',texte:'Alimentation futur panneaux solaires.',done:false,flag:false},
-        {id:'r32',texte:'Moteurs volets: Salon 4 doubles; Chambre 5 – 2 singles et 1 double; Chambre maître – 2 doubles.',done:false,flag:false},
-        {id:'r33',texte:'Devis à préparer: Sèche-serviette Acova Regate → modifier avec modèle chrome pour les deux chambres à l\'étage.',done:false,flag:true},
-        {id:'r34',texte:'Prises UK de JUNG validées par le client (le prix ne change pas). Appareillage Jung.',done:true,flag:false},
-        {id:'r35',texte:'Spots conformes RE2020 – fourniture et pose 20€ HT/spot. Tous les spots commandés par l\'électricien.',done:true,flag:false},
-      ]},
-      {id:'l6',titre:'Lot Climatisation / Plomberie',ouvert:false,intId:'i8',remarques:[
-        {id:'r36',texte:'Bac douches: SDB1 80×120, SDB2 80×170, SDB4 90×120.',done:false,flag:false},
-        {id:'r37',texte:'Trappes accès clim et VMC 50×50cm.',done:false,flag:false},
-        {id:'r38',texte:'VMC: toutes SDB, buanderie, local technique et cuisine.',done:false,flag:true},
-        {id:'r39',texte:'Poolhouse: prévoir un évier.',done:false,flag:true},
-        {id:'r40',texte:'Baignoire chambres maître: livraison mi-juillet. Alternative: modèle Joséphine (rebord plus fin).',done:false,flag:true},
-        {id:'r41',texte:'Entrée d\'air: 15m³/pièce chambres, 30m³ grand salon.',done:false,flag:false},
-        {id:'r42',texte:'Devis VMC validé.',done:true,flag:false},
-        {id:'r43',texte:'Planning second œuvre: Mars-Avril doublage/cloison/chape, Mai carrelage.',done:false,flag:false},
-      ]},
-      {id:'l7',titre:'Lot Menuiserie Extérieure',ouvert:false,intId:'i9',remarques:[
-        {id:'r44',texte:'Réception des fenêtres à programmer.',done:false,flag:true},
-        {id:'r45',texte:'Devis accepté: grilles entrée d\'air couleur noir, Autoréglable Hygroréglable 3 → communiquer la date de pose.',done:true,flag:false},
-        {id:'r46',texte:'À vérifier: porte-fenêtre dans la cuisine.',done:false,flag:true},
-        {id:'r47',texte:'RDC fenêtre WC d\'invité 00.10.01 → gauche tirant. Confirmé par Quintane le 16.09.25.',done:true,flag:false},
-      ]},
-      {id:'l8',titre:'Lot Menuiserie Intérieure',ouvert:false,intId:'i9',remarques:[
-        {id:'r48',texte:'Pose des portes intérieures par le menuisier du client. Travaux: cuisine 6 sem., buanderie 6 sem., portes 8 sem.',done:false,flag:false},
-        {id:'r49',texte:'Sur place à partir du 08 juin.',done:false,flag:false},
-        {id:'r50',texte:'Jeu de 1 cm sous les portes nécessaire pour le bon fonctionnement de la VMC.',done:false,flag:true},
-      ]},
-      {id:'l9',titre:'Lot Peinture',ouvert:false,intId:'i10',remarques:[
-        {id:'r51',texte:'Préparation murs et plafond, peinture blanc mat pour le plafond – accepté.',done:true,flag:false},
-        {id:'r52',texte:'Prévu pour juillet.',done:false,flag:false},
-        {id:'r53',texte:'Devis à préparer pour la peinture des volets (photos du bois envoyées).',done:false,flag:true},
-      ]},
-      {id:'l10',titre:'Lot Ferronerie',ouvert:false,intId:'i11',remarques:[
-        {id:'r54',texte:'Plans d\'exécution reçus et validés par le client.',done:true,flag:false},
-        {id:'r55',texte:'Planning à fournir.',done:false,flag:true},
-        {id:'r56',texte:'Portail: moins de 600 kg. Contacteur pour le portillon.',done:false,flag:false},
-        {id:'r57',texte:'Garde-corps terrasses – couleur grise RAL 7005 – barreaux verticaux.',done:false,flag:false},
-        {id:'r58',texte:'Rampe escaliers – couleur noir – barreaux verticaux.',done:false,flag:false},
-        {id:'r59',texte:'Garde-corps salon, profils en U au sol et verre (2×80cm, 8/8/2 = 16,2 total) – RAL 7005.',done:false,flag:false},
-      ]},
-      {id:'l11',titre:'Volets Automatiques / Portail',ouvert:false,intId:'i12',remarques:[
-        {id:'r60',texte:'RDV à prévoir avec le menuisier pour les volets (à partir du 8 juin).',done:false,flag:true},
-        {id:'r61',texte:'Devis motorisation volets – accepté.',done:true,flag:false},
-        {id:'r62',texte:'Devis motorisation portail et vidéophone – accepté.',done:true,flag:false},
-        {id:'r63',texte:'Devis stores (le client passera au showroom).',done:false,flag:false},
-      ]},
-      {id:'l12',titre:'Lot Carrelage',ouvert:false,intId:'i15',remarques:[
-        {id:'r64',texte:'Faïences murales SDB3 commandées. SDB4 fond de douche vertes type zellige commandées.',done:true,flag:false},
-      ]},
-      {id:'l13',titre:'Client',ouvert:false,intId:'i1',remarques:[
-        {id:'r65',texte:'Carrelage validé: PELDANO SEQUOIA BIRCH RECT 25×150 (étage), ATLAS EXIGO CALACATTA 60×60 (sols/escaliers/SDB), ATLAS ARENISCA PERLA 60×60 (terrasses/poolhouse).',done:true,flag:false},
-        {id:'r66',texte:'Prises UK JUNG validées. Appareillage Jung.',done:true,flag:false},
-        {id:'r67',texte:'Livraison meubles SDB: 26 mai après-midi, sur site à Mougins.',done:false,flag:true},
-        {id:'r68',texte:'Meetings sur site: 26 mai 11h30, 09 juin 11h30, 22 juin.',done:false,flag:false},
-        {id:'r69',texte:'Facade en pierre pour partie RDC et côté nord (salon). Pierre sélectionnée le 03.03.2026 – validé urbanisme.',done:true,flag:false},
-      ]},
-      {id:'l14',titre:'Urbanisme',ouvert:false,intId:'i1',remarques:[
-        {id:'r70',texte:'PC modificatif déposé le 23.10.2025 – Notification 23.01.2026 – Arrêté 20.02.2026.',done:true,flag:false},
-        {id:'r71',texte:'Contrôle chantier: Mme Darmon bureau des contrôles 04 92 92 58 14.',done:false,flag:false},
-        {id:'r72',texte:'Validation échantillons couleur façade et pierres de façade.',done:false,flag:true},
-      ]},
-      {id:'l15',titre:'Thermicien',ouvert:false,intId:'i3',remarques:[
-        {id:'r73',texte:'Extension: isolation murale 12cm R=3,75 | combles 40cm R=10 | plafond sous terrasse 16cm R=6,85 | plancher bas RDCH 10cm R=4,65 | plafond poolhouse 12cm R=3,75.',done:false,flag:false},
-        {id:'r74',texte:'Volets auto crépusculaire.',done:false,flag:false},
-        {id:'r75',texte:'Étude VMC et climatisation reçue.',done:true,flag:false},
-      ]},
-    ],
-    actions:[
-      {id:'a1',texte:'Communiquer date de pose des grilles d\'entrée d\'air',responsable:'Quintane',intId:'i9',echeance:'21/05/2026',done:false},
-      {id:'a2',texte:'Fournir informations dimensions/position machine climatisation combles',responsable:'M. Toral',intId:'i8',echeance:'21/05/2026',done:false},
-      {id:'a3',texte:'Finaliser devis Lot VRD et Semelle portail',responsable:'NBR',intId:'i5',echeance:'21/05/2026',done:false},
-      {id:'a4',texte:'Préparer devis peinture des volets',responsable:'Nuance Peinture',intId:'i10',echeance:'28/05/2026',done:false},
-      {id:'a5',texte:'Programmer réception des fenêtres',responsable:'Quintane',intId:'i9',echeance:'21/05/2026',done:false},
-      {id:'a6',texte:'Planning à fournir',responsable:'SAS Leo',intId:'i11',echeance:'21/05/2026',done:false},
-      {id:'a7',texte:'Vérifier porte-fenêtre cuisine',responsable:'Quintane',intId:'i9',echeance:'21/05/2026',done:false},
-      {id:'a8',texte:'Mettre en place clôture chantier avec code d\'accès',responsable:'NBR',intId:'i5',echeance:'Immédiat',done:false},
-      {id:'a9',texte:'Sèche-serviette Acova – modifier avec modèle chrome pour chambres étage',responsable:'ADELEC',intId:'i7',echeance:'21/05/2026',done:false},
-      {id:'a10',texte:'RDV avec menuisier pour volets (à partir du 8 juin)',responsable:'GB Stores',intId:'i12',echeance:'08/06/2026',done:false},
-    ]
-  },
-  {
-    id:'cr2',
-    projet:'Jundi',
-    adresse:'97 route de la Peyrière, 06250 Mougins',
-    date:'12/05/2026',
-    dateProchaine:'19/05/2026',
-    numero:1,
-    redacteur:'Mme Bell — Bell Architecture',
-    statut:'published',
-    intervenants:[
-      {id:'j1',lot:'Maîtrise d\'Ouvrage',entreprise:'',contacts:'M. et Mme Jundi',convoque:true,present:false},
-      {id:'j2',lot:'Maîtrise d\'Œuvre',entreprise:'Bell Architecture',contacts:'Mme Bell — 06 13 45 17 99',convoque:true,present:true},
-      {id:'j3',lot:'Ingénieur',entreprise:'ISTRUCTURE',contacts:'M. Rosso Grégory — 06 70 07 69 49 — contact@istructure.fr',convoque:true,present:false},
-      {id:'j4',lot:'Géologue',entreprise:'B.E.G.T',contacts:'04 94 40 08 29 — contact.begt@gmail.com',convoque:true,present:false},
-      {id:'j5',lot:'Lot Maçonnerie',entreprise:'NBR',contacts:'M. Novellini Alexandre — 06 87 38 37 96\nM. Novellini Christophe — 06 72 46 10 06 — n-b-r@wanadoo.fr',convoque:true,present:false},
-      {id:'j6',lot:'Lot Isolation Intérieur / Peinture',entreprise:'Nuance Décoration Peinture',contacts:'L\'Huillier Cyrille — 06 27 26 20 73 — contact@nuancedecorationpeinture.fr',convoque:true,present:false},
-      {id:'j7',lot:'Lot Électricité',entreprise:'ADELEC',contacts:'Delabroye Laurent — 06 81 70 04 97 — contact@adelec.me',convoque:true,present:false},
-      {id:'j8',lot:'Lot Climatisation / Plomberie',entreprise:'TORAL',contacts:'Toral Olivier — 06 16 44 76 87 — toral.olivier@gmail.com',convoque:true,present:false},
-      {id:'j9',lot:'Lot Menuiserie Extérieure',entreprise:'QUINTANE',contacts:'Duhamel Antoine — 04 93 60 16 28 — menuiserie@quintane.fr',convoque:true,present:false},
-      {id:'j10',lot:'Lot Velux',entreprise:'SGARD',contacts:'Sgard Yannick — 06 26 32 86 39 — Sgard.yannick@orange.fr',convoque:true,present:false},
-      {id:'j11',lot:'Lot Cuisine',entreprise:'Siematic Nice',contacts:'Mme Alphonsine — 04 93 56 66 00 — contact@albalat-agencement.fr',convoque:true,present:false},
-      {id:'j12',lot:'Lot Peinture',entreprise:'Nuance Décoration Peinture',contacts:'L\'Huillier Cyrille — 06 27 26 20 73 — contact@nuancedecorationpeinture.fr',convoque:true,present:true},
-      {id:'j13',lot:'Lot Garde Corps / Ferronerie',entreprise:'',contacts:'',convoque:true,present:false},
-      {id:'j14',lot:'Lot Pergola',entreprise:'',contacts:'',convoque:true,present:false},
-      {id:'j15',lot:'Lot Alarme',entreprise:'',contacts:'M. Satge — 06 60 76 00 92 — aataSatge@gmail.com',convoque:true,present:false},
-      {id:'j16',lot:'Lot Cours en Pavés',entreprise:'Europavage',contacts:'',convoque:true,present:false},
-      {id:'j17',lot:'Lot Cheminée',entreprise:'ATRYHOME',contacts:'',convoque:true,present:false},
-      {id:'j18',lot:'Lot Porte Cuisine',entreprise:'RIMADESIO',contacts:'nice@rimadesio.com',convoque:true,present:false},
-      {id:'j19',lot:'Lot Piscine',entreprise:'AQUAREVE',contacts:'M. Bellito Jonathan — 06 58 79 29 39 — direction@aquarevepiscines.fr',convoque:true,present:false},
-      {id:'j20',lot:'Lot Revêtement Sol',entreprise:'',contacts:'',convoque:true,present:false},
-      {id:'j21',lot:'Client',entreprise:'',contacts:'M. et Mme Jundi',convoque:true,present:false},
-    ],
-    lots:[
-      {id:'jl1',titre:'Maîtrise d\'Œuvre',ouvert:false,intId:'j2',remarques:[
-        {id:'jr1',texte:'Prendre un RDV avec Aquareve.',done:false,flag:true,createdAt:'12/05/2026'},
-        {id:'jr2',texte:'Plan pour la plage de la piscine – revêtement – EP – local technique. Revêtements choisis: carrelage Perla et margelles 120x30.',done:false,flag:false,createdAt:'12/05/2026'},
-      ]},
-      {id:'jl2',titre:'Ingénieur',ouvert:false,intId:'j3',remarques:[
-        {id:'jr3',texte:'SDB Studio: reprise en sous-œuvre pour 3 côtés.',done:false,flag:true,createdAt:'12/05/2026'},
-        {id:'jr4',texte:'Studio extérieur: à faire un trottoir – niveau -0,15cm de l\'intérieur.',done:false,flag:false,createdAt:'12/05/2026'},
-        {id:'jr5',texte:'Fitness: on ne peut pas garder la banquette → reprise en sous-œuvre.',done:false,flag:true,createdAt:'12/05/2026'},
-        {id:'jr6',texte:'À prévoir les contre-cloisons pour les murs contre terre et les ventiler.',done:false,flag:true,createdAt:'12/05/2026'},
-        {id:'jr7',texte:'Agrandissement plage: démolir le local technique pour un niveau de plancher uniforme et agrandir le local technique.',done:false,flag:true,createdAt:'12/05/2026'},
-      ]},
-      {id:'jl3',titre:'Géologue',ouvert:false,intId:'j4',remarques:[
-        {id:'jr8',texte:'Rapport reçu le 24.11.',done:true,archived:false,flag:false,createdAt:'12/05/2026'},
-      ]},
-      {id:'jl4',titre:'Lot Maçonnerie',ouvert:false,intId:'j5',remarques:[
-        {id:'jr9',texte:'La pose du velux à vérifier (condensation).',done:false,flag:true,createdAt:'12/05/2026'},
-        {id:'jr10',texte:'Quand les VRD seront-ils réalisés ? Pour le plombier.',done:false,flag:true,createdAt:'12/05/2026'},
-        {id:'jr11',texte:'RDCH – Préparation pour la porte coulissante de la cuisine (email envoyé le 6 mai).',done:false,flag:false,createdAt:'12/05/2026'},
-        {id:'jr12',texte:'Le trou existant dans la dalle du sol de la cuisine arrière est à reboucher.',done:false,flag:true,createdAt:'12/05/2026'},
-        {id:'jr13',texte:'Mise en place d\'un isolant thermique + acoustique.',done:false,flag:false,createdAt:'12/05/2026'},
-        {id:'jr14',texte:'Balcon: à vérifier le nombre des évacuations EP.',done:false,flag:true,createdAt:'12/05/2026'},
-        {id:'jr15',texte:'A garder le store et à déposer l\'auvent métallique.',done:false,flag:false,createdAt:'12/05/2026'},
-        {id:'jr16',texte:'Conduit cheminée: à contrôler l\'étanchéité.',done:false,flag:true,createdAt:'12/05/2026'},
-        {id:'jr17',texte:'Toiture plate: à vérifier le tuyau d\'évacuation.',done:false,flag:true,createdAt:'12/05/2026'},
-        {id:'jr18',texte:'2 appareils clim à déposer (façade entrée).',done:false,flag:false,createdAt:'12/05/2026'},
-        {id:'jr19',texte:'Trous façades à boucher.',done:false,flag:true,createdAt:'12/05/2026'},
-        {id:'jr20',texte:'RDJ – SDB studio: le tuyau EU doit être modifié → à refaire l\'étanchéité.',done:false,flag:true,createdAt:'12/05/2026'},
-        {id:'jr21',texte:'Terrasse chambre 1 et 2: à refaire la forme de pente du tuyau EU.',done:false,flag:true,createdAt:'12/05/2026'},
-        {id:'jr22',texte:'Dalle pour la PAC à créer.',done:false,flag:true,createdAt:'12/05/2026'},
-        {id:'jr23',texte:'RDJ: porte vers le studio – à enlever/modifier la cunette à cet endroit.',done:false,flag:false,createdAt:'12/05/2026'},
-        {id:'jr24',texte:'Les jardinières de l\'entrée sont conservées. Les pots de fleurs déplacés au fond du jardin pendant le chantier.',done:false,flag:false,createdAt:'12/05/2026'},
-        {id:'jr25',texte:'Le chemin d\'accès à la piscine sera protégé. La grille devra être déposée, remise en place, poncée et repeinte.',done:false,flag:false,createdAt:'12/05/2026'},
-        {id:'jr26',texte:'Portail d\'entrée (3m): à déconnecter avant dépose. Deviendra manuel et stocké dans la cour.',done:false,flag:true,createdAt:'12/05/2026'},
-        {id:'jr27',texte:'La terrasse de la piscine sera refaite.',done:false,flag:false,createdAt:'12/05/2026'},
-      ]},
-      {id:'jl5',titre:'Europavage',ouvert:false,intId:'j16',remarques:[
-        {id:'jr28',texte:'Devis reçu.',done:true,archived:false,flag:false,createdAt:'12/05/2026'},
-        {id:'jr29',texte:'3 semaines de travaux + 1 semaine séchage.',done:false,flag:false,createdAt:'12/05/2026'},
-      ]},
-      {id:'jl6',titre:'Lot Électricité',ouvert:false,intId:'j7',remarques:[
-        {id:'jr30',texte:'Ne pas percer le cuvelage.',done:false,flag:true,createdAt:'12/05/2026'},
-        {id:'jr31',texte:'Les plans actuels du cuisiniste seront encore transmis.',done:false,flag:true,createdAt:'12/05/2026'},
-        {id:'jr32',texte:'À enlever les 3 paraboles et l\'antenne.',done:false,flag:false,createdAt:'12/05/2026'},
-        {id:'jr33',texte:'Devis en cours: sèches-serviettes, amplificateur Wi-Fi (reçu 30 mars), appareillage (reçu 15 mai).',done:false,flag:false,createdAt:'12/05/2026'},
-        {id:'jr34',texte:'Doorbird: installé dans une nouvelle niche à l\'emplacement précédent. Clavier côté intérieur sur le poteau droit du portail.',done:false,flag:false,createdAt:'12/05/2026'},
-        {id:'jr35',texte:'Suppléments: 3 miroirs cosmétiques (SDB maître, SDB 1 et 2). Alimentation électrique stores fenêtres chambre maître, dressing et SDB.',done:false,flag:true,createdAt:'12/05/2026'},
-        {id:'jr36',texte:'Alimentation panneaux photovoltaïques à prévoir par la cuisine.',done:false,flag:true,createdAt:'12/05/2026'},
-        {id:'jr37',texte:'À prévoir l\'alimentation du sauna (emplacement dans le jardin).',done:false,flag:true,createdAt:'12/05/2026'},
-        {id:'jr38',texte:'Tableau électrique et baie de brassage dans le RDJ (fitness). Cat 6a câble internet.',done:false,flag:false,createdAt:'12/05/2026'},
-      ]},
-      {id:'jl7',titre:'Lot Climatisation / Plomberie',ouvert:false,intId:'j8',remarques:[
-        {id:'jr39',texte:'SDB studio: le tuyau EU doit être modifié. NBR va refaire l\'étanchéité.',done:false,flag:true,createdAt:'12/05/2026'},
-        {id:'jr40',texte:'Les informations pour le raccordement au gaz ont été envoyées.',done:true,archived:false,flag:false,createdAt:'12/05/2026'},
-        {id:'jr41',texte:'VMC studio et SDB: coffrage à réaliser.',done:false,flag:true,createdAt:'12/05/2026'},
-        {id:'jr42',texte:'À prévoir une VMC dans la partie RDJ (double cloison) → devis supplémentaire.',done:false,flag:true,createdAt:'12/05/2026'},
-        {id:'jr43',texte:'Tuyaux d\'eau – diamètre 32. Passage eaux pluviales jardin bas à définir clairement.',done:false,flag:false,createdAt:'12/05/2026'},
-      ]},
-      {id:'jl8',titre:'Lot Menuiserie Extérieure',ouvert:false,intId:'j9',remarques:[
-        {id:'jr44',texte:'Liste de réservations reçue.',done:true,archived:false,flag:false,createdAt:'12/05/2026'},
-        {id:'jr45',texte:'La vitre de la porte-fenêtre (PF 01.13.01) chambre maître est endommagée.',done:false,flag:true,createdAt:'12/05/2026'},
-        {id:'jr46',texte:'Moustiquaires et volets: communiquer les informations manquantes pour la commande définitive.',done:false,flag:true,createdAt:'12/05/2026'},
-        {id:'jr47',texte:'Préparation pour pose volets? Date pose fenêtres fixes à communiquer.',done:false,flag:true,createdAt:'12/05/2026'},
-        {id:'jr48',texte:'Devis en attente pour les modifications des verres → chambres RDJ.',done:false,flag:true,createdAt:'12/05/2026'},
-      ]},
-      {id:'jl9',titre:'Lot Menuiserie Intérieure',ouvert:false,intId:'j5',remarques:[
-        {id:'jr49',texte:'Dimension pour le plaquiste concernant les portes: porte 83/204 → 90/209.',done:false,flag:false,createdAt:'12/05/2026'},
-        {id:'jr50',texte:'Dressing chambre maître – reçu.',done:true,archived:false,flag:false,createdAt:'12/05/2026'},
-      ]},
-      {id:'jl10',titre:'Lot Velux',ouvert:false,intId:'j10',remarques:[
-        {id:'jr51',texte:'Un verre a été abîmé – remplacé fin semaine 10 (à vérifier condensation).',done:false,flag:true,createdAt:'12/05/2026'},
-        {id:'jr52',texte:'À fournir la notice / mode d\'emploi.',done:false,flag:false,createdAt:'12/05/2026'},
-      ]},
-      {id:'jl11',titre:'Lot Isolation / Doublage',ouvert:false,intId:'j6',remarques:[
-        {id:'jr53',texte:'Studio RDJ: utiliser les plaques orange. Mur à droite: ajouter un doublage pour l\'électricien (prises profondes 40mm).',done:false,flag:true,createdAt:'12/05/2026'},
-        {id:'jr54',texte:'Là où se trouve le cuvelage: ne pas percer, montants à coller.',done:false,flag:true,createdAt:'12/05/2026'},
-        {id:'jr55',texte:'Double cloison pour mur contre terre: extrudé entre montants + mousse + ventilation haute/basse. Renforts pour meubles SDB et cave à vin.',done:false,flag:true,createdAt:'12/05/2026'},
-      ]},
-      {id:'jl12',titre:'Lot Peinture',ouvert:false,intId:'j12',remarques:[
-        {id:'jr56',texte:'À ajouter: grilles fenêtres, garde-corps balcon, porte d\'entrée, fenêtres fixes (couleur RAL 7016).',done:false,flag:true,createdAt:'12/05/2026'},
-        {id:'jr57',texte:'Plâtre plafond: studio, chambre 1 et 2.',done:false,flag:false,createdAt:'12/05/2026'},
-      ]},
-      {id:'jl13',titre:'Lot Cuisine / Arrière-cuisine',ouvert:false,intId:'j11',remarques:[
-        {id:'jr58',texte:'Plans techniques reçus le 5 mars. Mesures à prendre sur place, plans à adapter.',done:false,flag:true,createdAt:'12/05/2026'},
-        {id:'jr59',texte:'Le mur au niveau de la porte coulissante: réaliser en BA25 avec renforts.',done:false,flag:false,createdAt:'12/05/2026'},
-      ]},
-      {id:'jl14',titre:'Lot Cheminée',ouvert:false,intId:'j17',remarques:[
-        {id:'jr60',texte:'Cheminée déposée le 10 février.',done:true,archived:false,flag:false,createdAt:'12/05/2026'},
-      ]},
-      {id:'jl15',titre:'Lot Porte Cuisine (Rimadesio)',ouvert:false,intId:'j18',remarques:[
-        {id:'jr61',texte:'Détail porte cuisine – reçu.',done:true,archived:false,flag:false,createdAt:'12/05/2026'},
-      ]},
-      {id:'jl16',titre:'Lot Piscine',ouvert:false,intId:'j19',remarques:[
-        {id:'jr62',texte:'Étanchéité et pose mosaïque prévues pour le 22 juin. Prévenir au moins 3 semaines à l\'avance.',done:false,flag:true,createdAt:'12/05/2026'},
-      ]},
-      {id:'jl17',titre:'Lot Revêtement Sol',ouvert:false,intId:'j20',remarques:[
-        {id:'jr63',texte:'Devis carrelage et margelles – acceptés.',done:true,archived:false,flag:false,createdAt:'12/05/2026'},
-        {id:'jr64',texte:'Devis parquet – accepté. Parquet 15mm + colle 2mm = 17mm. Si ragréage +20mm.',done:true,archived:false,flag:false,createdAt:'12/05/2026'},
-        {id:'jr65',texte:'PARQUET: chambre maître, atelier, bureau.',done:false,flag:false,createdAt:'12/05/2026'},
-      ]},
-      {id:'jl18',titre:'Lot Ferronerie / Garde-Corps',ouvert:false,intId:'j13',remarques:[
-        {id:'jr66',texte:'Portail – Grilles terrasse à réutiliser.',done:false,flag:false,createdAt:'12/05/2026'},
-        {id:'jr67',texte:'Garde-corps du balcon à rehausser? Peinture Zolpan 3 couches. Restauration sablage éléments déformés. Prix au ml, longueur environ 33m.',done:false,flag:true,createdAt:'12/05/2026'},
-      ]},
-      {id:'jl19',titre:'Lot Alarme',ouvert:false,intId:'j15',remarques:[
-        {id:'jr68',texte:'Alarme radio installée sur les murs. Anciens contacts inutilisables. Couleur des contacts à harmoniser avec les cadres de fenêtre.',done:false,flag:true,createdAt:'12/05/2026'},
-      ]},
-      {id:'jl20',titre:'Client',ouvert:false,intId:'j21',remarques:[
-        {id:'jr69',texte:'Mur entre salon TV et escalier → fenêtre de 50cm et télévision de 190cm.',done:false,flag:false,createdAt:'12/05/2026'},
-        {id:'jr70',texte:'Séparation salon/cuisine (Rimadesio): plans techniques reçus.',done:true,archived:false,flag:false,createdAt:'12/05/2026'},
-        {id:'jr71',texte:'Chambre maître: pas de portes invisibles.',done:false,flag:false,createdAt:'12/05/2026'},
-        {id:'jr72',texte:'Buanderie: 1 machine à laver avec sèche-linge intégré + 1 machine et 1 sèche-linge (voir plan cuisiniste).',done:false,flag:false,createdAt:'12/05/2026'},
-        {id:'jr73',texte:'Cuisine et BBQ piscine: prévoir le gaz. Puissance donnée au plombier.',done:false,flag:false,createdAt:'12/05/2026'},
-        {id:'jr74',texte:'Fitness: ouverture au plafond ne sera pas conservée.',done:false,flag:false,createdAt:'12/05/2026'},
-        {id:'jr75',texte:'Isolation acoustique aux bruits d\'impact entre RDC et chambres RDJ (PU ou PST), 13€/m².',done:false,flag:true,createdAt:'12/05/2026'},
-        {id:'jr76',texte:'Margelles piscine et carreaux antidérapants – devis signé.',done:true,archived:false,flag:false,createdAt:'12/05/2026'},
-        {id:'jr77',texte:'Pergola – devis signé.',done:true,archived:false,flag:false,createdAt:'12/05/2026'},
-        {id:'jr78',texte:'Aucun doublage contre terre pour le mur de l\'escalier – client confirmera par écrit.',done:false,flag:true,createdAt:'12/05/2026'},
-        {id:'jr79',texte:'Stores électriques pour chambre maître.',done:false,flag:false,createdAt:'12/05/2026'},
-        {id:'jr80',texte:'Faux plafond rampant dans la cuisine pour dissimuler gaine climatisation.',done:false,flag:false,createdAt:'12/05/2026'},
-        {id:'jr81',texte:'Éléments à réparer/protéger: feu arrière, porte local technique, embout tuyau arrosage, échelle, dommages pilier/portail/lumière, bacs plantes cassés, condenseur clim abîmé, programmateur arrosage Rainbird disparu, projecteur retiré, barre inox piscine endommagée, garde-corps balcon tordu, pompe à chaleur avec pierres, 2 couvercles skimmer disparus.',done:false,flag:true,createdAt:'12/05/2026'},
-      ]},
-    ],
-    actions:[
-      {id:'ja1',texte:'Prendre RDV avec Aquareve pour la plage piscine',responsable:'Bell Architecture',intId:'j2',echeance:'19/05/2026',done:false},
-      {id:'ja2',texte:'VRD: confirmer date de réalisation pour le plombier',responsable:'NBR',intId:'j5',echeance:'19/05/2026',done:false},
-      {id:'ja3',texte:'Communiquer informations manquantes pour commande définitive volets/moustiquaires',responsable:'QUINTANE',intId:'j9',echeance:'19/05/2026',done:false},
-      {id:'ja4',texte:'Fournir notice/mode d\'emploi Velux',responsable:'SGARD',intId:'j10',echeance:'19/05/2026',done:false},
-      {id:'ja5',texte:'Devis supplémentaire VMC partie RDJ',responsable:'TORAL',intId:'j8',echeance:'19/05/2026',done:false},
-      {id:'ja6',texte:'Mesures à prendre sur place pour le cuisiniste – adapter plans',responsable:'Siematic Nice',intId:'j11',echeance:'19/05/2026',done:false},
-      {id:'ja7',texte:'Transmettre plans actuels cuisiniste à l\'électricien',responsable:'ADELEC',intId:'j7',echeance:'19/05/2026',done:false},
-      {id:'ja8',texte:'Devis modifications verres chambres RDJ',responsable:'QUINTANE',intId:'j9',echeance:'19/05/2026',done:false},
-      {id:'ja9',texte:'Prévenir Aquareve au moins 3 semaines avant le 22 juin (piscine)',responsable:'Bell Architecture',intId:'j2',echeance:'01/06/2026',done:false},
-      {id:'ja10',texte:'Client à confirmer par écrit: aucun doublage mur escalier contre terre',responsable:'M. et Mme Jundi',intId:'j21',echeance:'19/05/2026',done:false},
-    ]
+let CRS = [];
+// ── Persistence ──────────────────────────────────────────────────────
+// CRs are stored in localStorage under 'plansync_crs'.
+// The source code ships no real project data.
+// If saved user data exists, it is loaded and no default is injected.
+// If no saved data exists, a generic starter project is shown.
+(function(){
+  try {
+    const saved = localStorage.getItem('plansync_crs');
+    if(saved){
+      const parsed = JSON.parse(saved);
+      if(Array.isArray(parsed) && parsed.length > 0){
+        CRS = parsed;
+        return; // user data loaded — do not inject default
+      }
+    }
+  } catch(e) {
+    console.warn('PlanSync: could not load saved CRs:', e);
   }
-];
+  // No saved data — inject a clean generic starter project
+  CRS = [{
+    id:'cr_modele',
+    projet:'Projet modèle',
+    adresse:'Adresse du chantier',
+    date:(function(){var d=new Date();return d.toLocaleDateString('fr-FR');})(),
+    dateProchaine:'',
+    numero:1,
+    redacteur:'Rédacteur',
+    statut:'draft',
+    intervenants:[
+      {id:'im1',lot:'Maîtrise d\'œuvre',entreprise:'Cabinet Architecte',contacts:'Architecte référent',color:'#7a9db5',present:true,convoque:true},
+      {id:'im2',lot:'Lot Gros Œuvre',entreprise:'Entreprise GO',contacts:'Chef de chantier',color:'#c47a00',present:true,convoque:true},
+      {id:'im3',lot:'Lot Électricité',entreprise:'Entreprise Élec',contacts:'Responsable technique',color:'#f59f00',present:false,convoque:true},
+    ],
+    lots:[
+      {id:'lm1',titre:'Gros Œuvre',ouvert:true,intId:'im2',remarques:[
+        {id:'rm1',texte:'Vérifier le ferraillage de la dalle avant coulage.',done:false,flag:true,decision:false,archived:false,createdAt:(function(){var d=new Date();return d.toLocaleDateString('fr-FR');})()},
+        {id:'rm2',texte:'Nettoyage de la zone de coffrage effectué.',done:true,flag:false,decision:false,archived:false,createdAt:(function(){var d=new Date();return d.toLocaleDateString('fr-FR');})(),doneAt:(function(){var d=new Date();return d.toLocaleDateString('fr-FR');})()},
+      ]},
+      {id:'lm2',titre:'Électricité',ouvert:true,intId:'im3',remarques:[
+        {id:'rm3',texte:'Réservations pour passage des gaines à confirmer avec l\'architecte.',done:false,flag:false,decision:false,archived:false,createdAt:(function(){var d=new Date();return d.toLocaleDateString('fr-FR');})()},
+      ]},
+      {id:'lm3',titre:'Coordination générale',ouvert:true,intId:'im1',remarques:[]},
+    ],
+    actions:[
+      {id:'am1',texte:'Transmettre le plan de coffrage mis à jour.',responsable:'Entreprise GO',intId:'im2',echeance:'',done:false},
+    ],
+  }];
+})();
 
 /* ══ TEMPLATES ══ */
 // Load saved templates from localStorage
@@ -631,6 +365,11 @@ try {
   const saved = localStorage.getItem('plansync_cr_templates');
   if (saved) TEMPLATES = JSON.parse(saved);
 } catch(e) { TEMPLATES = []; }
+
+function saveCRS() {
+  try { localStorage.setItem('plansync_crs', JSON.stringify(CRS)); }
+  catch(e) { console.warn('PlanSync: could not save CRs:', e); }
+}
 
 function saveTemplatesToStorage() {
   try { localStorage.setItem('plansync_cr_templates', JSON.stringify(TEMPLATES)); } catch(e) {}
@@ -668,6 +407,8 @@ let remarqueSearch='';
 let quickFilter='all'; // all | flag | open | done | action
 let isDirty=false; // tracks unsaved changes
 let isAuthenticated=false;
+let actionFilter='';         // filter by intId
+let actionStatusFilter='all'; // all | late | soon | open | done
 
 /* ══ AUTH ══ */
 // ⚠️ Protection côté client uniquement — ne remplace pas une vraie protection Vercel/Auth côté serveur.
@@ -706,6 +447,7 @@ function initAuth(){
     isAuthenticated=true;
     const overlay=document.getElementById('auth-overlay');
     if(overlay)overlay.classList.add('hidden');
+    renderList();
   } else {
     // Focus password field
     setTimeout(()=>document.getElementById('auth-pwd')?.focus(),100);
@@ -745,13 +487,24 @@ function renderList(){
       <div style="font-size:11px;color:var(--text3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${cr.adresse}</div>
       <div class="cr-item-sub">
         <span class="badge ${allDone?'bgreen':'bgray'}" style="font-size:9px">${doneCount}/${total}</span>
-        ${flagCount?`<span class="badge bamber" style="font-size:9px">${flagCount} ⚑</span>`:''}
+        ${flagCount?`<span class="badge bamber" style="font-size:9px">${flagCount} À suivre</span>`:''}
         <span style="font-size:10px;color:var(--text3);margin-left:auto">CR n°${cr.numero}</span>
       </div>
     </div>`;
   }
 
   let html='';
+
+  if(CRS.length===0){
+    html=`<div style="padding:24px 12px;text-align:center;color:var(--text3)">
+      <svg class="ico" style="width:36px;height:36px;display:block;margin:0 auto 12px;opacity:.4"><use href="#i-file"/></svg>
+      <div style="font-size:13px;font-weight:500;margin-bottom:6px;color:var(--text2)">Aucun compte rendu</div>
+      <div style="font-size:11px;margin-bottom:16px">Créez votre premier CR pour commencer.</div>
+      <button class="btn btn-p btn-sm" onclick="openNewCR()" style="width:100%;justify-content:center">${ico('plus','ico-sm')} Nouveau CR</button>
+    </div>`;
+    el.innerHTML=html;
+    return;
+  }
 
   if(active.length){
     html+=`<div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;padding:8px 6px 4px">En cours (${active.length})</div>`;
@@ -815,21 +568,18 @@ function renderCR(){
 
   // Reset tab UI
   document.querySelectorAll('.tab').forEach((t,i)=>{
-    const tabs=['remarques','intervenants','actions'];
+    const tabs=['remarques','actions','intervenants','dates','historique'];
     t.classList.toggle('active',tabs[i]===activeTab);
   });
 
   const isArchived=cr.statut==='archived';
   document.getElementById('tb-actions').innerHTML=`
-    <button class="btn btn-sm" onclick="openCRSettings('${cr.id}')">${ico('settings','ico-sm')} Réglages</button>
-    <button class="btn btn-sm" onclick="saveAsTemplate('${cr.id}')" title="Enregistrer comme modèle réutilisable"><svg class="ico ico-sm"><use href="#i-save"/></svg> Modèle</button>
     <button class="btn btn-sm" onclick="previewPDF('${cr.id}')" title="Aperçu PDF avant impression"><svg class="ico ico-sm"><use href="#i-printer"/></svg> Aperçu PDF</button>
     <button class="btn btn-sm" onclick="openEditCR('${cr.id}')">${ico('edit','ico-sm')} Modifier</button>
     <button class="btn btn-sm ${isArchived?'':'btn-amber'}" onclick="toggleArchiveCR('${cr.id}')" title="${isArchived?'Désarchiver':'Archiver ce CR'}" style="${isArchived?'':'color:var(--amber);border-color:var(--amber)'}">
       <svg class="ico ico-sm"><use href="#i-archive"/></svg> ${isArchived?'Désarchiver':'Archiver'}
     </button>
-    <button class="btn btn-p btn-sm" onclick="cloneCR('${cr.id}')" style="background:var(--green);border-color:var(--green);color:#fff;font-weight:600">${ico('plus','ico-sm')} CR Suivant</button>
-    <button class="btn btn-sm" onclick="openAddLot('${cr.id}')">${ico('plus','ico-sm')} Lot</button>`;
+    <button class="btn btn-p btn-sm" onclick="cloneCR('${cr.id}')" style="background:var(--green);border-color:var(--green);color:#fff;font-weight:600">${ico('plus','ico-sm')} CR Suivant</button>`;
 
   if(activeTab==='remarques') renderRemarques(cr);
   else if(activeTab==='intervenants') renderIntervenants(cr);
@@ -876,7 +626,7 @@ function renderRemarques(cr){
       <div style="font-size:10px;color:#c0392b;line-height:1.3">Actions<br>en retard</div>
     </div>`:''}
     ${cr.dateProchaine?`<div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:8px 14px;display:flex;align-items:center;gap:8px">
-      <div style="font-size:11px;color:var(--text3)">Prochaine reunion<br><strong style="color:var(--text);font-size:13px">${cr.dateProchaine}</strong></div>
+      <div style="font-size:11px;color:var(--text3)">Prochaine réunion<br><strong style="color:var(--text);font-size:13px">${cr.dateProchaine}</strong></div>
     </div>`:''}
     <div style="display:flex;flex-direction:column;gap:4px;justify-content:center;margin-left:auto">
       <button class="btn btn-sm" onclick="exportCSV('${cr.id}')" title="CSV"><svg class="ico ico-xs"><use href="#i-download"/></svg></button>
@@ -888,10 +638,9 @@ function renderRemarques(cr){
   <div style="display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap;align-items:center">
     ${[
       ['all','Tous',all.length,'var(--text2)','var(--bg2)'],
-      ['flag','⚑ À suivre',flagR.length,'var(--amber)','var(--amber-bg)'],
+      ['flag','À suivre',flagR.length,'var(--amber)','var(--amber-bg)'],
       ['open','Non traités',openR.length,'var(--text2)','var(--bg2)'],
       ['done','Traités',doneR.length,'var(--green)','var(--green-bg)'],
-      ['action','Actions',actCount,'var(--blue)','var(--blue-bg)'],
     ].map(([k,label,count,col,bg])=>`
       <button onclick="quickFilter='${k}';renderRemarques(CRS.find(c=>c.id==='${cr.id}'))"
         style="padding:5px 12px;border-radius:20px;border:1.5px solid ${quickFilter===k?col:'var(--border)'};background:${quickFilter===k?bg:'transparent'};color:${quickFilter===k?col:'var(--text3)'};font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .12s">
@@ -905,6 +654,9 @@ function renderRemarques(cr){
       ${remarqueSearch?`<button onclick="remarqueSearch='';renderRemarques(CRS.find(c=>c.id==='${cr.id}'))" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:12px">✕</button>`:''}
     </div>
   </div>`;
+
+
+  html+=`<div style="display:flex;justify-content:flex-end;margin-bottom:8px">`+`<button class="btn btn-sm" onclick="openAddLot('${cr.id}')">${ico('plus','ico-xs')} + Lot</button>`+`</div>`;
 
   cr.lots.forEach(lot=>{
     // Color priority: linked intervenant > lot's own color > derived from title
@@ -921,7 +673,7 @@ function renderRemarques(cr){
         <div class="lot-head-left">
           <div class="lot-dot" style="background:${color}"></div>
           <div class="lot-title">${lot.titre}</div>
-          ${lotFlags?`<span class="badge bamber" style="font-size:9px">${lotFlags} ⚑</span>`:''}
+          ${lotFlags?`<span class="badge bamber" style="font-size:9px">${lotFlags} À suivre</span>`:''}
           ${linkedLabel?`<span class="lot-int-badge" style="font-size:10px;color:${color};background:${color}18;padding:2px 7px;border-radius:10px;font-weight:500">${linkedLabel}</span>`:''}
         </div>
         <div style="display:flex;align-items:center;gap:6px">
@@ -956,14 +708,15 @@ function renderRemarques(cr){
             out+='<div style="padding:10px 0;font-size:12px;color:var(--text3);text-align:center">Aucun point pour ce filtre</div>';
           }
 
+          out+='<div id="lot-rmks-'+lot.id+'" data-crid="'+cr.id+'" data-lotid="'+lot.id+'">';
           out+=active.map(r=>{
             // Status badge
             const badge=r.flag&&!r.done
-              ?'<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;background:var(--amber-bg);color:var(--amber);white-space:nowrap;flex-shrink:0">⚑ À suivre</span>'
+              ?'<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;background:var(--amber-bg);color:var(--amber);white-space:nowrap;flex-shrink:0">À suivre</span>'
               :r.decision&&!r.done
-              ?'<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;background:var(--purple-bg);color:var(--purple);white-space:nowrap;flex-shrink:0">🔷 Décision</span>'
+              ?'<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;background:var(--purple-bg);color:var(--purple);white-space:nowrap;flex-shrink:0">Décision</span>'
               :r.done
-              ?'<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;background:var(--green-bg);color:var(--green);white-space:nowrap;flex-shrink:0">✓ Traité</span>'
+              ?'<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;background:var(--green-bg);color:var(--green);white-space:nowrap;flex-shrink:0">Traité</span>'
               :'';
             // Image thumbnails
             const imgGrid=(r.images&&r.images.length)?`<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px">${r.images.map(img=>`
@@ -973,6 +726,8 @@ function renderRemarques(cr){
                 <button onclick="deleteImage('${cr.id}','${lot.id}','${r.id}','${img.id}')" style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,.55);border:none;color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">x</button>
               </div>`).join('')}</div>`:'';
             return `<div class="remarque-item" style="${r.done?'opacity:.65':''}${r.flag&&!r.done?';border-left:2px solid var(--amber);padding-left:8px;margin-left:-2px':''}">
+              <span class="r-drag-handle" data-lotid="${lot.id}" title="Glisser pour réordonner" style="color:var(--text3);font-size:16px;line-height:1;cursor:grab;flex-shrink:0;padding:0 3px;user-select:none;align-self:center">&#8801;</span>
+
               <div class="ri-check ${r.done?'done':r.flag?'flagged':''}" onclick="toggleDone('${cr.id}','${lot.id}','${r.id}')" title="${r.done?'Décocher':'Marquer traité'}" style="flex-shrink:0">
                 ${r.done?ico('check','ico-xs'):''}
               </div>
@@ -989,10 +744,10 @@ function renderRemarques(cr){
                 <button class="btn-g" style="padding:4px 6px;font-size:14px;font-weight:700;color:var(--text3);line-height:1" onclick="toggleRemarqueMenu(event,'rmenu-${r.id}')" title="Plus d\'actions">…</button>
                 <div id="rmenu-${r.id}" style="display:none;position:absolute;right:0;top:24px;background:var(--panel);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow2);z-index:50;min-width:180px;padding:4px 0">
                   ${!r.done?`<button onclick="toggleFlag('${cr.id}','${lot.id}','${r.id}');closeAllMenus()" style="width:100%;text-align:left;padding:7px 14px;border:none;background:none;cursor:pointer;font-size:12px;font-family:inherit;color:${r.flag?'var(--amber)':'var(--text2)'}">
-                    ${r.flag?'⚑ Retirer le marquage':'⚑ Marquer à suivre'}
+                    ${r.flag?'Retirer le marquage':'Marquer à suivre'}
                   </button>`:''}
                   ${!r.done?`<button onclick="toggleDone('${cr.id}','${lot.id}','${r.id}');closeAllMenus()" style="width:100%;text-align:left;padding:7px 14px;border:none;background:none;cursor:pointer;font-size:12px;font-family:inherit;color:var(--green)">
-                    ✓ Marquer traité
+                    Marquer traité
                   </button>`:''}
                   ${r.done?`<button onclick="archiveRemarque('${cr.id}','${lot.id}','${r.id}');closeAllMenus()" style="width:100%;text-align:left;padding:7px 14px;border:none;background:none;cursor:pointer;font-size:12px;font-family:inherit">
                     Archiver
@@ -1017,6 +772,7 @@ function renderRemarques(cr){
               </div>
             </div>`;
           }).join('');
+          out+='</div>';
 
           if(archived.length){
             out+=`<div style="margin-top:8px;border-top:1px dashed var(--border2)">
@@ -1029,7 +785,7 @@ function renderRemarques(cr){
                   <div class="ri-check done" onclick="unarchiveRemarque('${cr.id}','${lot.id}','${r.id}')" title="Remettre visible">${ico('check','ico-xs')}</div>
                   <div style="flex:1;min-width:0">
                     <div class="ri-text done-text">${r.texte}</div>
-                    ${r.archivedAt?`<div style="font-size:10px;color:var(--green);margin-top:2px">🗄 Archivé le ${r.archivedAt}</div>`:''}
+                    ${r.archivedAt?`<div style="font-size:10px;color:var(--green);margin-top:2px">Archivé le ${r.archivedAt}</div>`:''}
                   </div>
                   <button class="btn-g" style="padding:3px" onclick="deleteRemarque('${cr.id}','${lot.id}','${r.id}')" title="Supprimer définitivement"><svg class="ico ico-xs" style="color:var(--red)"><use href="#i-trash"/></svg></button>
                 </div>`).join('')}
@@ -1038,20 +794,15 @@ function renderRemarques(cr){
           }
           return out;
         })()}
-        <!-- Quick add with type selector -->
+        <!-- Ajout rapide -->
         <div style="padding:8px 0 2px;border-top:1px solid var(--border);margin-top:8px">
-          <div style="display:flex;gap:4px;margin-bottom:5px;flex-wrap:wrap">
-            ${[['remarque','💬','Remarque','var(--text2)'],['flag','⚑','À suivre','var(--amber)'],['action','⚡','Action','var(--blue)'],['decision','🔷','Décision','var(--purple)']].map(([t,icon,label,col])=>`
-            <button id="qtype-${lot.id}-${t}" onclick="setQuickType('${lot.id}','${t}')"
-              style="font-size:10px;padding:3px 9px;border-radius:12px;border:1.5px solid ${col};background:transparent;color:${col};cursor:pointer;font-family:inherit;font-weight:600;opacity:.5;transition:all .12s">
-              ${icon} ${label}
-            </button>`).join('')}
-          </div>
-          <div style="display:flex;gap:6px">
-            <input placeholder="Ajouter une remarque…" id="new-r-${lot.id}"
+          <div style="display:flex;gap:6px;align-items:center">
+            <input placeholder="Ajouter un point…" id="new-r-${lot.id}"
               style="flex:1;padding:6px 9px;border:1px solid var(--border2);border-radius:7px;font-size:12px;background:var(--bg);color:var(--text);outline:none;font-family:inherit"
-              onfocus="setQuickType('${lot.id}','remarque')"
               onkeydown="if(event.key==='Enter')addRemarque('${cr.id}','${lot.id}')">
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--amber);white-space:nowrap;cursor:pointer">
+              <input type="checkbox" id="new-r-flag-${lot.id}" style="width:13px;height:13px;accent-color:var(--amber)"> À suivre
+            </label>
             <button class="btn btn-p btn-sm" onclick="addRemarque('${cr.id}','${lot.id}')">${ico('plus','ico-xs')}</button>
           </div>
         </div>
@@ -1060,9 +811,42 @@ function renderRemarques(cr){
   });
   html+='</div>';
   document.getElementById('content').innerHTML=html;
+  // Init SortableJS drag on each lot's remarques list
+  if(typeof Sortable !== 'undefined'){
+    cr.lots.forEach(function(lot){
+      var el=document.getElementById('lot-rmks-'+lot.id);
+      if(!el)return;
+      Sortable.create(el,{
+        animation:120,
+        handle:'.r-drag-handle',
+        filter:'input,textarea,select,button,label',
+        preventOnFilter:true,
+        ghostClass:'sortable-ghost',
+        onEnd:function(evt){
+          if(evt.oldIndex===evt.newIndex)return;
+          var crId=el.dataset.crid;
+          var lotId=el.dataset.lotid;
+          // Move in data using absolute indices
+          var cr2=CRS.find(function(c){return c.id===crId;});
+          var lot2=cr2&&cr2.lots.find(function(l){return l.id===lotId;});
+          if(!lot2)return;
+          // Indices are within active (non-archived) subset — need to map to full array
+          var activeIds=lot2.remarques.filter(function(r){return !r.archived;}).map(function(r){return r.id;});
+          var movedId=activeIds[evt.oldIndex];
+          var targetId=activeIds[evt.newIndex];
+          if(!movedId||!targetId||movedId===targetId)return;
+          var fromIdx=lot2.remarques.findIndex(function(r){return r.id===movedId;});
+          var toIdx=lot2.remarques.findIndex(function(r){return r.id===targetId;});
+          if(fromIdx<0||toIdx<0)return;
+          var moved=lot2.remarques.splice(fromIdx,1)[0];
+          lot2.remarques.splice(toIdx,0,moved);
+          markDirty();
+          // No re-render needed — SortableJS already moved the DOM node
+        }
+      });
+    });
+  }
 }
-
-/* ══ INTERVENANTS ══ */
 function renderIntervenants(cr){
   const present=cr.intervenants.filter(i=>i.present);
   const absent=cr.intervenants.filter(i=>!i.present);
@@ -1080,8 +864,8 @@ function renderIntervenants(cr){
           <div class="int-ent">${i.entreprise||i.lot}</div>
           <div class="int-contact" style="white-space:pre-line">${i.contacts||'—'}</div>
           <div style="margin-top:8px;display:flex;align-items:center;flex-wrap:wrap;gap:4px">
-            <span class="badge ${i.convoque!==false?'bblue':'bgray'}" style="font-size:9px;cursor:pointer" onclick="toggleConvoque('${cr.id}','${i.id}')" title="Convoqué à cette réunion">${i.convoque!==false?'📩 Convoqué':'Non convoqué'}</span>
-            <span class="badge ${i.present?'bgreen':'bgray'}" style="font-size:9px;cursor:pointer" onclick="togglePresence('${cr.id}','${i.lot}')">${i.present?'✓ Présent':'Absent'}</span>
+            <span class="badge ${i.convoque!==false?'bblue':'bgray'}" style="font-size:9px;cursor:pointer" onclick="toggleConvoque('${cr.id}','${i.id}')" title="Convoqué à cette réunion">${i.convoque!==false?'Convoqué':'Non convoqué'}</span>
+            <span class="badge ${i.present?'bgreen':'bgray'}" style="font-size:9px;cursor:pointer" onclick="togglePresence('${cr.id}','${i.lot}')">${i.present?'Présent':'Absent'}</span>
             <div style="display:flex;gap:3px;margin-left:auto">
               <button class="btn-g" style="padding:3px" onclick="editIntervenant('${cr.id}',${idx})" title="Modifier">${ico('edit','ico-xs')}</button>
               <button class="btn-g" style="padding:3px" onclick="deleteIntervenant('${cr.id}',${idx})" title="Supprimer"><svg class="ico ico-xs" style="color:var(--red)"><use href="#i-trash"/></svg></button>
@@ -1117,7 +901,7 @@ function renderActions(cr){
   // Status quick filters
   const statusFilters=[
     ['all','Toutes',allActions.length,'var(--text2)'],
-    ['late','⚠ En retard',lateActions.length,'var(--red)'],
+    ['late','En retard',lateActions.length,'var(--red)'],
     ['soon','⏰ Avant prochaine réunion',soonActions.length,'var(--amber)'],
     ['open','En cours',allTodo.length,'var(--text2)'],
     ['done','Terminées',allDone.length,'var(--green)'],
@@ -1179,7 +963,7 @@ function renderActions(cr){
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
       <div style="display:flex;gap:8px;align-items:center">
         <span style="font-size:13px;font-weight:600">${allActions.length} actions</span>
-        ${lateActions.length?`<span class="badge bred">⚠ ${lateActions.length} en retard</span>`:''}
+        ${lateActions.length?`<span class="badge bred">${lateActions.length} en retard</span>`:''}
         ${soonActions.length?`<span class="badge bamber">⏰ ${soonActions.length} bientôt</span>`:''}
       </div>
       <button class="btn btn-p btn-sm" onclick="openAddAction('${cr.id}')">${ico('plus','ico-sm')} Ajouter</button>
@@ -1253,11 +1037,11 @@ function renderDates(cr){
       +'</td>'
       +'<td style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:12.5px;vertical-align:top">'
         +(isArchived?'<span style="text-decoration:line-through;color:var(--text3)">'+e(r.texte)+'</span>':e(r.texte))
-        +(r.flag?'<span style="margin-left:6px;color:var(--amber);font-size:10px;font-weight:600">⚑</span>':'')
+        +(r.flag?'<span style="margin-left:6px;font-size:10px;font-weight:600;padding:2px 5px;background:var(--amber-bg);color:var(--amber);border-radius:3px">À suivre</span>':'')
       +'</td>'
       +'<td style="padding:8px 10px;border-bottom:1px solid var(--border);white-space:nowrap;vertical-align:top">'
         +'<div style="font-size:11px;color:var(--text3)">'+(r.createdAt||'—')+'</div>'
-        +(isArchived&&r.archivedAt?'<div style="font-size:10px;color:var(--green);margin-top:2px">✓ '+r.archivedAt+'</div>':'')
+        +(isArchived&&r.archivedAt?'<div style="font-size:10px;color:var(--green);margin-top:2px">Traité le '+r.archivedAt+'</div>':'')
       +'</td>'
       +'<td style="padding:8px 10px;border-bottom:1px solid var(--border);white-space:nowrap;vertical-align:top;text-align:center">'
         +(isArchived
@@ -1544,28 +1328,39 @@ function deleteRemarque(crId,lotId,rId){
   if(lot)lot.remarques=lot.remarques.filter(r=>r.id!==rId);
   renderCR();renderList();
 }
+function moveRemarque(crId,lotId,rId,dir){
+  const cr=CRS.find(c=>c.id===crId);
+  const lot=cr?.lots.find(l=>l.id===lotId);
+  if(!lot)return;
+  const idx=lot.remarques.findIndex(r=>r.id===rId);
+  if(idx<0)return;
+  const to=idx+dir;
+  if(to<0||to>=lot.remarques.length)return;
+  const moved=lot.remarques.splice(idx,1)[0];
+  lot.remarques.splice(to,0,moved);
+  markDirty();renderCR();
+}
 function addRemarque(crId,lotId){
   const inp=document.getElementById('new-r-'+lotId);
   if(!inp||!inp.value.trim())return;
   const cr=CRS.find(c=>c.id===crId);
   const lot=cr?.lots.find(l=>l.id===lotId);
   if(!lot)return;
-  const type=(_quickTypes&&_quickTypes[lotId])||'remarque';
+  const flagCb=document.getElementById('new-r-flag-'+lotId);
+  const isFlag=flagCb?flagCb.checked:false;
   const newR={
     id:'r'+(uid++),
     texte:inp.value.trim(),
     done:false,
-    flag:type==='flag',
-    decision:type==='decision',
+    flag:isFlag,
+    decision:false,
     archived:false,
     createdAt:new Date().toLocaleDateString('fr-FR')
   };
   lot.remarques.push(newR);
   inp.value='';
+  if(flagCb)flagCb.checked=false;
   markDirty();renderCR();renderList();
-  if(type==='action'){
-    setTimeout(()=>remarkToAction(crId,lotId,newR.id),50);
-  }
 }
 function editRemarque(crId,lotId,rId){
   const cr=CRS.find(c=>c.id===crId);
@@ -1694,8 +1489,8 @@ function openAddIntervenant(crId){
     <div class="fi"><label>Lot / Fonction *</label><input id="ai-lot" placeholder="Ex: Lot Carrelage, Ingénieur…"></div>
     <div class="fi"><label>Entreprise</label><input id="ai-ent" placeholder="Nom de l'entreprise"></div>
     <div class="fi"><label>Contacts</label><textarea id="ai-contacts" placeholder="Nom — Téléphone — Email"></textarea></div>
-    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;margin-bottom:6px"><input type="checkbox" id="ai-convoque" checked style="width:15px;height:15px"> 📩 Convoqué à cette réunion</label>
-    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;margin-bottom:12px"><input type="checkbox" id="ai-present" style="width:15px;height:15px"> ✓ Présent à cette réunion</label>
+    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;margin-bottom:6px"><input type="checkbox" id="ai-convoque" checked style="width:15px;height:15px"> Convoqué à cette réunion</label>
+    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;margin-bottom:12px"><input type="checkbox" id="ai-present" style="width:15px;height:15px"> Présent à cette réunion</label>
     <div class="mo-foot">
       <button class="btn" onclick="closeModal()">Annuler</button>
       <button class="btn btn-p" onclick="saveIntervenant('${crId}')">${ico('plus','ico-sm')} Ajouter</button>
@@ -1714,11 +1509,11 @@ function openNewCR(){
   showModal(`<h3>${ico('file','ico-sm')} Nouveau compte rendu</h3>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div class="fi" style="grid-column:1/-1"><label>Nom du projet *</label><input id="nc-proj" placeholder="Ex: Villa Dupont"></div>
-      <div class="fi" style="grid-column:1/-1"><label>Adresse du chantier</label><input id="nc-addr" placeholder="641 Allée de la Roseraie, 06250 Mougins"></div>
+      <div class="fi" style="grid-column:1/-1"><label>Adresse du chantier</label><input id="nc-addr" placeholder="Ex: 12 rue du Chantier, 75001 Paris"></div>
       <div class="fi"><label>Date de la réunion *</label><input type="date" id="nc-date"></div>
       <div class="fi"><label>Date prochaine réunion</label><input id="nc-datep" placeholder="21/05/2026 14:00"></div>
       <div class="fi"><label>N° de CR</label><input type="number" id="nc-num" placeholder="1" min="1"></div>
-      <div class="fi"><label>Rédacteur</label><input id="nc-red" placeholder="Mme Bell — Bell Architecture"></div>
+      <div class="fi"><label>Rédacteur</label><input id="nc-red" placeholder="Ex: Martin Dupont — Cabinet Martin"></div>
     </div>
     <div class="mo-foot">
       <button class="btn" onclick="closeModal()">Annuler</button>
@@ -1745,6 +1540,7 @@ function saveNewCR(){
     actions:[],
   };
   CRS.unshift(newCR);
+  saveCRS();
   closeModal();
   activeCR=newCR.id;
   activeTab='intervenants';
@@ -1764,6 +1560,9 @@ function openEditCR(crId){
       <div class="fi"><label>Rédacteur</label><input id="ec-red" value="${e(cr.redacteur)}"></div>
     </div>
     <div class="mo-foot">
+      <button class="btn" style="margin-right:auto" onclick="closeModal();saveAsTemplate('${crId}')">
+        <svg class="ico ico-sm"><use href="#i-save"/></svg> Enregistrer comme modèle
+      </button>
       <button class="btn" onclick="closeModal()">Annuler</button>
       <button class="btn btn-p" onclick="saveEditCR('${crId}')">${ico('save','ico-sm')} Enregistrer</button>
     </div>`);
@@ -1776,7 +1575,7 @@ function saveEditCR(crId){
   cr.dateProchaine=document.getElementById('ec-datep')?.value||cr.dateProchaine;
   cr.numero=parseInt(document.getElementById('ec-num')?.value)||cr.numero;
   cr.redacteur=document.getElementById('ec-red')?.value||cr.redacteur;
-  closeModal();renderList();renderCR();toast('Modifications enregistrées ✓');
+  saveCRS();closeModal();renderList();renderCR();toast('Modifications enregistrées ✓');
 }
 
 /* ══ EXPORT / PRINT ══ */
@@ -2072,10 +1871,10 @@ function editIntervenant(crId,idx){
       <span style="font-size:12px;color:var(--text3)">Utilisée dans les badges et l'export</span>
     </div>
     <label style="display:flex;align-items:center;gap:7px;font-size:13px;cursor:pointer;margin-bottom:6px">
-      <input type="checkbox" id="ei-convoque" ${i.convoque!==false?'checked':''} style="width:15px;height:15px"> 📩 Convoqué à cette réunion
+      <input type="checkbox" id="ei-convoque" ${i.convoque!==false?'checked':''} style="width:15px;height:15px"> Convoqué à cette réunion
     </label>
     <label style="display:flex;align-items:center;gap:7px;font-size:13px;cursor:pointer;margin-bottom:4px">
-      <input type="checkbox" id="ei-present" ${i.present?'checked':''} style="width:15px;height:15px"> ✓ Présent à cette réunion
+      <input type="checkbox" id="ei-present" ${i.present?'checked':''} style="width:15px;height:15px"> Présent à cette réunion
     </label>
     <div class="mo-foot">
       <button class="btn" onclick="closeModal()">Annuler</button>
@@ -2145,10 +1944,8 @@ function openCRSettings(crId){
     var done=lot.remarques.filter(function(r){return r.done;}).length;
     lotsHTML+=''
       +'<div style="border:1px solid '+(hasInt?'var(--border)':'#fca5a5')+';border-left:4px solid '+lotCol+';border-radius:8px;padding:9px 12px;margin-bottom:6px;background:'+(hasInt?'var(--panel)':'#fff5f5')+';display:flex;align-items:center;gap:7px">'
-        +'<div class="sort-handle" style="display:flex;flex-direction:column;gap:3px;flex-shrink:0;cursor:grab">'
-          +'<button onclick="moveItem(\'lot\',\''+crId+'\','+li+',-1)" style="background:var(--panel);border:1px solid var(--border2);border-radius:6px;cursor:pointer;width:28px;height:24px;font-size:13px;display:flex;align-items:center;justify-content:center;color:var(--text2);font-weight:500;padding:0">▲</button>'
-          +'<button onclick="moveItem(\'lot\',\''+crId+'\','+li+',1)" style="background:var(--panel);border:1px solid var(--border2);border-radius:6px;cursor:pointer;width:28px;height:24px;font-size:13px;display:flex;align-items:center;justify-content:center;color:var(--text2);font-weight:500;padding:0">▼</button>'
-        +'</div>'
+        +'<span class="sort-handle" style="color:var(--text3);font-size:18px;line-height:1;user-select:none;cursor:grab;flex-shrink:0;padding:0 2px" title="Glisser pour réordonner">&#8801;</span>'
+
         // Color dot — derived from intervenant, not editable independently
         +'<div style="width:12px;height:12px;border-radius:50%;background:'+lotCol+';flex-shrink:0;border:2px solid '+(hasInt?'transparent':'#e03131')+'" title="Couleur = couleur de l\'intervenant lié"></div>'
         +'<input value="'+e(lot.titre)+'" id="gs-lot-'+lot.id+'"'
@@ -2175,10 +1972,8 @@ function openCRSettings(crId){
     intsHTML+=''
       +'<div style="border:1px solid var(--border);border-left:4px solid '+col+';border-radius:8px;padding:9px 12px;cursor:default;margin-bottom:6px">'
         +'<div style="display:flex;align-items:center;gap:7px;margin-bottom:7px">'
-          +'<div class="sort-handle" style="display:flex;align-items:center;gap:4px;flex-shrink:0;cursor:grab">'+'<span style="color:var(--text3);font-size:16px;line-height:1;user-select:none">&#8801;</span>'+'<div style="display:flex;flex-direction:column;gap:2px">'
-            +'<button onclick="moveItem(\'int\',\''+crId+'\','+ii+',-1)" style="background:var(--panel);border:1px solid var(--border2);border-radius:6px;cursor:pointer;width:28px;height:24px;font-size:13px;display:flex;align-items:center;justify-content:center;color:var(--text2);font-weight:500;padding:0">▲</button>'
-            +'<button onclick="moveItem(\'int\',\''+crId+'\','+ii+',1)" style="background:var(--panel);border:1px solid var(--border2);border-radius:6px;cursor:pointer;width:28px;height:24px;font-size:13px;display:flex;align-items:center;justify-content:center;color:var(--text2);font-weight:500;padding:0">▼</button>'
-          +'</div>'+'</div>'
+          +'<span class="sort-handle" style="color:var(--text3);font-size:18px;line-height:1;user-select:none;cursor:grab;flex-shrink:0;padding:0 2px" title="Glisser pour réordonner">&#8801;</span>'
+
           +'<span style="font-size:10px;font-weight:700;color:var(--text3);min-width:18px;text-align:center;flex-shrink:0">'+( ii+1)+'</span>'
           +'<input type="color" id="gs-int-color-'+ii+'" value="'+col+'" title="Couleur intervenant"'
             +' oninput="syncIntColor(\''+crId+'\','+ii+',this.value)"'
@@ -2193,9 +1988,7 @@ function openCRSettings(crId){
         +'</div>'
         +'<textarea id="gs-int-contacts-'+ii+'" placeholder="Contacts (nom, tel, email)"'
           +' style="width:100%;padding:5px 8px;border:1px solid var(--border2);border-radius:6px;font-size:11px;background:var(--bg);color:var(--text);outline:none;font-family:inherit;resize:vertical;min-height:44px">'+e(int.contacts)+'</textarea>'
-        +'<label style="display:flex;align-items:center;gap:6px;margin-top:5px;font-size:11px;cursor:pointer">'
-          +'<input type="checkbox" id="gs-int-convoque-'+ii+'"'+(int.convoque!==false?' checked':'')+' style="width:13px;height:13px"> 📩 Convoqué'
-        +'</label>'
+
       +'</div>';
   });
 
@@ -2208,13 +2001,11 @@ function openCRSettings(crId){
     actsHTML+=''
       +'<div style="border:1px solid var(--border);border-radius:8px;padding:9px 12px;cursor:default;margin-bottom:6px">'
         +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">'
-          +'<div class="sort-handle" style="display:flex;align-items:center;gap:4px;flex-shrink:0;cursor:grab">'+'<span style="color:var(--text3);font-size:16px;line-height:1;user-select:none">&#8801;</span>'+'<div style="display:flex;flex-direction:column;gap:2px">'
-            +'<button onclick="moveItem(\'act\',\''+crId+'\','+ai+',-1)" style="background:var(--panel);border:1px solid var(--border2);border-radius:6px;cursor:pointer;width:28px;height:24px;font-size:13px;display:flex;align-items:center;justify-content:center;color:var(--text2);font-weight:500;padding:0">▲</button>'
-            +'<button onclick="moveItem(\'act\',\''+crId+'\','+ai+',1)" style="background:var(--panel);border:1px solid var(--border2);border-radius:6px;cursor:pointer;width:28px;height:24px;font-size:13px;display:flex;align-items:center;justify-content:center;color:var(--text2);font-weight:500;padding:0">▼</button>'
-          +'</div>'+'</div>'
+          +'<span class="sort-handle" style="color:var(--text3);font-size:18px;line-height:1;user-select:none;cursor:grab;flex-shrink:0;padding:0 2px" title="Glisser pour réordonner">&#8801;</span>'
+
           +'<span style="font-size:10px;font-weight:700;color:var(--text3);min-width:18px;text-align:center;flex-shrink:0">'+( ai+1)+'</span>'
           +'<label style="display:flex;align-items:center;gap:5px;font-size:11px;cursor:pointer;white-space:nowrap">'
-            +'<input type="checkbox" id="gs-a-done-'+a.id+'"'+(a.done?' checked':'')+' style="width:13px;height:13px"> Terminee'
+            +'<input type="checkbox" id="gs-a-done-'+a.id+'"'+(a.done?' checked':'')+' style="width:13px;height:13px"> Terminée'
           +'</label>'
           +'<input value="'+e(a.texte)+'" id="gs-a-texte-'+a.id+'"'
             +' style="flex:1;padding:5px 8px;border:1px solid var(--border2);border-radius:6px;font-size:12px;background:var(--bg);color:var(--text);outline:none;font-family:inherit">'
@@ -2227,31 +2018,31 @@ function openCRSettings(crId){
             +' style="flex:1;padding:5px 8px;border:1px solid var(--border2);border-radius:6px;font-size:11px;background:var(--bg);color:var(--text);outline:none;font-family:inherit">'
             +intOpts
           +'</select>'
-          +'<input value="'+e(a.echeance)+'" id="gs-a-ech-'+a.id+'" placeholder="Echeance"'
+          +'<input value="'+e(a.echeance)+'" id="gs-a-ech-'+a.id+'" placeholder="Échéance"'
             +' style="width:110px;padding:5px 8px;border:1px solid var(--border2);border-radius:6px;font-size:11px;background:var(--bg);color:var(--text);outline:none;font-family:inherit">'
         +'</div>'
       +'</div>';
   });
 
   var html=''
-    +'<h3 style="margin-bottom:14px;font-size:15px;font-weight:600">Reglages</h3>'
+    +'<h3 style="margin-bottom:14px;font-size:15px;font-weight:600">Réglages</h3>'
     +'<div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:14px" id="gs-tabs">'
       +'<button class="gs-tab" onclick="gsCRTab(0,this)" style="padding:8px 14px;border:none;background:none;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;color:var(--blue);border-bottom:2px solid var(--blue);margin-bottom:-1px">Lots</button>'
       +'<button class="gs-tab" onclick="gsCRTab(1,this)" style="padding:8px 14px;border:none;background:none;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;color:var(--text3);border-bottom:2px solid transparent;margin-bottom:-1px">Intervenants</button>'
       +'<button class="gs-tab" onclick="gsCRTab(2,this)" style="padding:8px 14px;border:none;background:none;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;color:var(--text3);border-bottom:2px solid transparent;margin-bottom:-1px">Actions</button>'
     +'</div>'
     +'<div id="gs-p0">'
-      +'<p style="font-size:11px;color:var(--text3);margin-bottom:10px">Boutons ▲▼ pour reordonner · couleur · intervenant lie</p>'
+      +'<p style="font-size:11px;color:var(--text3);margin-bottom:10px">Glisser pour réordonner · couleur · intervenant lié</p>'
       +'<div id="gs-lots-list" style="max-height:340px;overflow-y:auto">'+lotsHTML+'</div>'
       +'<button class="btn btn-p btn-sm" style="margin-top:8px;width:100%;justify-content:center" onclick="gsAddLot(\''+crId+'\')">+ Ajouter un lot</button>'
     +'</div>'
     +'<div id="gs-p1" style="display:none">'
-      +'<p style="font-size:11px;color:var(--text3);margin-bottom:10px">Boutons ▲▼ pour reordonner · roue couleur</p>'
+      +'<p style="font-size:11px;color:var(--text3);margin-bottom:10px">Glisser pour réordonner · couleur</p>'
       +'<div id="gs-ints-list" style="max-height:340px;overflow-y:auto">'+intsHTML+'</div>'
       +'<button class="btn btn-p btn-sm" style="margin-top:8px;width:100%;justify-content:center" onclick="gsAddInt(\''+crId+'\')">+ Ajouter un intervenant</button>'
     +'</div>'
     +'<div id="gs-p2" style="display:none">'
-      +'<p style="font-size:11px;color:var(--text3);margin-bottom:10px">Boutons ▲▼ pour reordonner · lier un intervenant</p>'
+      +'<p style="font-size:11px;color:var(--text3);margin-bottom:10px">Glisser pour réordonner · lier un intervenant</p>'
       +'<div id="gs-acts-list" style="max-height:340px;overflow-y:auto">'+actsHTML+'</div>'
       +'<button class="btn btn-p btn-sm" style="margin-top:8px;width:100%;justify-content:center" onclick="gsAddAction(\''+crId+'\')">+ Ajouter une action</button>'
     +'</div>'
@@ -2264,14 +2055,29 @@ function openCRSettings(crId){
 
   // Init SortableJS on each panel list (needs timeout for DOM)
   setTimeout(function(){
+    if(typeof Sortable==='undefined'){
+      // SortableJS not loaded — show a small warning, keep ▲▼ buttons as fallback
+      var warn=document.createElement('div');
+      warn.style.cssText='font-size:11px;color:var(--amber);padding:4px 8px;background:var(--amber-bg);border-radius:4px;margin-bottom:8px;text-align:center';
+      warn.textContent='Drag & drop non disponible (CDN) — utilisez les boutons ▲▼';
+      var p0=document.getElementById('gs-p0');
+      if(p0)p0.insertBefore(warn,p0.firstChild);
+      return;
+    }
     function makeSortable(containerId,type){
       var el=document.getElementById(containerId);
-      if(!el||typeof Sortable==='undefined')return;
+      if(!el)return;
       Sortable.create(el,{
-        animation:150, handle:'.sort-handle',
-        filter:'input,textarea,select,button',
-        preventOnFilter:false,
+        animation:150,
+        handle:'.sort-handle',
+        // Only prevent drag from these — .sort-handle is a plain span, safe to drag
+        filter:'input,textarea,select,button,label',
+        preventOnFilter:true,
         ghostClass:'sortable-ghost',
+        onStart:function(){
+          // Save all field values into data before DOM is mutated by drag
+          _saveSettingsFields(crId);
+        },
         onEnd:function(evt){
           if(evt.oldIndex===evt.newIndex)return;
           moveItem(type,crId,evt.oldIndex,evt.newIndex,true);
@@ -2369,12 +2175,10 @@ function saveSettings(crId){
     const ent=document.getElementById('gs-int-ent-'+ii);
     const contacts=document.getElementById('gs-int-contacts-'+ii);
     const colorEl=document.getElementById('gs-int-color-'+ii);
-    const convoqueEl=document.getElementById('gs-int-convoque-'+ii);
     if(lot)int.lot=lot.value||int.lot;
     if(ent)int.entreprise=ent.value||'';
     if(contacts)int.contacts=contacts.value||'';
     if(colorEl)int.color=colorEl.value;
-    if(convoqueEl)int.convoque=convoqueEl.checked;
   });
   // Save actions
   cr.actions.forEach(a=>{
@@ -2402,7 +2206,7 @@ function saveSettings(crId){
     });
   },10);
   renderList();
-  toast('Tout enregistré ✓');
+  saveCRS();toast('Tout enregistré ✓');
 }
 
 /* ══ ARCHIVE CR ══ */
@@ -2413,9 +2217,11 @@ function toggleArchiveCR(crId){
   if(!isArchived){
     if(!confirm(`Archiver "${cr.projet} — ${cr.date}" ?\n\nLe CR sera masqué de la liste principale mais restera accessible dans l'historique.`))return;
     cr.statut='archived';
+    saveCRS();
     toast('CR archivé — visible dans l\'historique ✓');
   } else {
     cr.statut='published';
+    saveCRS();
     toast('CR désarchivé ✓');
   }
   renderList();
@@ -2426,49 +2232,59 @@ function toggleArchiveCR(crId){
 let dragSrcIdx=null;
 let dragSrcType=null;
 
+// Save all visible settings field values into CR data (used before drag reorders DOM)
+function _saveSettingsFields(crId){
+  var cr=CRS.find(c=>c.id===crId);
+  if(!cr)return;
+  cr.lots.forEach(function(lot){
+    var el=document.getElementById('gs-lot-'+lot.id);
+    if(el&&el.value.trim())lot.titre=el.value.trim();
+    var intEl=document.getElementById('gs-lot-int-'+lot.id);
+    if(intEl&&intEl.value)lot.intId=intEl.value;
+  });
+  cr.intervenants.forEach(function(int,ii){
+    var lotEl=document.getElementById('gs-int-lot-'+ii);
+    var entEl=document.getElementById('gs-int-ent-'+ii);
+    var cEl=document.getElementById('gs-int-contacts-'+ii);
+    var colEl=document.getElementById('gs-int-color-'+ii);
+    if(lotEl)int.lot=lotEl.value||int.lot;
+    if(entEl)int.entreprise=entEl.value||'';
+    if(cEl)int.contacts=cEl.value||'';
+    if(colEl)int.color=colEl.value;
+  });
+  cr.actions.forEach(function(a){
+    var tEl=document.getElementById('gs-a-texte-'+a.id);
+    var iEl=document.getElementById('gs-a-int-'+a.id);
+    var eEl=document.getElementById('gs-a-ech-'+a.id);
+    var dEl=document.getElementById('gs-a-done-'+a.id);
+    if(tEl&&tEl.value.trim())a.texte=tEl.value.trim();
+    if(iEl){
+      a.intId=iEl.value||null;
+      var lk=a.intId?cr.intervenants.find(function(i){return i.id===a.intId;}):null;
+      if(lk)a.responsable=lk.entreprise||lk.lot;
+    }
+    if(eEl)a.echeance=eEl.value||'';
+    if(dEl)a.done=dEl.checked;
+  });
+}
+
 function moveItem(type, crId, fromIdx, dirOrTo, isAbsolute) {
   const cr = CRS.find(c => c.id === crId);
   if (!cr) return;
   const toIdx = isAbsolute ? dirOrTo : fromIdx + dirOrTo;
 
-  // Save all current field values first
+  // Save all visible field values before reordering
+  _saveSettingsFields(crId);
+
   if (type === 'lot') {
-    cr.lots.forEach(function(lot) {
-      const el = document.getElementById('gs-lot-' + lot.id);
-      if (el && el.value.trim()) lot.titre = el.value.trim();
-      const intEl = document.getElementById('gs-lot-int-' + lot.id);
-      if (intEl) lot.intId = intEl.value || null;
-      const colorEl = document.getElementById('gs-lot-color-' + lot.id);
-      if (colorEl) lot.color = colorEl.value;
-    });
     if (toIdx < 0 || toIdx >= cr.lots.length) return;
     const moved = cr.lots.splice(fromIdx, 1)[0];
     cr.lots.splice(toIdx, 0, moved);
   } else if (type === 'int') {
-    cr.intervenants.forEach(function(int, ii) {
-      const lotEl = document.getElementById('gs-int-lot-' + ii);
-      const entEl = document.getElementById('gs-int-ent-' + ii);
-      const cEl = document.getElementById('gs-int-contacts-' + ii);
-      const colEl = document.getElementById('gs-int-color-' + ii);
-      if (lotEl) int.lot = lotEl.value || int.lot;
-      if (entEl) int.entreprise = entEl.value || '';
-      if (cEl) int.contacts = cEl.value || '';
-      if (colEl) int.color = colEl.value;
-    });
     if (toIdx < 0 || toIdx >= cr.intervenants.length) return;
     const moved = cr.intervenants.splice(fromIdx, 1)[0];
     cr.intervenants.splice(toIdx, 0, moved);
   } else if (type === 'act') {
-    cr.actions.forEach(function(a) {
-      const tEl = document.getElementById('gs-a-texte-' + a.id);
-      const iEl = document.getElementById('gs-a-int-' + a.id);
-      const eEl = document.getElementById('gs-a-ech-' + a.id);
-      const dEl = document.getElementById('gs-a-done-' + a.id);
-      if (tEl && tEl.value.trim()) a.texte = tEl.value.trim();
-      if (iEl) { a.intId = iEl.value || null; const lk = a.intId ? cr.intervenants.find(i => i.id === a.intId) : null; a.responsable = lk ? (lk.entreprise || lk.lot) : a.responsable; }
-      if (eEl) a.echeance = eEl.value || '';
-      if (dEl) a.done = dEl.checked;
-    });
     if (toIdx < 0 || toIdx >= cr.actions.length) return;
     const moved = cr.actions.splice(fromIdx, 1)[0];
     cr.actions.splice(toIdx, 0, moved);
@@ -2716,7 +2532,7 @@ function useTemplate(ti){
       +'<div class="fi"><label>Date de la réunion *</label><input type="date" id="nc-date"></div>'
       +'<div class="fi"><label>Date prochaine réunion</label><input id="nc-datep" placeholder="21/05/2026 14:00"></div>'
       +'<div class="fi"><label>N° de CR</label><input type="number" id="nc-num" placeholder="1" min="1" value="'+(CRS.length+1)+'"></div>'
-      +'<div class="fi"><label>Rédacteur</label><input id="nc-red" placeholder="Mme Bell — Bell Architecture"></div>'
+      +'<div class="fi"><label>Rédacteur</label><input id="nc-red" placeholder="Ex: Martin Dupont — Cabinet Martin"></div>'
     +'</div>'
     +'<div style="background:var(--blue-bg);border-radius:var(--r);padding:10px 14px;margin-bottom:4px;font-size:12px;color:var(--text2)">'
       +'Sera importé depuis le modèle : '+tpl.intCount+' intervenants + '+tpl.lotCount+' lots vides'
@@ -2763,6 +2579,7 @@ function createFromTemplate(ti){
     actions:[],
   };
   CRS.unshift(newCR);
+  saveCRS();
   // Initialize colors
   newCR.intervenants.forEach(function(int){if(!int.color)int.color=lotColor(int.lot);});
 
@@ -2826,7 +2643,7 @@ function cloneCR(crId){
     <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:4px">
       <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
         <input type="checkbox" id="cl-flags" checked style="width:15px;height:15px">
-        Reporter les <strong>${pendingOpen} points non traités</strong> (tous, dont les ⚑)
+        Reporter les <strong>${pendingOpen} points non traités</strong> (tous, dont les points à suivre)
       </label>
       <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
         <input type="checkbox" id="cl-actions" checked style="width:15px;height:15px">
@@ -2859,7 +2676,7 @@ function confirmCloneCR(crId){
             color:iv.color,present:false,convoque:iv.convoque!==false};
   });
 
-  // Clone lots: keep structure, import only ⚑ points if requested
+  // Clone lots: keep structure, import only flagged points if requested
   const newLots=cr.lots.map(function(lot){
     const remarks=importFlags
       // All non-done non-archived points (flag or not)
@@ -2897,6 +2714,7 @@ function confirmCloneCR(crId){
     actions:newActions,
   };
   CRS.unshift(newCR);
+  saveCRS();
   newCR.intervenants.forEach(function(int){if(!int.color)int.color=lotColor(int.lot);});
 
   closeModal();
@@ -2910,8 +2728,6 @@ function confirmCloneCR(crId){
 }
 
 /* ══ FILTER ACTIONS BY INTERVENANT ══ */
-let actionFilter='';        // filter by intId (intervenant)
-let actionStatusFilter='all'; // all | late | soon | open | done
 function setActionFilter(crId,intId){
   actionFilter=intId;
   const cr=CRS.find(c=>c.id===crId);
@@ -2976,7 +2792,7 @@ function confirmRemarkToAction(crId,lotId,rId){
 function exportCSV(crId){
   const cr=CRS.find(c=>c.id===crId);
   if(!cr)return;
-  const rows=[['Lot','Intervenant','Remarque','Statut','Ajouté le','Traité le','⚑']];
+  const rows=[['Lot','Intervenant','Remarque','Statut','Ajouté le','Traité le','A suivre']];
   cr.lots.forEach(function(lot){
     const iv=lot.intId?cr.intervenants.find(i=>i.id===lot.intId):null;
     lot.remarques.forEach(function(r){
@@ -2987,7 +2803,7 @@ function exportCSV(crId){
         r.done?'Traité':'En cours',
         r.createdAt||'',
         r.archivedAt||'',
-        r.flag?'⚑':''
+        r.flag?'oui':''
       ]);
     });
   });
@@ -3003,8 +2819,6 @@ function exportCSV(crId){
 }
 
 /* ══ SORT LOTS BY FLAGS ══ */
-let lotsSortedByFlags=false;
-const _quickTypes={};  // lotId → current quick-add type (remarque|flag|action)
 function toggleSortLots(crId){
   lotsSortedByFlags=!lotsSortedByFlags;
   const cr=CRS.find(c=>c.id===crId);
@@ -3015,7 +2829,7 @@ function toggleSortLots(crId){
       const fb=b.remarques.filter(r=>r.flag&&!r.done).length;
       return fb-fa; // most flags first
     });
-    toast('Lots triés par points en suspens ⚑');
+    toast('Lots triés par points en suspens');
   } else {
     toast('Tri original rétabli — réouvrez les Réglages pour réorganiser');
   }
@@ -3100,7 +2914,7 @@ function openPdfSettings(){
     +'<div style="border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:12px">'
       +'<div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Identité du cabinet</div>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
-        +'<div class="fi"><label>Nom du cabinet</label><input id="ps-firm" value="'+e(s.firmName)+'" placeholder="Bell Architecture"></div>'
+        +'<div class="fi"><label>Nom du cabinet</label><input id="ps-firm" value="'+e(s.firmName)+'" placeholder="Ex: Cabinet Dupont"></div>'
         +'<div class="fi"><label>Sous-titre</label><input id="ps-sub" value="'+e(s.firmSub)+'" placeholder="Architecte"></div>'
       +'</div>'
       +'<div class="fi"><label>Titre en-tête PDF</label><input id="ps-title" value="'+e(s.headerTitle)+'" placeholder="COMPTE RENDU"></div>'
@@ -3217,19 +3031,7 @@ function closeAllMenus(){
 }
 document.addEventListener('click',function(){closeAllMenus();});
 
-/* ══ QUICK TYPE SELECTOR ══ */
-function setQuickType(lotId,type){
-  _quickTypes[lotId]=type;
-  ['remarque','flag','action'].forEach(t=>{
-    const btn=document.getElementById('qtype-'+lotId+'-'+t);
-    if(btn) btn.style.opacity=t===type?'1':'0.4';
-  });
-  const inp=document.getElementById('new-r-'+lotId);
-  if(inp){
-    inp.placeholder=type==='flag'?'Ajouter un point à suivre…':type==='action'?'Décrire l\'action…':'Ajouter une remarque…';
-    inp.focus();
-  }
-}
+
 
 /* ══ OVERRIDE addRemarque to handle quick type ══ */
 
@@ -3424,27 +3226,33 @@ function previewPDF(crId){
     window._pdfPages=Array.from(pages).map(p=>p.outerHTML);
     window._pdfCurrentPage=0;
 
+    function updateCounter(){
+      const counter=document.getElementById('pdf-page-counter');
+      if(counter) counter.textContent='Page '+(window._pdfCurrentPage+1)+' / '+window._pdfPages.length;
+    }
+
     function renderPages(){
       container.innerHTML='';
       const zoom=window._pdfZoom||1;
       window._pdfPages.forEach(function(pageHTML,i){
         const wrapper=document.createElement('div');
-        wrapper.style.cssText=`background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.4);border-radius:2px;width:${Math.round(794*zoom)}px;min-height:${Math.round(1123*zoom)}px;overflow:hidden;flex-shrink:0;transform-origin:top left;position:relative`;
+        wrapper.className='pdf-page-wrapper';
+        wrapper.style.cssText='background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.4);border-radius:2px;width:'+Math.round(794*zoom)+'px;min-height:'+Math.round(1123*zoom)+'px;overflow:hidden;flex-shrink:0;position:relative';
         const inner=document.createElement('div');
-        inner.style.cssText=`transform:scale(${zoom});transform-origin:top left;width:794px;min-height:1123px;font-family:Arial,sans-serif;font-size:9pt;color:#000;padding:18px;box-sizing:border-box`;
+        inner.style.cssText='transform:scale('+zoom+');transform-origin:top left;width:794px;min-height:1123px;font-family:Arial,sans-serif;font-size:9pt;color:#000;padding:18px;box-sizing:border-box';
         inner.innerHTML=pageHTML;
         wrapper.appendChild(inner);
         container.appendChild(wrapper);
       });
-      const counter=document.getElementById('pdf-page-counter');
-      if(counter)counter.textContent=window._pdfPages.length+' page'+(window._pdfPages.length>1?'s':'');
+      updateCounter();
     }
 
     window.pdfViewPage=function(dir){
-      // Scroll to next/prev page
-      const pages2=container.children;
-      window._pdfCurrentPage=Math.max(0,Math.min(pages2.length-1,(window._pdfCurrentPage||0)+dir));
-      if(pages2[window._pdfCurrentPage])pages2[window._pdfCurrentPage].scrollIntoView({behavior:'smooth',block:'start'});
+      const total=window._pdfPages.length;
+      window._pdfCurrentPage=Math.max(0,Math.min(total-1,(window._pdfCurrentPage||0)+dir));
+      const pages2=container.querySelectorAll('.pdf-page-wrapper');
+      if(pages2[window._pdfCurrentPage]) pages2[window._pdfCurrentPage].scrollIntoView({behavior:'smooth',block:'start'});
+      updateCounter();
     };
     window.pdfZoom=function(delta){
       window._pdfZoom=Math.max(0.4,Math.min(2,(window._pdfZoom||1)+delta));
@@ -3633,7 +3441,6 @@ CRS.forEach(function(cr){
     }
   });
 });
-renderList();
 updateSidebarLogo();
 initAuth();
 </script>
