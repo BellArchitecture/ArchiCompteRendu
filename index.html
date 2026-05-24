@@ -11,6 +11,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%232d4ef5'/><text x='50%25' y='55%25' font-size='18' text-anchor='middle' dominant-baseline='middle' fill='white' font-family='Arial' font-weight='bold'>PS</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.mjs" type="module" id="pdfjs-script"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -130,6 +131,7 @@ body{background:var(--bg);height:100vh;overflow:hidden;font-family:inherit}
 .ico-sm{width:14px;height:14px}
 .ico-xs{width:12px;height:12px}
 .sortable-ghost{opacity:.3;background:var(--blue-bg)!important;border-color:var(--blue)!important}
+@keyframes spin{to{transform:rotate(360deg)}}
 .sort-handle{cursor:grab;user-select:none;display:inline-flex;align-items:center}.sort-handle:active{cursor:grabbing}
 
 /* ══ AUTH ══ */
@@ -226,6 +228,7 @@ body{background:var(--bg);height:100vh;overflow:hidden;font-family:inherit}
         </button>
       </div>
     </div>
+
   </aside>
 
   <!-- MAIN -->
@@ -558,7 +561,10 @@ function renderCR(){
       banner.id='arch-banner';
       banner.style.cssText='background:var(--amber-bg);border-bottom:1px solid var(--amber);padding:8px 20px;font-size:12px;color:var(--amber);display:flex;align-items:center;gap:8px;flex-shrink:0';
       banner.innerHTML=`<svg class="ico ico-sm"><use href="#i-archive"/></svg> Ce compte rendu est archivé — il est en lecture seule dans l'historique.
-        <button onclick="toggleArchiveCR('${cr.id}')" style="background:none;border:none;cursor:pointer;color:var(--blue);font-size:12px;font-family:inherit;margin-left:auto;text-decoration:underline">Désarchiver</button>`;
+        <div style="display:flex;gap:10px;align-items:center;margin-left:auto">
+          <button onclick="toggleArchiveCR('${cr.id}')" style="background:none;border:none;cursor:pointer;color:var(--blue);font-size:12px;font-family:inherit;text-decoration:underline">Désarchiver</button>
+          <button onclick="deleteCR('${cr.id}')" style="background:none;border:1px solid var(--red);color:var(--red);border-radius:var(--r);padding:3px 10px;font-size:11px;cursor:pointer;font-family:inherit">Supprimer définitivement</button>
+        </div>`;
       const tabbar=document.getElementById('tabbar');
       tabbar.parentNode.insertBefore(banner,tabbar);
     }
@@ -777,7 +783,7 @@ function renderRemarques(cr){
           if(archived.length){
             out+=`<div style="margin-top:8px;border-top:1px dashed var(--border2)">
               <button onclick="var el=document.getElementById('${archId}');el.style.display=el.style.display==='none'?'block':'none'" style="display:flex;align-items:center;gap:6px;padding:6px 0;border:none;background:none;cursor:pointer;font-family:inherit;font-size:11px;font-weight:600;color:var(--text3);width:100%">
-                <svg class="ico ico-xs"><use href="#i-archive"/></svg> Archive — ${archived.length} point(s) archivés ▸
+                <svg class="ico ico-xs"><use href="#i-archive"/></svg> Archive — ${archived.length} point(s) archivés
               </button>
               <div id="${archId}" style="display:none">
                 ${archived.map(r=>`
@@ -902,7 +908,7 @@ function renderActions(cr){
   const statusFilters=[
     ['all','Toutes',allActions.length,'var(--text2)'],
     ['late','En retard',lateActions.length,'var(--red)'],
-    ['soon','⏰ Avant prochaine réunion',soonActions.length,'var(--amber)'],
+    ['soon','Avant prochaine réunion',soonActions.length,'var(--amber)'],
     ['open','En cours',allTodo.length,'var(--text2)'],
     ['done','Terminées',allDone.length,'var(--green)'],
   ].map(([k,label,count,col])=>`
@@ -964,7 +970,7 @@ function renderActions(cr){
       <div style="display:flex;gap:8px;align-items:center">
         <span style="font-size:13px;font-weight:600">${allActions.length} actions</span>
         ${lateActions.length?`<span class="badge bred">${lateActions.length} en retard</span>`:''}
-        ${soonActions.length?`<span class="badge bamber">⏰ ${soonActions.length} bientôt</span>`:''}
+        ${soonActions.length?`<span class="badge bamber">${soonActions.length} bientôt</span>`:''}
       </div>
       <button class="btn btn-p btn-sm" onclick="openAddAction('${cr.id}')">${ico('plus','ico-sm')} Ajouter</button>
     </div>
@@ -1086,7 +1092,7 @@ function renderDates(cr){
             +'<th style="padding:7px 10px;text-align:left;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);white-space:nowrap">Lot</th>'
             +'<th style="padding:7px 10px;text-align:left;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border)">Remarque</th>'
             +'<th style="padding:7px 10px;text-align:left;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);white-space:nowrap">Ajouté le</th>'
-            +'<th style="padding:7px 10px;text-align:center;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);white-space:nowrap">Action</th>'
+            +'<th style="padding:7px 10px;text-align:center;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);white-space:nowrap">Options</th>'
           +'</tr></thead>'
           +'<tbody>'+active.map(function(x){return tableRow(x,false);}).join('')+'</tbody>'
         +'</table>'
@@ -1102,7 +1108,7 @@ function renderDates(cr){
             +'<th style="padding:7px 10px;text-align:left;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);white-space:nowrap">Lot</th>'
             +'<th style="padding:7px 10px;text-align:left;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border)">Remarque</th>'
             +'<th style="padding:7px 10px;text-align:left;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);white-space:nowrap">Ajouté / Traité le</th>'
-            +'<th style="padding:7px 10px;text-align:center;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border)">Action</th>'
+            +'<th style="padding:7px 10px;text-align:center;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border)">Options</th>'
           +'</tr></thead>'
           +'<tbody>'+archived.map(function(x){return tableRow(x,true);}).join('')+'</tbody>'
         +'</table>'
@@ -1214,6 +1220,11 @@ function renderHistorique(currentCR){
               `).join('')}
             </div>`:''}
           </div>
+          ${isArchived?`<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);display:flex;justify-content:flex-end">
+            <button onclick="event.stopPropagation();deleteCR('${cr.id}')" style="background:none;border:1px solid var(--red);color:var(--red);border-radius:var(--r);padding:4px 12px;font-size:11px;cursor:pointer;font-family:inherit">
+              Supprimer définitivement
+            </button>
+          </div>`:''}
         </div>`;
       }).join('')}
     </div>
@@ -1506,7 +1517,7 @@ function saveIntervenant(crId){
 
 /* ══ NEW / EDIT CR ══ */
 function openNewCR(){
-  showModal(`<h3>${ico('file','ico-sm')} Nouveau compte rendu</h3>
+  showModal(`<h3>${ico('plus','ico-sm')} Nouveau compte rendu</h3>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div class="fi" style="grid-column:1/-1"><label>Nom du projet *</label><input id="nc-proj" placeholder="Ex: Villa Dupont"></div>
       <div class="fi" style="grid-column:1/-1"><label>Adresse du chantier</label><input id="nc-addr" placeholder="Ex: 12 rue du Chantier, 75001 Paris"></div>
@@ -1515,9 +1526,23 @@ function openNewCR(){
       <div class="fi"><label>N° de CR</label><input type="number" id="nc-num" placeholder="1" min="1"></div>
       <div class="fi"><label>Rédacteur</label><input id="nc-red" placeholder="Ex: Martin Dupont — Cabinet Martin"></div>
     </div>
+    <div style="border-top:1px solid var(--border);margin:10px 0;padding-top:10px">
+      <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Ou importer depuis un fichier existant</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-sm" onclick="closeModal();openPdfImport('pdf')">
+          <svg class="ico ico-xs"><use href="#i-upload"/></svg> PDF
+        </button>
+        <button class="btn btn-sm" onclick="closeModal();openPdfImport('image')">
+          <svg class="ico ico-xs"><use href="#i-upload"/></svg> Image (JPG/PNG)
+        </button>
+        <button class="btn btn-sm" onclick="closeModal();importData()">
+          <svg class="ico ico-xs"><use href="#i-download"/></svg> JSON
+        </button>
+      </div>
+    </div>
     <div class="mo-foot">
       <button class="btn" onclick="closeModal()">Annuler</button>
-      <button class="btn btn-p" onclick="saveNewCR()">${ico('plus','ico-sm')} Créer</button>
+      <button class="btn btn-p" onclick="saveNewCR()">${ico('plus','ico-sm')} Créer manuellement</button>
     </div>`);
   setTimeout(()=>document.getElementById('nc-proj')?.focus(),50);
 }
@@ -1560,9 +1585,14 @@ function openEditCR(crId){
       <div class="fi"><label>Rédacteur</label><input id="ec-red" value="${e(cr.redacteur)}"></div>
     </div>
     <div class="mo-foot">
-      <button class="btn" style="margin-right:auto" onclick="closeModal();saveAsTemplate('${crId}')">
-        <svg class="ico ico-sm"><use href="#i-save"/></svg> Enregistrer comme modèle
-      </button>
+      <div style="display:flex;flex-direction:column;gap:5px;margin-right:auto">
+        <button class="btn btn-sm" onclick="closeModal();saveAsTemplate('${crId}')">
+          <svg class="ico ico-xs"><use href="#i-save"/></svg> Enregistrer comme modèle
+        </button>
+        <button class="btn btn-sm" onclick="exportData()" style="color:var(--text3)">
+          <svg class="ico ico-xs"><use href="#i-download"/></svg> Exporter les données
+        </button>
+      </div>
       <button class="btn" onclick="closeModal()">Annuler</button>
       <button class="btn btn-p" onclick="saveEditCR('${crId}')">${ico('save','ico-sm')} Enregistrer</button>
     </div>`);
@@ -2228,6 +2258,31 @@ function toggleArchiveCR(crId){
   renderCR();
 }
 
+function deleteCR(crId){
+  const cr=CRS.find(c=>c.id===crId);
+  if(!cr)return;
+  // Safety: only allow deleting archived CRs
+  if(cr.statut!=='archived'){
+    alert('Seuls les CRs archivés peuvent être supprimés définitivement.');
+    return;
+  }
+  const pts=cr.lots.reduce(function(s,l){return s+l.remarques.length;},0);
+  if(!confirm(
+    'Supprimer définitivement "'+cr.projet+' — '+cr.date+'" ?\n\n'+
+    'Ce CR contient '+pts+' point(s) et '+cr.actions.length+' action(s).\n\n'+
+    'Cette action est irréversible. Les données seront perdues définitivement.'
+  ))return;
+  CRS=CRS.filter(function(c){return c.id!==crId;});
+  saveCRS();
+  if(activeCR===crId){
+    activeCR=CRS.length?CRS[0].id:null;
+  }
+  renderList();
+  if(activeCR)renderCR();
+  else document.getElementById('content').innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text3);font-size:13px">Sélectionnez un CR ou créez-en un nouveau.</div>';
+  toast('CR supprimé définitivement');
+}
+
 /* ══ REORDER — up/down buttons (reliable in modals) ══ */
 let dragSrcIdx=null;
 let dragSrcType=null;
@@ -2676,7 +2731,7 @@ function confirmCloneCR(crId){
             color:iv.color,present:false,convoque:iv.convoque!==false};
   });
 
-  // Clone lots: keep structure, import only flagged points if requested
+  // Clone lots: keep structure, import all non-treated non-archived points if requested
   const newLots=cr.lots.map(function(lot){
     const remarks=importFlags
       // All non-done non-archived points (flag or not)
@@ -2792,7 +2847,7 @@ function confirmRemarkToAction(crId,lotId,rId){
 function exportCSV(crId){
   const cr=CRS.find(c=>c.id===crId);
   if(!cr)return;
-  const rows=[['Lot','Intervenant','Remarque','Statut','Ajouté le','Traité le','A suivre']];
+  const rows=[['Lot','Intervenant','Remarque','Statut','Ajouté le','Traité le','À suivre']];
   cr.lots.forEach(function(lot){
     const iv=lot.intId?cr.intervenants.find(i=>i.id===lot.intId):null;
     lot.remarques.forEach(function(r){
@@ -2816,6 +2871,540 @@ function exportCSV(crId){
   a.click();
   URL.revokeObjectURL(url);
   toast('CSV exporté ✓');
+}
+
+/* ══ PDF / IMAGE IMPORT ══ */
+// Step 1 — open upload modal
+function openPdfImport(typeHint){
+  // If a specific type is requested, skip modal and go straight to file picker
+  if(typeHint==='pdf'||typeHint==='image'){
+    const directInput=document.createElement('input');
+    directInput.type='file';
+    directInput.accept=typeHint==='pdf'?'.pdf,application/pdf':'image/*';
+    directInput.onchange=function(ev){_handlePdfFile(ev.target.files[0]);};
+    directInput.click();
+    return;
+  }
+  showModal(`
+    <h3>${ico('file','ico-sm')} Importer un PDF ou une image</h3>
+    <p style="font-size:12px;color:var(--text3);margin-bottom:14px">
+      Importe un compte rendu existant en PDF ou image (JPG, PNG, WebP).
+      Le texte extrait sera affiché pour correction avant création du CR.
+    </p>
+    <div id="pdf-import-drop" style="border:2px dashed var(--border2);border-radius:var(--r);padding:32px;text-align:center;cursor:pointer;color:var(--text3);font-size:13px;transition:border-color .15s"
+      onclick="document.getElementById('pdf-import-file').click()"
+      ondragover="event.preventDefault();this.style.borderColor='var(--blue)'"
+      ondragleave="this.style.borderColor='var(--border2)'"
+      ondrop="_handlePdfDrop(event)">
+      <svg class="ico" style="width:32px;height:32px;display:block;margin:0 auto 10px;opacity:.4"><use href="#i-upload"/></svg>
+      Cliquer ou déposer un fichier ici<br>
+      <span style="font-size:11px">PDF, JPG, PNG, WebP — max 20 Mo</span>
+    </div>
+    <input type="file" id="pdf-import-file" accept=".pdf,image/*" style="display:none" onchange="_handlePdfFile(this.files[0])">
+    <div class="mo-foot">
+      <button class="btn" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-sm" onclick="_showManualPaste()" style="margin-right:auto;color:var(--text3);font-size:11px">
+        Coller du texte manuellement
+      </button>
+    </div>`);
+}
+
+function _handlePdfDrop(e){
+  e.preventDefault();
+  document.getElementById('pdf-import-drop').style.borderColor='var(--border2)';
+  const file=e.dataTransfer.files[0];
+  if(file)_handlePdfFile(file);
+}
+
+function _handlePdfFile(file){
+  if(!file)return;
+  const maxMB=20;
+  if(file.size>maxMB*1024*1024){alert('Fichier trop volumineux (max '+maxMB+' Mo)');return;}
+  const isPDF=file.type==='application/pdf'||file.name.toLowerCase().endsWith('.pdf');
+  const isImage=file.type.startsWith('image/');
+  if(!isPDF&&!isImage){alert('Format non supporté. Utilisez PDF, JPG, PNG ou WebP.');return;}
+  _showExtractingModal(file.name);
+  if(isPDF){
+    _extractPdfText(file).then(function(text){
+      _showExtractedText(text, file.name, 'pdf');
+    }).catch(function(err){
+      _showExtractedText('', file.name, 'pdf', 'Extraction PDF échouée : '+err.message);
+    });
+  } else {
+    // Image — try AI extraction, fallback to manual
+    const reader=new FileReader();
+    reader.onload=function(e){
+      _extractImageText(e.target.result, file.name, file.type);
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+function _showExtractingModal(name){
+  showModal(`
+    <h3>${ico('file','ico-sm')} Extraction en cours…</h3>
+    <div style="display:flex;align-items:center;gap:12px;padding:20px 0;color:var(--text3);font-size:13px">
+      <div style="width:20px;height:20px;border:2px solid var(--border2);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0"></div>
+      Analyse de <strong>${e(name)}</strong>…
+    </div>
+    <p style="font-size:11px;color:var(--text3)">Cela peut prendre quelques secondes.</p>`);
+}
+
+// Extract text from PDF using PDF.js (CDN, loaded as module)
+async function _extractPdfText(file){
+  // PDF.js 4.x loaded as module — access via global or dynamic import
+  let pdfjsLib=window.pdfjsLib;
+  if(!pdfjsLib){
+    // Try dynamic import from CDN
+    try{
+      const mod=await import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.mjs');
+      pdfjsLib=mod;
+      window.pdfjsLib=mod;
+    }catch(err){
+      throw new Error('PDF.js non disponible. Vérifiez votre connexion internet.');
+    }
+  }
+  if(pdfjsLib.GlobalWorkerOptions){
+    pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.mjs';
+  }
+  const arrayBuffer=await file.arrayBuffer();
+  const pdf=await pdfjsLib.getDocument({data:arrayBuffer}).promise;
+  let fullText='';
+  for(let i=1;i<=pdf.numPages;i++){
+    const page=await pdf.getPage(i);
+    const content=await page.getTextContent();
+    const pageText=content.items.map(function(it){return it.str;}).join(' ');
+    if(pageText.trim())fullText+='--- Page '+i+' ---\n'+pageText+'\n\n';
+  }
+  return fullText.trim();
+}
+
+// Image — try Claude API for OCR, fall back to manual
+function _extractImageText(dataUrl, name, mimeType){
+  // Try Claude API (available in Claude.ai artifacts context)
+  fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      model:'claude-sonnet-4-20250514',
+      max_tokens:4000,
+      messages:[{
+        role:'user',
+        content:[
+          {type:'image',source:{type:'base64',media_type:mimeType,data:dataUrl.split(',')[1]}},
+          {type:'text',text:'Extrait tout le texte visible de cette image de compte rendu de chantier. Conserve la structure (titres, listes, tableaux). Réponds uniquement avec le texte extrait, sans commentaire.'}
+        ]
+      }]
+    })
+  })
+  .then(function(r){return r.json();})
+  .then(function(data){
+    const text=(data.content&&data.content[0]&&data.content[0].text)||'';
+    if(text&&text.length>10){
+      _showExtractedText(text, name, 'image');
+    } else {
+      _showExtractedText('', name, 'image', 'OCR non disponible pour cette image.');
+    }
+  })
+  .catch(function(){
+    _showExtractedText('', name, 'image', 'Service OCR non disponible (hors ligne ou non connecté à Claude.ai).');
+  });
+}
+
+// Step 2 — show extracted text for editing
+function _showExtractedText(text, name, type, warning){
+  const hasText=text&&text.trim().length>20;
+  showModal(`
+    <h3>${ico('file','ico-sm')} Texte extrait — ${e(name)}</h3>
+    ${warning?`<div style="background:var(--amber-bg);border:1px solid var(--amber);border-radius:var(--r);padding:8px 12px;font-size:12px;color:var(--amber);margin-bottom:10px">
+      ${e(warning)}<br><span style="font-size:11px;opacity:.8">Vous pouvez coller ou saisir le texte manuellement ci-dessous.</span>
+    </div>`:''}
+    ${!hasText&&!warning?`<div style="background:var(--amber-bg);border:1px solid var(--amber);border-radius:var(--r);padding:8px 12px;font-size:12px;color:var(--amber);margin-bottom:10px">
+      Aucun texte sélectionnable trouvé dans ce PDF. Il s'agit peut-être d'un scan.<br>
+      <span style="font-size:11px">Collez le texte manuellement, ou utilisez un outil OCR externe.</span>
+    </div>`:''}
+    <div class="fi" style="margin-bottom:8px">
+      <label style="display:flex;justify-content:space-between">
+        <span>Texte brut (corrigez si nécessaire)</span>
+        <span style="font-size:10px;color:var(--text3)">${text.length} caractères</span>
+      </label>
+      <textarea id="pdf-raw-text" style="min-height:200px;font-size:11px;font-family:monospace;resize:vertical"
+        placeholder="Collez ou saisissez le texte du compte rendu ici…">${e(text)}</textarea>
+    </div>
+    <div class="mo-foot">
+      <button class="btn" onclick="closeModal()">Annuler</button>
+      <button class="btn" onclick="_showManualPaste(document.getElementById('pdf-raw-text').value)">Ressaisir</button>
+      <button class="btn btn-p" onclick="_structureText(document.getElementById('pdf-raw-text').value,'${e(name)}')"
+        ${!document.getElementById?'':''}
+        >Analyser et créer un CR</button>
+    </div>`);
+}
+
+// Step 2b — manual text paste entry
+function _showManualPaste(initialText){
+  showModal(`
+    <h3>${ico('file','ico-sm')} Saisie manuelle</h3>
+    <p style="font-size:12px;color:var(--text3);margin-bottom:10px">
+      Collez ici le texte de votre compte rendu (depuis Word, Notepad, ou autre).
+    </p>
+    <div class="fi">
+      <textarea id="pdf-raw-text" style="min-height:220px;font-size:12px;resize:vertical"
+        placeholder="Collez le texte du CR ici…">${initialText?e(initialText):''}</textarea>
+    </div>
+    <div class="mo-foot">
+      <button class="btn" onclick="openPdfImport()">← Retour</button>
+      <button class="btn btn-p" onclick="_structureText(document.getElementById('pdf-raw-text').value,'Texte collé')">Analyser et créer un CR</button>
+    </div>`);
+}
+
+// Step 3 — use Claude AI to structure the text, or parse naively
+function _structureText(rawText, sourceName){
+  if(!rawText||!rawText.trim()){alert('Aucun texte à analyser.');return;}
+  _showExtractingModal('Analyse de la structure…');
+  // Try Claude API for intelligent structuring
+  const prompt=`Tu es un assistant spécialisé dans les comptes rendus de chantier français.
+Analyse ce texte et extrait les informations structurées en JSON strictement valide.
+Format attendu :
+{
+  "projet": "nom du projet ou chantier",
+  "adresse": "adresse si présente",
+  "date": "date de la réunion (format dd/mm/yyyy ou vide)",
+  "dateProchaine": "date prochaine réunion ou vide",
+  "redacteur": "rédacteur ou vide",
+  "numero": 1,
+  "intervenants": [{"lot": "MOE/Architecte/etc", "entreprise": "nom entreprise", "contacts": ""}],
+  "lots": [
+    {
+      "titre": "nom du lot",
+      "intLabel": "entreprise ou lot responsable (pour liaison manuelle)",
+      "remarques": ["texte remarque 1", "texte remarque 2"]
+    }
+  ],
+  "actions": [{"texte": "description action", "responsable": "nom", "echeance": ""}],
+  "nonClasse": ["texte non classé 1", "texte non classé 2"]
+}
+Règles :
+- Si tu n'es pas sûr, mets dans nonClasse.
+- Conserve le texte original sans le reformuler.
+- Réponds UNIQUEMENT avec le JSON, sans explication ni balise markdown.
+
+Texte à analyser :
+${rawText.substring(0,8000)}`;
+
+  fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      model:'claude-sonnet-4-20250514',
+      max_tokens:3000,
+      messages:[{role:'user',content:prompt}]
+    })
+  })
+  .then(function(r){return r.json();})
+  .then(function(data){
+    const txt=(data.content&&data.content[0]&&data.content[0].text)||'';
+    let parsed=null;
+    try{
+      const clean=txt.replace(/```json|```/g,'').trim();
+      parsed=JSON.parse(clean);
+    }catch(err){
+      // AI failed — fall back to naive parse
+    }
+    if(parsed&&parsed.lots){
+      _showStructuredPreview(parsed, rawText, sourceName);
+    } else {
+      _showStructuredPreview(_naiveParse(rawText), rawText, sourceName, true);
+    }
+  })
+  .catch(function(){
+    _showStructuredPreview(_naiveParse(rawText), rawText, sourceName, true);
+  });
+}
+
+// Naive fallback parser — puts everything in À classer
+function _naiveParse(rawText){
+  const lines=rawText.split('\n').map(function(l){return l.trim();}).filter(Boolean);
+  // Guess project name from first non-empty line
+  const projet=lines[0]||'Projet importé';
+  // Put all lines as unclassified remarks
+  return {
+    projet:projet,
+    adresse:'',
+    date:'',
+    dateProchaine:'',
+    redacteur:'',
+    numero:1,
+    intervenants:[],
+    lots:[],
+    actions:[],
+    nonClasse:lines.slice(1)
+  };
+}
+
+// Step 4 — show structured preview with editable fields, then create CR
+function _showStructuredPreview(parsed, rawText, sourceName, isNaive){
+  const lotRows=(parsed.lots||[]).map(function(lot,i){
+    return `<div style="background:var(--bg2);border-radius:var(--r);padding:8px 10px;margin-bottom:5px">
+      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:4px">Lot : ${e(lot.titre||'Lot '+(i+1))}${lot.intLabel?' <span style="font-weight:400;color:var(--text3)">— '+e(lot.intLabel)+'</span>':''}</div>
+      ${(lot.remarques||[]).map(function(r){return '<div style="font-size:11px;color:var(--text);padding:2px 0;border-bottom:1px solid var(--border)">'+e(r)+'</div>';}).join('')}
+    </div>`;
+  }).join('');
+
+  const actRows=(parsed.actions||[]).map(function(a){
+    return `<div style="font-size:11px;color:var(--text);padding:3px 0;border-bottom:1px solid var(--border)">${e(a.texte||a)} ${a.responsable?'<span style="color:var(--text3)">→ '+e(a.responsable)+'</span>':''}</div>`;
+  }).join('');
+
+  const nonClasse=parsed.nonClasse||[];
+
+  showModal(`
+    <h3>${ico('file','ico-sm')} Aperçu — validation avant import</h3>
+    ${isNaive?`<div style="background:var(--amber-bg);border:1px solid var(--amber);border-radius:var(--r);padding:8px 12px;font-size:12px;color:var(--amber);margin-bottom:12px">
+      Structure analysée sans IA — tout le contenu est placé dans "À classer". Vérifiez avant de créer le CR.
+    </div>`:''}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div class="fi"><label>Projet</label><input id="pi-projet" value="${e(parsed.projet||'')}"></div>
+      <div class="fi"><label>N° CR</label><input id="pi-num" type="number" value="${parsed.numero||1}" min="1"></div>
+      <div class="fi"><label>Date réunion</label><input id="pi-date" value="${e(parsed.date||'')}"></div>
+      <div class="fi"><label>Prochaine réunion</label><input id="pi-datep" value="${e(parsed.dateProchaine||'')}"></div>
+      <div class="fi" style="grid-column:1/-1"><label>Adresse</label><input id="pi-addr" value="${e(parsed.adresse||'')}"></div>
+      <div class="fi" style="grid-column:1/-1"><label>Rédacteur</label><input id="pi-red" value="${e(parsed.redacteur||'')}"></div>
+    </div>
+    <div style="max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--r);padding:10px;margin-bottom:8px">
+      ${(parsed.intervenants&&parsed.intervenants.length)?`<div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;margin-bottom:5px">Intervenants (${parsed.intervenants.length})</div>
+        ${parsed.intervenants.map(function(iv){return '<div style="font-size:11px;padding:2px 0">'+e(iv.lot)+(iv.entreprise?' — '+e(iv.entreprise):'')+'</div>';}).join('')}`:''}
+      ${lotRows?`<div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;margin:8px 0 5px">Lots / Remarques (${(parsed.lots||[]).length})</div>${lotRows}`:''}
+      ${actRows?`<div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;margin:8px 0 5px">Actions (${(parsed.actions||[]).length})</div>${actRows}`:''}
+      ${nonClasse.length?`<div style="font-size:10px;font-weight:600;color:var(--amber);text-transform:uppercase;margin:8px 0 5px">À classer (${nonClasse.length} lignes)</div>
+        <div style="font-size:11px;color:var(--text3)">${nonClasse.slice(0,15).map(function(t){return e(t);}).join('<br>')+(nonClasse.length>15?'<br><em>... et '+(nonClasse.length-15)+' autres</em>':'')}</div>`:''}
+      ${!lotRows&&!actRows&&!nonClasse.length?'<div style="color:var(--text3);font-size:12px;text-align:center;padding:10px">Aucune structure détectée.</div>':''}
+    </div>
+    <p style="font-size:11px;color:var(--text3);margin:0">
+      Le CR sera créé en brouillon. Vous pourrez l'éditer librement ensuite. Les CRs existants ne seront pas modifiés.
+    </p>
+    <div class="mo-foot">
+      <button class="btn" onclick="_showExtractedText(${JSON.stringify(rawText).replace(/</g,'&lt;')},${JSON.stringify(sourceName).replace(/</g,'&lt;')},'pdf')">← Retour</button>
+      <button class="btn" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-p" onclick="_createImportedCR(${JSON.stringify(parsed).replace(/</g,'&lt;').replace(/"/g,'&quot;')})">Créer le CR</button>
+    </div>`);
+}
+
+// Step 5 — create the CR from parsed data
+function _createImportedCR(parsed){
+  // Read user-edited header fields
+  const projet=(document.getElementById('pi-projet')||{value:parsed.projet||'CR importé'}).value.trim()||'CR importé';
+  const addr=(document.getElementById('pi-addr')||{value:parsed.adresse||''}).value||'';
+  const date=(document.getElementById('pi-date')||{value:parsed.date||''}).value||'';
+  const datep=(document.getElementById('pi-datep')||{value:parsed.dateProchaine||''}).value||'';
+  const red=(document.getElementById('pi-red')||{value:parsed.redacteur||''}).value||'';
+  const num=parseInt((document.getElementById('pi-num')||{value:1}).value)||CRS.length+1;
+
+  // Build intervenants with unique IDs
+  const idMap={};
+  const intervenants=(parsed.intervenants||[]).map(function(iv){
+    const id='i'+(uid++);
+    idMap[iv.lot]=id;
+    idMap[iv.entreprise||'']=id;
+    return {
+      id:id,
+      lot:iv.lot||'Intervenant',
+      entreprise:iv.entreprise||'',
+      contacts:iv.contacts||'',
+      color:lotColor(iv.lot||''),
+      present:false,
+      convoque:true
+    };
+  });
+
+  // Build lots
+  const lots=(parsed.lots||[]).map(function(lot){
+    // Try to link to an intervenant by label
+    const intId=idMap[lot.intLabel||'']||idMap[lot.titre||'']||(intervenants.length?intervenants[0].id:null);
+    return {
+      id:'l'+(uid++),
+      titre:lot.titre||'Lot',
+      ouvert:true,
+      intId:intId||null,
+      remarques:(lot.remarques||[]).map(function(txt){
+        return {
+          id:'r'+(uid++),
+          texte:String(txt),
+          done:false,
+          flag:false,
+          decision:false,
+          archived:false,
+          createdAt:date||new Date().toLocaleDateString('fr-FR')
+        };
+      })
+    };
+  });
+
+  // Add "À classer" lot for unclassified content
+  const nonClasse=parsed.nonClasse||[];
+  if(nonClasse.length){
+    // Add a generic intervenant if none exist
+    let aClasId=intervenants.length?intervenants[0].id:null;
+    if(!aClasId){
+      aClasId='i'+(uid++);
+      intervenants.push({id:aClasId,lot:'Importé',entreprise:'',contacts:'',color:lotColor('DEFAULT'),present:false,convoque:false});
+    }
+    lots.push({
+      id:'l'+(uid++),
+      titre:'À classer',
+      ouvert:true,
+      intId:aClasId,
+      remarques:nonClasse.map(function(txt){
+        return {id:'r'+(uid++),texte:String(txt),done:false,flag:false,decision:false,archived:false,createdAt:date||new Date().toLocaleDateString('fr-FR')};
+      })
+    });
+  }
+
+  // Build actions
+  const actions=(parsed.actions||[]).map(function(a){
+    const texte=typeof a==='string'?a:(a.texte||String(a));
+    const resp=typeof a==='object'?(a.responsable||''):'';
+    return {
+      id:'a'+(uid++),
+      texte:texte,
+      responsable:resp,
+      intId:null,
+      echeance:typeof a==='object'?(a.echeance||''):'',
+      done:false
+    };
+  });
+
+  const newCR={
+    id:'cr'+(uid++),
+    projet:projet,
+    adresse:addr,
+    date:date||new Date().toLocaleDateString('fr-FR'),
+    dateProchaine:datep,
+    numero:num,
+    redacteur:red,
+    statut:'draft',
+    intervenants:intervenants,
+    lots:lots,
+    actions:actions
+  };
+
+  CRS.unshift(newCR);
+  saveCRS();
+  closeModal();
+  activeCR=newCR.id;
+  activeTab='remarques';
+  renderList();
+  renderCR();
+  const total=lots.reduce(function(s,l){return s+l.remarques.length;},0);
+  toast('CR créé depuis import — '+total+' points, '+actions.length+' actions ✓');
+}
+
+/* ══ BACKUP / RESTORE ══ */
+function exportData(){
+  const backup={
+    version:1,
+    exportedAt:new Date().toISOString(),
+    crs:CRS,
+    templates:TEMPLATES,
+    pdfSettings:PDF_SETTINGS,
+  };
+  const json=JSON.stringify(backup,null,2);
+  const blob=new Blob([json],{type:'application/json;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  const d=new Date();
+  const stamp=d.getFullYear()+''+String(d.getMonth()+1).padStart(2,'0')+''+String(d.getDate()).padStart(2,'0');
+  a.download='plansync_backup_'+stamp+'.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Sauvegarde exportée ✓');
+}
+
+function importData(){
+  const input=document.createElement('input');
+  input.type='file';
+  input.accept='.json,application/json';
+  input.onchange=function(e){
+    const file=e.target.files[0];
+    if(!file)return;
+    const reader=new FileReader();
+    reader.onload=function(ev){
+      let backup;
+      try{
+        backup=JSON.parse(ev.target.result);
+      }catch(err){
+        alert('Fichier JSON invalide — impossible de lire les données.');
+        return;
+      }
+      // Validate structure
+      if(!backup||!Array.isArray(backup.crs)){
+        alert('Format de sauvegarde non reconnu (clé "crs" manquante).');
+        return;
+      }
+      const incomingCRs=backup.crs.length;
+      const existingCRs=CRS.length;
+      // Build confirmation message
+      let msg='Importer '+incomingCRs+' CR(s)';
+      if(backup.templates&&backup.templates.length) msg+=', '+backup.templates.length+' modèle(s)';
+      msg+=' depuis ce fichier ?\n\n';
+      if(existingCRs>0){
+        msg+='Choisir une option :\n';
+        msg+='- OK → Fusionner (ajouter sans supprimer les existants)\n';
+        msg+='- Annuler → Ne pas importer';
+        // Offer overwrite via separate confirm
+        const choice=confirm(msg);
+        if(!choice)return;
+        // Ask if overwrite
+        const overwrite=confirm(
+          'Remplacer TOUTES les données existantes ?\n\n'+
+          '- OK → Remplacer ('+existingCRs+' CR(s) actuels seront perdus)\n'+
+          '- Annuler → Fusionner (ajouter sans supprimer)'
+        );
+        if(overwrite){
+          _applyImport(backup, true);
+        } else {
+          _applyImport(backup, false);
+        }
+      } else {
+        if(!confirm(msg+'Continuer ?'))return;
+        _applyImport(backup, true);
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+function _applyImport(backup, replace){
+  if(replace){
+    CRS=Array.isArray(backup.crs)?backup.crs:[];
+    TEMPLATES=Array.isArray(backup.templates)?backup.templates:TEMPLATES;
+    if(backup.pdfSettings&&typeof backup.pdfSettings==='object'){
+      Object.assign(PDF_SETTINGS,backup.pdfSettings);
+    }
+  } else {
+    // Merge CRs: skip those with same id
+    if(Array.isArray(backup.crs)){
+      const existingIds=new Set(CRS.map(function(c){return c.id;}));
+      const added=backup.crs.filter(function(c){return !existingIds.has(c.id);});
+      CRS=CRS.concat(added);
+    }
+    // Merge templates: skip same name
+    if(Array.isArray(backup.templates)){
+      const existingNames=new Set(TEMPLATES.map(function(t){return t.name;}));
+      backup.templates.forEach(function(t){
+        if(!existingNames.has(t.name))TEMPLATES.push(t);
+      });
+    }
+  }
+  // Persist everything
+  saveCRS();
+  saveTemplatesToStorage();
+  savePdfSettings();
+  updateSidebarLogo();
+  activeCR=CRS.length?CRS[0].id:null;
+  renderList();
+  if(activeCR)renderCR();
+  toast('Import terminé — '+CRS.length+' CR(s) chargés ✓');
 }
 
 /* ══ SORT LOTS BY FLAGS ══ */
@@ -3033,7 +3622,7 @@ document.addEventListener('click',function(){closeAllMenus();});
 
 
 
-/* ══ OVERRIDE addRemarque to handle quick type ══ */
+/* ══ addRemarque — checkbox-based quick add ══ */
 
 /* ══ LATE ACTIONS DETECTION ══ */
 function isLate(echeance){
