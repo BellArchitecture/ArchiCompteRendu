@@ -1207,6 +1207,40 @@ function getSupabase(){
 }
 
 let _crOwners = {}; // cr_id -> user_id (creator/owner), learned from fetch
+
+// Fusion douce de deux versions d'un même CR pour limiter les pertes quand deux
+// personnes éditent le MÊME CR presque simultanément. Principe : on part de NOTRE
+// version (celle qu'on enregistre) et on ré-injecte les éléments présents côté
+// serveur que nous n'avons pas (ajouts de l'autre personne), par identifiant.
+// Cela préserve les ajouts des deux côtés. Les modifications d'un MÊME élément
+// restent en "dernier qui écrit gagne".
+function _mergeCRForSave(mine, server){
+  if(!server) return mine;
+  function unionById(localArr, serverArr){
+    localArr = localArr||[]; serverArr = serverArr||[];
+    const seen={}; localArr.forEach(function(x){ if(x&&x.id) seen[x.id]=true; });
+    const extra = serverArr.filter(function(x){ return x&&x.id&&!seen[x.id]; });
+    return localArr.concat(extra);
+  }
+  const out = Object.assign({}, mine);
+  // Intervenants
+  out.intervenants = unionById(mine.intervenants, server.intervenants);
+  // Actions
+  out.actions = unionById(mine.actions, server.actions);
+  // Lots (+ remarques par lot)
+  const myLots = mine.lots||[]; const svLots = server.lots||[];
+  const svLotById={}; svLots.forEach(function(l){ if(l&&l.id) svLotById[l.id]=l; });
+  const myLotIds={}; myLots.forEach(function(l){ if(l&&l.id) myLotIds[l.id]=true; });
+  out.lots = myLots.map(function(l){
+    const sv=svLotById[l.id];
+    if(!sv) return l;
+    const m=Object.assign({}, l);
+    m.remarques = unionById(l.remarques, sv.remarques);
+    return m;
+  }).concat(svLots.filter(function(l){ return l&&l.id&&!myLotIds[l.id]; }));
+  return out;
+}
+
 async function _syncToSupabase(){
   const sb = getSupabase();
   if(!sb) return;
@@ -1220,10 +1254,21 @@ async function _syncToSupabase(){
       const ts = cr._updatedAt || new Date().toISOString();
       let error=null;
       if(_crOwners[cr.id]){
-        // CR déjà présent sur le serveur → UPDATE (autorisé éditeur/contributeur).
-        // IMPORTANT : ne pas utiliser upsert ici — un upsert déclenche aussi la
-        // policy INSERT (réservée à l'admin) et bloquerait les non-admins.
-        const r = await sb.from('crs').update({ data: cr, updated_at: ts }).eq('id', cr.id);
+        // CR déjà présent sur le serveur → relire d'abord la version serveur et
+        // fusionner les ajouts éventuels d'une autre personne, puis UPDATE.
+        let payload = cr;
+        try{
+          const cur = await sb.from('crs').select('data').eq('id', cr.id).maybeSingle();
+          if(cur && cur.data && cur.data.data){
+            payload = _mergeCRForSave(cr, cur.data.data);
+            // Refléter la fusion en local pour rester cohérent à l'écran.
+            const li = CRS.findIndex(function(x){return x.id===cr.id;});
+            if(li>=0){ payload._updatedAt = ts; CRS[li]=payload; }
+          }
+        }catch(_){}
+        // UPDATE (autorisé éditeur/contributeur). Pas d'upsert : éviterait la
+        // policy INSERT réservée à l'admin.
+        const r = await sb.from('crs').update({ data: payload, updated_at: ts }).eq('id', cr.id);
         error = r.error;
       } else {
         // Nouveau CR → INSERT (réservé à l'admin par la RLS).
@@ -5265,27 +5310,47 @@ function savePdfSettingsForm(){
 let _menuOpen=null;
 function toggleRemarqueMenu(e,id){
   e.stopPropagation();
+  const already=(_menuOpen===id);
   closeAllMenus();
+  if(already) return; // un second clic referme
   const el=document.getElementById(id);
-  if(el&&el.style.display==='none'){
-    // Show first so we can measure it, then decide direction.
-    el.style.visibility='hidden';
-    el.style.display='block';
-    el.style.top='24px';el.style.bottom='';
-    const rect=el.getBoundingClientRect();
-    const vh=window.innerHeight||document.documentElement.clientHeight;
-    // If the menu would overflow the bottom and there's room above, flip up.
-    if(rect.bottom>vh-8 && rect.top-rect.height>8){
-      el.style.top='';el.style.bottom='24px';
-    }
-    el.style.visibility='';
-    _menuOpen=id;
+  if(!el) return;
+  // Bouton déclencheur (ancre)
+  const btn=(e.currentTarget||e.target);
+  const br=btn.getBoundingClientRect();
+  // Afficher hors écran pour mesurer
+  el.style.position='fixed';
+  el.style.visibility='hidden';
+  el.style.display='block';
+  el.style.top='0px'; el.style.left='0px'; el.style.right='auto'; el.style.bottom='auto';
+  const mw=el.offsetWidth||190, mh=el.offsetHeight||200;
+  const vw=window.innerWidth||document.documentElement.clientWidth;
+  const vh=window.innerHeight||document.documentElement.clientHeight;
+  const pad=8;
+  // Horizontal : aligner le bord droit du menu sous le bouton, sinon recaler
+  let left=br.right-mw;
+  if(left<pad) left=pad;
+  if(left+mw>vw-pad) left=vw-pad-mw;
+  // Vertical : sous le bouton si la place suffit, sinon au-dessus
+  let top=br.bottom+4;
+  if(top+mh>vh-pad){
+    const above=br.top-4-mh;
+    top = (above>=pad) ? above : Math.max(pad, vh-pad-mh);
   }
+  el.style.left=left+'px';
+  el.style.top=top+'px';
+  el.style.visibility='';
+  _menuOpen=id;
 }
 function closeAllMenus(){
-  if(_menuOpen){const el=document.getElementById(_menuOpen);if(el){el.style.display='none';el.style.top='';el.style.bottom='';}}
+  if(_menuOpen){
+    const el=document.getElementById(_menuOpen);
+    if(el){ el.style.display='none'; el.style.position=''; el.style.top=''; el.style.bottom=''; el.style.left=''; el.style.right=''; }
+  }
   _menuOpen=null;
 }
+// Refermer aussi au défilement (la position fixe ne suit pas le scroll).
+window.addEventListener('scroll',function(){ if(_menuOpen) closeAllMenus(); }, true);
 document.addEventListener('click',function(){closeAllMenus();});
 
 
