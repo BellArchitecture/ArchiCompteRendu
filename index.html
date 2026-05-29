@@ -1213,22 +1213,27 @@ async function _syncToSupabase(){
   _pendingSync = true;
   try {
     // Ne pousser QUE les CRs modifiés sur cet appareil (et non tombstonés).
-    // Un appareil ne ré-écrit jamais des CRs qu'il n'a pas touchés : c'est ce
-    // qui évite d'écraser le travail des autres avec une copie périmée.
     const toPush = CRS.filter(function(cr){
       return _dirtyCRIds.has(cr.id) && !_deletedPVIds.has(cr.id);
     });
-    if(!toPush.length){ _pendingSync=false; return; }
-    const upserts = toPush.map(function(cr){
-      const owner = _crOwners[cr.id] || currentUserId();
-      // Utiliser l'horodatage propre du CR (et non "maintenant") pour que le
-      // merge serveur/local reste cohérent.
-      return { id: cr.id, user_id: owner, data: cr, updated_at: cr._updatedAt || new Date().toISOString() };
-    });
-    const pushedIds = toPush.map(function(cr){return cr.id;});
-    const { error } = await sb.from('crs').upsert(upserts);
-    if(error){ console.warn('PlanSync: Supabase sync error:', error.message); }
-    else { pushedIds.forEach(function(id){ _dirtyCRIds.delete(id); }); }
+    for(const cr of toPush){
+      const ts = cr._updatedAt || new Date().toISOString();
+      let error=null;
+      if(_crOwners[cr.id]){
+        // CR déjà présent sur le serveur → UPDATE (autorisé éditeur/contributeur).
+        // IMPORTANT : ne pas utiliser upsert ici — un upsert déclenche aussi la
+        // policy INSERT (réservée à l'admin) et bloquerait les non-admins.
+        const r = await sb.from('crs').update({ data: cr, updated_at: ts }).eq('id', cr.id);
+        error = r.error;
+      } else {
+        // Nouveau CR → INSERT (réservé à l'admin par la RLS).
+        const r = await sb.from('crs').insert([{ id: cr.id, user_id: currentUserId(), data: cr, updated_at: ts }]);
+        error = r.error;
+        if(!error) _crOwners[cr.id] = currentUserId();
+      }
+      if(error){ console.warn('PlanSync: sync error', cr.id, error.message); }
+      else { _dirtyCRIds.delete(cr.id); }
+    }
   } catch(e) { console.warn('PlanSync: Supabase unreachable:', e.message); }
   finally { _pendingSync = false; }
 }
@@ -2748,7 +2753,7 @@ function toggleFlag(crId,lotId,rId){
   const lot=cr?.lots.find(l=>l.id===lotId);
   const r=lot?.remarques.find(x=>x.id===rId);
   if(r)r.flag=!r.flag;
-  renderCR();renderList();
+  markDirty(crId);renderCR();renderList();
 }
 function deleteRemarque(crId,lotId,rId,skipConfirm){
   if(!guardDelete(crId))return;
@@ -2846,20 +2851,20 @@ function togglePresence(crId,lot){
   const cr=CRS.find(c=>c.id===crId);
   const i=cr?.intervenants.find(x=>x.lot===lot);
   if(i)i.present=!i.present;
-  renderCR();
+  markDirty(crId);renderCR();
 }
 function toggleConvoque(crId,intId){
   const cr=CRS.find(c=>c.id===crId);
   const i=cr?.intervenants.find(x=>x.id===intId);
   if(i)i.convoque=!(i.convoque!==false);
-  renderCR();
+  markDirty(crId);renderCR();
 }
 function toggleAction(crId,aId){
   const cr=CRS.find(c=>c.id===crId);
   const a=cr?.actions.find(x=>x.id===aId);
   if(a)a.done=!a.done;
   if(a) logActivity(a.done?'action_completed':'action_edited','action','Action : '+(a.texte||''),crId,{done:a.done});
-  renderCR();renderList();
+  markDirty(crId);renderCR();renderList();
 }
 function deleteAction(crId,aId){
   if(!guardDelete(crId))return;
