@@ -232,7 +232,7 @@ body{background:var(--bg);height:100vh;overflow:hidden;font-family:inherit}
     <div style="font-size:12px;color:var(--text3);margin-bottom:24px">Compte Rendus Chantier</div>
     <div class="fi" style="text-align:left">
       <label style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px">Identifiant</label>
-      <input type="text" id="auth-email" autocomplete="username" placeholder="Votre identifiant"
+      <input type="text" id="auth-email" autocomplete="username" placeholder="Votre identifiant (ex. tbell)"
         style="width:100%;padding:10px 12px;border:1px solid var(--border2);border-radius:8px;font-size:14px;background:var(--bg);color:var(--text);outline:none;font-family:inherit"
         onkeydown="if(event.key==='Enter')document.getElementById('auth-pwd').focus()">
     </div>
@@ -253,26 +253,22 @@ body{background:var(--bg);height:100vh;overflow:hidden;font-family:inherit}
   ════════════════════════════════════════════════════════════════════════
   SÉCURITÉ — À LIRE AVANT MISE EN PRODUCTION
   ════════════════════════════════════════════════════════════════════════
-  ⚠️ ATTENTION — PORTE D'ENTRÉE COSMÉTIQUE
-  L'écran de connexion ci-dessus utilise un identifiant et un mot de passe
-  CODÉS EN DUR dans le JavaScript (voir checkAuth). Ce n'est PAS une vraie
-  protection : le mot de passe est visible par quiconque ouvre le code source
-  de la page, et il n'authentifie PAS auprès de Supabase. Il sert uniquement à
-  masquer l'application aux regards occasionnels.
-  La VRAIE protection des données reste assurée — et UNIQUEMENT — par les
-  politiques Row-Level Security (RLS) ci-dessous, liées à de vraies sessions
-  Supabase Auth (auth.uid()). Tant qu'aucune session Supabase réelle n'est
-  ouverte, la lecture/écriture serveur dépend entièrement de ces politiques.
+  CONNEXION : authentification réelle Supabase (e-mail / mot de passe).
+  L'écran de connexion appelle sb.auth.signInWithPassword (voir checkAuth).
+  L'identifiant saisi est complété par LOGIN_DOMAIN (ex. "tbell" →
+  "tbell@bell-architecture.com") ou utilisé tel quel s'il contient déjà un @.
+  Il n'y a plus de mot de passe codé en dur dans la page.
 
-  Le code conserve l'intégralité du dispositif Supabase Auth + RLS + rôles
-  ci-dessous. Pour revenir à une authentification réelle, réactivez la
-  connexion par e-mail/mot de passe Supabase dans checkAuth().
+  La protection réelle des données dépend des politiques Row-Level Security
+  (RLS) côté Supabase, liées à la session authentifiée (auth.uid()). La clé
+  publiable embarquée n'est PAS un secret : sans RLS correctes, n'importe qui
+  peut lire/écrire les tables.
 
   ── Le reste de ce bloc décrit la configuration Supabase (RLS, rôles,
-     partage par CR) qui constitue la seule protection réelle des données ──
+     partage par CR) qui constitue la protection réelle des données ──
 
-  L'option d'authentification réelle repose sur Supabase Auth (e-mail /
-  mot de passe). Elle ne protège réellement les données QUE si les politiques
+  L'authentification repose sur Supabase Auth (e-mail / mot de passe).
+  Elle ne protège réellement les données QUE si les politiques
   Row-Level Security (RLS) sont activées côté Supabase. La clé publiable
   embarquée dans cette page n'est PAS un secret : sans RLS, n'importe qui peut
   lire/écrire la table `crs`.
@@ -768,6 +764,7 @@ const SUPA_KEY = 'sb_publishable_4mB_iISGtX3heD2Viu7w3Q_JBb5ipL5';
 // remains visible until the SQL migration repoints rows to a real auth.uid().
 const LEGACY_USER = 'bell-architecture';
 let _authUserId = null; // set on sign-in to the live auth.uid()
+let _authEmail = null;  // e-mail de la session courante (pour le journal)
 // All reads/writes are scoped to the signed-in user. Before sign-in we fall
 // back to LEGACY_USER so existing local data still renders, but writes are
 // blocked until authenticated (see _syncToSupabase / guards).
@@ -820,8 +817,13 @@ function canExport(){ return true; } // tous les rôles peuvent imprimer/exporte
    quoi) est assuré par les politiques RLS de la table audit_log. logActivity ne
    doit JAMAIS faire échouer une action utilisateur : toute erreur est avalée. */
 function _auditUserEmail(){
-  // Avec le gate, pas de session Supabase : on retombe sur l'identifiant saisi.
-  return _gateEmail || (_members.find(function(m){return m.id===_authUserId;})||{}).email || null;
+  // E-mail de la session Supabase courante (sinon, repli sur la liste membres).
+  try{
+    if(window._supa && window._supa.auth){
+      // pas d'appel réseau : on lit l'email mémorisé sur _authUserId si dispo
+    }
+  }catch(e){}
+  return (_members.find(function(m){return m.id===_authUserId;})||{}).email || _authEmail || null;
 }
 function logActivity(action, entityType, entityLabel, crId, details){
   try{
@@ -990,7 +992,17 @@ async function addMemberRow(){
     toast('Membre ajouté ✓');
     await loadMembersData();
     renderMembers();
-  }catch(e){ toast('Échec de l\'ajout (UUID déjà présent ?).','error'); }
+  }catch(e){
+    const msg=(e&&e.message)?e.message:String(e);
+    // Surface the real cause instead of guessing. The most common cause under
+    // the gate is a row-level-security block (pas de session admin).
+    let hint=msg;
+    if(/row-level security|RLS|policy/i.test(msg)) hint='Bloqué par la sécurité (RLS) — l\'app n\'est pas connectée en tant qu\'admin Supabase. Ouvrez les tables membres (voir SQL) ou activez la vraie connexion Supabase.';
+    else if(/duplicate|already exists|unique/i.test(msg)) hint='Cet UUID est déjà dans la liste.';
+    else if(/foreign key|violates foreign/i.test(msg)) hint='UUID inconnu côté Supabase — créez d\'abord l\'utilisateur (Authentication → Users).';
+    toast('Échec de l\'ajout : '+hint,'error');
+    console.warn('addMember error:', msg);
+  }
 }
 
 async function removeMember(userId){
@@ -1422,70 +1434,71 @@ let actionStatusFilter='all'; // all | late | soon | open | done
 // Ce n'est PAS une protection réelle (le mot de passe est visible dans le code
 // source). Voir le commentaire SÉCURITÉ en haut du <body>. La protection réelle
 // des données dépend des politiques RLS Supabase.
-const GATE_ID  = 'admin';     // identifiant attendu
-const GATE_PWD = 'bell2026';  // mot de passe attendu (en clair, non secret)
-let _gateEmail = null;        // identifiant saisi (pour libellé du journal)
 
-// Called once the local gate is passed: grants admin access in the UI.
-async function _onAuthenticatedLocal(){
-  isAuthenticated = true;
-  _authUserId = null;          // pas de vraie session Supabase
-  _myRole = 'admin';           // accès admin local (UI)
-  _myGrantsByCR = new Map();
-  try{ sessionStorage.setItem('ps_gate','1'); }catch(e){}
-  const overlay=document.getElementById('auth-overlay');
-  if(overlay) overlay.classList.add('hidden');
-  const bm=document.getElementById('btn-membres');
-  if(bm) bm.style.display=isAdmin()?'':'none';
-  updateSidebarLogo();
-  renderList();
-  if(activeCR) renderCR();
-  // Charge les données (Supabase si dispo, sinon localStorage). Sans session
-  // Supabase réelle, seules les données accessibles selon les RLS reviennent.
-  await refreshFromStorage();
-  _initSupabaseRealtime();
-  maybeShowOnboarding();
+// ── Connexion réelle Supabase (e-mail/mot de passe) ──
+// Les comptes se créent dans Supabase (Authentication → Users). On accepte un
+// identifiant court (ex. "tbell") et on complète avec le domaine du cabinet,
+// ou bien une adresse e-mail complète saisie telle quelle.
+const LOGIN_DOMAIN = 'bell-architecture.com'; // ← domaine e-mail du cabinet
+function resolveLoginEmail(idValue){
+  const v=(idValue||'').trim();
+  if(!v) return '';
+  return v.indexOf('@')>=0 ? v : (v+'@'+LOGIN_DOMAIN);
 }
 
-// (Conservé) Chemin d'authentification réelle Supabase, si vous le réactivez.
+// Appelé une fois la session Supabase établie (connexion ou session restaurée).
 async function _onAuthenticated(session){
   _authUserId = session?.user?.id || null;
+  _authEmail = session?.user?.email || null;
   isAuthenticated = true;
   const overlay=document.getElementById('auth-overlay');
   if(overlay) overlay.classList.add('hidden');
-  await loadMyProfile();
+  await loadMyProfile();              // rôle global + rôles par CR
   const bm=document.getElementById('btn-membres');
   if(bm) bm.style.display=isAdmin()?'':'none';
   updateSidebarLogo();
   renderList();
   if(activeCR) renderCR();
-  await refreshFromStorage();
+  await refreshFromStorage();         // sync filtré par RLS + grants
   _initSupabaseRealtime();
   maybeShowOnboarding();
 }
 
-// Vérification du gate codé en dur.
+// Connexion réelle par e-mail/mot de passe.
 async function checkAuth(){
   const id=(document.getElementById('auth-email')?.value||'').trim();
   const pwd=document.getElementById('auth-pwd')?.value||'';
   if(!id){showAuthError('Entrez votre identifiant');return;}
   if(!pwd){showAuthError('Entrez votre mot de passe');return;}
-  if(id===GATE_ID && pwd===GATE_PWD){
-    _gateEmail = (id.indexOf('@')>=0)? id : (id+'@local');
-    await _onAuthenticatedLocal();
-  } else {
-    showAuthError('Identifiant ou mot de passe incorrect');
-    const p=document.getElementById('auth-pwd'); if(p){p.value='';p.focus();}
+  const sb=getSupabase();
+  if(!sb){showAuthError('Service indisponible — réessayez plus tard');return;}
+  const email=resolveLoginEmail(id);
+  const btn=document.getElementById('auth-submit');
+  if(btn){btn.disabled=true;btn.textContent='Connexion…';}
+  try{
+    const { data, error } = await sb.auth.signInWithPassword({ email: email, password: pwd });
+    if(error){
+      showAuthError('Identifiant ou mot de passe incorrect');
+      const p=document.getElementById('auth-pwd'); if(p){p.value='';p.focus();}
+      return;
+    }
+    if(data&&data.session){ await _onAuthenticated(data.session); }
+  }catch(e){
+    showAuthError('Erreur de connexion — vérifiez votre réseau');
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='Se connecter';}
   }
 }
 
-function signOut(){
-  // Effacer la session locale d'abord, puis recharger immédiatement.
-  try{ sessionStorage.removeItem('ps_gate'); }catch(e){}
-  _authUserId=null; isAuthenticated=false; _myRole=null; _gateEmail=null;
-  // Déconnexion Supabase éventuelle : best-effort, sans bloquer le rechargement
-  // (sous le gate il n'y a pas de session réelle et l'appel peut traîner).
-  try{ const sb=getSupabase(); if(sb&&sb.auth&&sb.auth.signOut) sb.auth.signOut(); }catch(e){}
+async function signOut(){
+  const sb=getSupabase();
+  try{
+    // Déconnexion Supabase, avec garde-fou pour ne pas bloquer le rechargement.
+    if(sb&&sb.auth&&sb.auth.signOut){
+      await Promise.race([ sb.auth.signOut(), new Promise(function(r){setTimeout(r,1500);}) ]);
+    }
+  }catch(e){}
+  _authUserId=null; _authEmail=null; isAuthenticated=false; _myRole=null;
   location.reload();
 }
 
@@ -1496,7 +1509,7 @@ function showAuthError(msg){
 }
 
 async function initAuth(){
-  // Sync firm name / logo on the auth screen first.
+  // Logo / nom du cabinet sur l'écran de connexion.
   const fn=document.getElementById('auth-firm-name');
   if(fn)fn.textContent=PDF_SETTINGS.firmName||'PlanSync';
   const lm=document.getElementById('auth-logo-mark');
@@ -1509,14 +1522,27 @@ async function initAuth(){
       lm.textContent=initials;
     }
   }
-  // Restaure le gate pour la session courante (onglet) s'il a déjà été passé.
-  let restored=false;
-  try{ restored = sessionStorage.getItem('ps_gate')==='1'; }catch(e){}
-  if(restored){
-    await _onAuthenticatedLocal();
-  } else {
+  const sb=getSupabase();
+  if(!sb){
+    console.warn('PlanSync: Supabase indisponible — connexion impossible.');
+    setTimeout(()=>document.getElementById('auth-email')?.focus(),100);
+    return;
+  }
+  // Restaure une session Supabase existante si présente.
+  try{
+    const { data } = await sb.auth.getSession();
+    if(data&&data.session){ await _onAuthenticated(data.session); }
+    else { setTimeout(()=>document.getElementById('auth-email')?.focus(),100); }
+  }catch(e){
     setTimeout(()=>document.getElementById('auth-email')?.focus(),100);
   }
+  // Réagit aux changements de session (déconnexion ailleurs, refresh de jeton).
+  sb.auth.onAuthStateChange(function(event, session){
+    if(event==='SIGNED_OUT'){ _authUserId=null; _authEmail=null; isAuthenticated=false; _myRole=null; return; }
+    if((event==='SIGNED_IN'||event==='TOKEN_REFRESHED') && session && !isAuthenticated){
+      _onAuthenticated(session);
+    }
+  });
 }
 
 /* ══ ONBOARDING (première utilisation) ══ */
