@@ -69,7 +69,7 @@ body{background:var(--bg);height:100vh;overflow:hidden;font-family:inherit}
 .badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px}
 .bgreen{background:var(--green-bg);color:var(--green)}
 .bamber{background:var(--amber-bg);color:var(--amber)}
-.baccent{background:var(--accent-bg);color:var(--accent)}
+.baccent{background:var(--accent-bg);color:var(--accent-ink)}
 .bred{background:var(--red-bg);color:var(--red)}
 .bgray{background:var(--bg2);color:var(--text3)}
 .bpurple{background:var(--purple-bg);color:var(--purple)}
@@ -232,7 +232,7 @@ body{background:var(--bg);height:100vh;overflow:hidden;font-family:inherit}
     <div style="font-size:12px;color:var(--text3);margin-bottom:24px">Compte Rendus Chantier</div>
     <div class="fi" style="text-align:left">
       <label style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px">Identifiant</label>
-      <input type="text" id="auth-email" autocomplete="username" placeholder="Votre identifiant (ex. tbell)"
+      <input type="text" id="auth-email" autocomplete="username" placeholder="Identifiant ou adresse e-mail"
         style="width:100%;padding:10px 12px;border:1px solid var(--border2);border-radius:8px;font-size:14px;background:var(--bg);color:var(--text);outline:none;font-family:inherit"
         onkeydown="if(event.key==='Enter')document.getElementById('auth-pwd').focus()">
     </div>
@@ -246,7 +246,8 @@ body{background:var(--bg);height:100vh;overflow:hidden;font-family:inherit}
     <button class="btn btn-p" id="auth-submit" style="width:100%;justify-content:center;margin-top:12px;padding:10px" onclick="checkAuth()">
       Se connecter
     </button>
-    <div style="font-size:10px;color:var(--text3);margin-top:16px">Espace privé</div>
+    <div style="margin-top:10px"><button type="button" id="auth-forgot" onclick="forgotPassword()" style="background:none;border:none;cursor:pointer;font-family:inherit;font-size:12px;color:var(--text2);text-decoration:underline;padding:0">Mot de passe oublié ?</button></div>
+    <div style="font-size:10px;color:var(--text3);margin-top:16px">Accès réservé — connexion requise.</div>
   </div>
 </div>
 <!--
@@ -485,7 +486,7 @@ body{background:var(--bg);height:100vh;overflow:hidden;font-family:inherit}
     <div style="padding:8px 10px;border-bottom:1px solid var(--border)">
       <div style="display:flex;align-items:center;gap:6px;background:var(--bg2);border-radius:8px;padding:6px 10px">
         <svg class="ico ico-sm" style="color:var(--text3);flex-shrink:0"><use href="#i-search"/></svg>
-        <input id="search-input" placeholder="Rechercher…" style="border:none;background:none;outline:none;font-size:12px;color:var(--text);width:100%;font-family:inherit" oninput="filterCR(this.value)">
+        <input id="search-input" placeholder="Rechercher un CR…" style="border:none;background:none;outline:none;font-size:12px;color:var(--text);width:100%;font-family:inherit" oninput="filterCR(this.value)">
       </div>
     </div>
 
@@ -527,7 +528,7 @@ body{background:var(--bg);height:100vh;overflow:hidden;font-family:inherit}
         <div style="min-width:0">
           <div style="display:flex;align-items:center;gap:6px">
             <div style="font-weight:600;font-size:15px;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="tb-title">Compte Rendus Chantier</div>
-            <div id="dirty-dot" style="display:none;align-items:center;gap:4px;flex-shrink:0;font-size:10px;font-weight:600;color:var(--amber);background:var(--amber-bg);border:1px solid var(--amber);border-radius:20px;padding:1px 8px" title="Vos modifications sont enregistrées, mais ne figurent pas encore dans le dernier PDF exporté. Ré-exportez pour un PDF à jour."><span style="width:6px;height:6px;border-radius:50%;background:var(--amber)"></span>À ré-exporter</div>
+            <div id="dirty-dot" style="display:none;align-items:center;gap:4px;flex-shrink:0;font-size:10px;font-weight:600;color:var(--amber);background:var(--amber-bg);border:1px solid var(--amber);border-radius:20px;padding:1px 8px" title="Les données ont changé depuis le dernier export PDF."><span style="width:6px;height:6px;border-radius:50%;background:var(--amber)"></span>PDF non à jour</div>
           </div>
           <div style="font-size:11px;color:var(--text3)" id="tb-sub">Sélectionnez un compte rendu</div>
         </div>
@@ -559,6 +560,31 @@ body{background:var(--bg);height:100vh;overflow:hidden;font-family:inherit}
 <div id="print-area"></div>
 
 <script>
+/* ════════════════════════════════════════════════════════════════════════
+   TODO — SÉCURITÉ DES DONNÉES (RLS Supabase) — À FAIRE AVANT PRODUCTION
+   ────────────────────────────────────────────────────────────────────────
+   La protection réelle des données ne dépend PAS de ce code client : elle
+   repose entièrement sur les politiques Row-Level Security (RLS) côté Supabase.
+   La clé publiable embarquée n'est pas un secret ; sans RLS, n'importe qui
+   peut lire/écrire les tables.
+
+   Migration SQL requise (copiable-collable) : voir le bloc « SÉCURITÉ — À LIRE
+   AVANT MISE EN PRODUCTION » en commentaire HTML, en haut du <body>
+   (tables profiles + cr_access + audit_log, fonctions is_admin() / my_role_on(),
+   politiques crs_select / crs_insert / crs_update / crs_delete).
+
+   Résumé des étapes :
+     1) Activer Email auth, désactiver les inscriptions publiques.
+     2) Créer les comptes (Authentication → Users).
+     3) Repointer crs.user_id vers l'UUID admin, convertir en uuid.
+     4) Exécuter le bloc de migration per-CR (profiles/cr_access/RLS).
+     5) Définir l'admin fixe, accorder les accès par CR.
+     6) Ajouter les membres via l'écran « Membres ».
+
+   Un contrôle de démarrage best-effort (_rlsSelfCheck) émet un avertissement
+   console si la session reçoit un CR auquel l'utilisateur ne devrait pas avoir
+   accès, et l'écran Membres affiche un état RLS indicatif pour l'admin.
+   ════════════════════════════════════════════════════════════════════════ */
 /* ══ UTILS ══ */
 function ico(id,cls=''){return`<svg class="ico ${cls}"><use href="#i-${id}"/></svg>`;}
 function e(s){return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
@@ -676,6 +702,9 @@ let CRS = [];
   } catch(e) {
     console.warn('PlanSync: could not load saved CRs:', e);
   }
+  // Si l'exemple de démonstration a été supprimé explicitement, ne pas le
+  // réinjecter : on laisse l'espace vide (l'utilisateur créera ses propres CR).
+  try { if(localStorage.getItem('plansync_demo_deleted')==='1'){ CRS=[]; return; } } catch(e) {}
   // No saved data — inject a clean generic starter project
   CRS = [{
     id:'cr_modele',
@@ -871,6 +900,20 @@ function logActivity(action, entityType, entityLabel, crId, details){
 }
 // Libellé court d'un CR pour le journal.
 function _crLabel(cr){ if(!cr) return ''; return (cr.projet||'CR')+' n°'+(cr.numero||'?'); }
+// ── Numérotation des CR (unicité par projet) ────────────────────────────
+// Plus haut numéro utilisé dans un projet (hors lignes techniques __order__).
+function _maxNumeroInProject(projetId, excludeId){
+  return CRS.filter(function(c){
+      return c.projetId===projetId && c.id!==excludeId && c.id.indexOf('__order__')!==0;
+    }).reduce(function(m,c){ return Math.max(m, c.numero||0); }, 0);
+}
+// Vrai si un autre CR du même projet porte déjà ce numéro.
+function _numeroCollision(projetId, numero, excludeId){
+  return CRS.some(function(c){
+    return c.projetId===projetId && c.id!==excludeId
+      && c.id.indexOf('__order__')!==0 && c.numero===numero;
+  });
+}
 // Charge le profil (rôle global) et les rôles par CR du membre connecté.
 async function loadMyProfile(){
   const sb=getSupabase();
@@ -886,6 +929,48 @@ async function loadMyProfile(){
       (grants||[]).forEach(function(g){ _myGrantsByCR.set(g.cr_id, g.role||'viewer'); });
     }catch(e){}
   }
+}
+
+/* ══ CONTRÔLE RLS AU DÉMARRAGE (best-effort) ══
+   La protection réelle des données dépend des politiques Row-Level Security
+   Supabase (voir le commentaire SÉCURITÉ et le bloc TODO en haut du script).
+   Ce contrôle ne MODIFIE rien : il interroge la table crs et, si la session
+   d'un membre reçoit un CR auquel il ne devrait pas avoir accès, journalise un
+   avertissement console. L'écran Membres affiche un état RLS indicatif. */
+let _rlsStatus='unknown'; // unknown | pending | admin | enforced | leak
+async function _rlsSelfCheck(){
+  const sb=getSupabase();
+  if(!sb){ _rlsStatus='unknown'; return; }
+  if(_myRole===null){ _rlsStatus='pending'; return; }   // migration non exécutée
+  if(isAdmin()){ _rlsStatus='admin'; return; }            // non vérifiable en admin
+  try{
+    const { data, error } = await sb.from('crs').select('id').limit(500);
+    if(error){ _rlsStatus='unknown'; return; }
+    // Un membre ne doit recevoir QUE les CR auxquels cr_access lui donne accès.
+    const leaked=(data||[]).filter(function(row){
+      return row.id.indexOf('__order__')!==0 && !canSeeCR(row.id);
+    });
+    if(leaked.length){
+      _rlsStatus='leak';
+      console.warn('SÉCURITÉ (RLS) : la session a reçu '+leaked.length
+        +' compte(s) rendu sans droit d\'accès — les politiques Row-Level Security '
+        +'ne filtrent pas les données. Exécutez la migration SQL (voir le commentaire '
+        +'« SÉCURITÉ » en haut du <body>).', leaked.map(function(r){return r.id;}));
+    } else {
+      _rlsStatus='enforced';
+    }
+  }catch(e){ _rlsStatus='unknown'; }
+}
+// Note RLS (admin uniquement) affichée dans l'écran Membres.
+function _rlsStatusNote(){
+  if(!isAdmin()) return '';
+  let txt,col;
+  if(_rlsStatus==='pending'){ txt='RLS : migration non exécutée — données NON protégées (voir le SQL dans le code).'; col='var(--red)'; }
+  else if(_rlsStatus==='leak'){ txt='RLS : non appliquées — des CR sans droit ont été reçus (voir la console + le SQL).'; col='var(--red)'; }
+  else if(_rlsStatus==='admin'){ txt='RLS : modèle de rôles actif. L\'application des RLS ne peut pas être confirmée depuis un compte admin — testez avec un compte membre.'; col='var(--text2)'; }
+  else if(_rlsStatus==='enforced'){ txt='RLS : semblent appliquées (constaté depuis ce compte).'; col='var(--green)'; }
+  else { txt='RLS : état indéterminé.'; col='var(--text3)'; }
+  return '<div style="font-size:11px;color:'+col+';line-height:1.5;margin-bottom:10px;padding:6px 9px;border:1px solid var(--border);border-radius:var(--r);background:var(--bg2)">'+e(txt)+'</div>';
 }
 
 /* ══ ÉCRAN MEMBRES (admin uniquement) ══
@@ -984,7 +1069,8 @@ function _renderComptesTab(){
       +'</div>';
     });
   }
-  return '<div style="background:var(--accent-bg);border:1px solid var(--accent-lt);border-radius:var(--r);padding:11px 13px;margin-bottom:14px;font-size:11.5px;color:var(--text2);line-height:1.55">'
+  return _rlsStatusNote()
+    +'<div style="background:var(--accent-bg);border:1px solid var(--accent-lt);border-radius:var(--r);padding:11px 13px;margin-bottom:14px;font-size:11.5px;color:var(--text2);line-height:1.55">'
       +'Les comptes et mots de passe se créent dans Supabase (Authentication → Users → Add user). Cet écran ne crée pas de compte ; il gère uniquement les rôles et les accès par CR.</div>'
     +rows
     +'<div id="add-member-zone" style="margin-top:6px"><button class="btn btn-sm" onclick="showAddMemberForm()">'+ico('plus','ico-xs')+' Ajouter un membre</button></div>';
@@ -1247,8 +1333,9 @@ async function _syncToSupabase(){
   _pendingSync = true;
   try {
     // Ne pousser QUE les CRs modifiés sur cet appareil (et non tombstonés).
+    // Le CR de démonstration 'cr_modele' n'est JAMAIS synchronisé (données fictives).
     const toPush = CRS.filter(function(cr){
-      return _dirtyCRIds.has(cr.id) && !_deletedPVIds.has(cr.id);
+      return cr.id!=='cr_modele' && _dirtyCRIds.has(cr.id) && !_deletedPVIds.has(cr.id);
     });
     for(const cr of toPush){
       const ts = cr._updatedAt || new Date().toISOString();
@@ -1569,6 +1656,7 @@ async function _onAuthenticated(session){
   renderList();
   if(activeCR) renderCR();
   await refreshFromStorage();         // sync filtré par RLS + grants
+  _rlsSelfCheck();                     // contrôle RLS best-effort (non bloquant)
   _initSupabaseRealtime();
   maybeShowOnboarding();
 }
@@ -1599,6 +1687,22 @@ async function checkAuth(){
   }
 }
 
+// Réinitialisation du mot de passe (Supabase). Réponse neutre : ne révèle
+// jamais si un compte existe pour l'identifiant saisi.
+async function forgotPassword(){
+  const id=(document.getElementById('auth-email')?.value||'').trim();
+  if(!id){ showAuthError('Entrez d\'abord votre identifiant ou e-mail'); return; }
+  const sb=getSupabase();
+  if(!sb){ toast('Contactez votre administrateur.','info'); return; }
+  const email=resolveLoginEmail(id);
+  try{
+    // On ignore volontairement l'éventuelle erreur côté Supabase pour ne pas
+    // divulguer l'existence (ou non) du compte.
+    await sb.auth.resetPasswordForEmail(email);
+  }catch(e){ /* réponse neutre quoi qu'il arrive */ }
+  toast('Si un compte existe, un e-mail de réinitialisation a été envoyé.','info');
+}
+
 async function signOut(){
   const sb=getSupabase();
   try{
@@ -1619,16 +1723,16 @@ function showAuthError(msg){
 
 async function initAuth(){
   // Logo / nom du cabinet sur l'écran de connexion.
+  updateFavicon();
   const fn=document.getElementById('auth-firm-name');
-  if(fn)fn.textContent=PDF_SETTINGS.firmName||'PlanSync';
+  if(fn)fn.textContent=firmDisplayName();
   const lm=document.getElementById('auth-logo-mark');
   if(lm){
     if(PDF_SETTINGS.logoLeft){
       lm.innerHTML='<img src="'+PDF_SETTINGS.logoLeft+'" style="width:100%;height:100%;object-fit:contain;border-radius:8px">';
       lm.style.background='none';
     } else {
-      const initials=(PDF_SETTINGS.firmName||'PS').split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase()||'PS';
-      lm.textContent=initials;
+      lm.textContent=firmInitials();
     }
   }
   const sb=getSupabase();
@@ -1944,6 +2048,44 @@ function openCR(id){
   if(window.matchMedia&&window.matchMedia('(max-width:900px)').matches) toggleSidebar(false);
 }
 
+// ── Démo « Projet modèle » ──────────────────────────────────────────────
+// 'cr_modele' est un exemple local injecté quand aucune donnée n'existe. Il
+// n'est jamais synchronisé vers Supabase (voir _syncToSupabase). Le bandeau
+// d'aide est masquable pour la session ; la suppression le retire en un clic.
+let _demoBannerDismissed=false;
+function dismissDemoBanner(){
+  _demoBannerDismissed=true;
+  const b=document.getElementById('demo-banner');
+  if(b) b.remove();
+}
+function deleteDemoCR(){
+  const idx=CRS.findIndex(function(c){return c.id==='cr_modele';});
+  if(idx<0) return;
+  CRS.splice(idx,1);
+  _tombstone('cr_modele'); // empêche toute réapparition via un éventuel merge
+  try { localStorage.setItem('plansync_demo_deleted','1'); } catch(e) {} // pas de réinjection au prochain chargement
+  if(activeCR==='cr_modele') activeCR=null;
+  saveCRS();
+  const b=document.getElementById('demo-banner');
+  if(b) b.remove();
+  renderList();
+  if(activeCR){ renderCR(); }
+  else {
+    const tb=document.getElementById('tabbar'); if(tb) tb.style.display='none';
+    const ct=document.getElementById('content');
+    if(ct) ct.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:12px;color:var(--text3)">
+        <svg class="ico" style="width:40px;height:40px"><use href="#i-file"/></svg>
+        <div style="font-weight:500;font-size:14px">Aucun compte rendu sélectionné</div>
+        <div style="font-size:12px">Créez votre premier CR pour commencer.</div>
+        <button class="btn btn-p btn-sm" onclick="openNewCR()"><svg class="ico ico-sm"><use href="#i-plus"/></svg> Créer mon premier compte rendu</button>
+      </div>`;
+    const tbt=document.getElementById('tb-title'); if(tbt) tbt.textContent='Compte Rendus Chantier';
+    const tbs=document.getElementById('tb-sub'); if(tbs) tbs.textContent='Sélectionnez un compte rendu';
+    document.getElementById('tb-actions').innerHTML='';
+  }
+  toast('Exemple supprimé ✓');
+}
+
 function renderCR(){
   const cr=CRS.find(c=>c.id===activeCR);
   if(!cr)return;
@@ -1974,6 +2116,25 @@ function renderCR(){
     if(existingBanner)existingBanner.remove();
   }
 
+  // Demo banner : affiché uniquement quand le CR de démonstration 'cr_modele'
+  // est le SEUL compte rendu présent. Dismissible + suppression en un clic.
+  const existingDemo=document.getElementById('demo-banner');
+  if(existingDemo) existingDemo.remove();
+  const realCount=CRS.filter(function(c){return c.id.indexOf('__order__')!==0;}).length;
+  if(cr.id==='cr_modele' && realCount===1 && !_demoBannerDismissed){
+    const dbanner=document.createElement('div');
+    dbanner.id='demo-banner';
+    dbanner.style.cssText='background:var(--accent-bg);border-bottom:1px solid var(--accent-lt);padding:8px 20px;font-size:12px;color:var(--text2);display:flex;align-items:center;gap:8px;flex-shrink:0';
+    dbanner.innerHTML=`<svg class="ico ico-sm" style="color:var(--accent-ink)"><use href="#i-file"/></svg>
+      <span>Exemple de démonstration — supprimez-le quand vous créez votre premier CR.</span>
+      <div style="display:flex;gap:10px;align-items:center;margin-left:auto">
+        <button onclick="deleteDemoCR()" style="background:none;border:1px solid var(--accent-ink);color:var(--accent-ink);border-radius:var(--r);padding:3px 10px;font-size:11px;cursor:pointer;font-family:inherit">Supprimer l'exemple</button>
+        <button onclick="dismissDemoBanner()" title="Masquer ce message" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px;line-height:1;padding:2px 4px">✕</button>
+      </div>`;
+    const tabbar=document.getElementById('tabbar');
+    tabbar.parentNode.insertBefore(dbanner,tabbar);
+  }
+
   // Reset tab UI
   document.querySelectorAll('.tab').forEach((t,i)=>{
     const tabs=['remarques','actions','intervenants','dates','pv'];
@@ -1990,7 +2151,7 @@ function renderCR(){
     ${canEditSettings(cr.id)?`<button class="btn btn-sm ${isArchived?'':'btn-amber'}" onclick="toggleArchiveCR('${cr.id}')" title="${isArchived?'Désarchiver':'Archiver ce CR'}" style="${isArchived?'':'color:var(--amber);border-color:var(--amber)'}">
       <svg class="ico ico-sm"><use href="#i-archive"/></svg> ${isArchived?'Désarchiver':'Archiver'}
     </button>`:''}
-    ${canEdit(cr.id)?`<button class="btn btn-p btn-sm" onclick="cloneCR('${cr.id}')" style="background:var(--green);border-color:var(--green);color:#fff;font-weight:600">${ico('plus','ico-sm')} CR Suivant</button>`:''}`;
+    ${canEdit(cr.id)?`<button class="btn btn-p btn-sm" onclick="cloneCR('${cr.id}')" style="font-weight:600">${ico('plus','ico-sm')} CR Suivant</button>`:''}`;
 
   if(activeTab==='remarques') renderRemarques(cr);
   else if(activeTab==='intervenants') renderIntervenants(cr);
@@ -2024,17 +2185,17 @@ function renderRemarques(cr){
       <div style="font-size:22px;font-weight:700;color:var(--amber)">${flagR.length}</div>
       <div style="font-size:10px;color:var(--amber);line-height:1.3">A<br>suivre</div>
     </div>
-    <div style="background:${openR.length?'#fff5f5':'var(--panel)'};border:1px solid ${openR.length?'#f5b8b8':'var(--border)'};border-radius:var(--r);padding:8px 14px;display:flex;align-items:center;gap:8px;min-width:80px">
-      <div style="font-size:22px;font-weight:700;color:${openR.length?'#c0392b':'var(--text3)'}">${openR.length}</div>
-      <div style="font-size:10px;color:${openR.length?'#c0392b':'var(--text3)'};line-height:1.3">Non<br>traites</div>
+    <div style="background:${openR.length?'var(--red-bg)':'var(--panel)'};border:1px solid ${openR.length?'var(--red)':'var(--border)'};border-radius:var(--r);padding:8px 14px;display:flex;align-items:center;gap:8px;min-width:80px">
+      <div style="font-size:22px;font-weight:700;color:${openR.length?'var(--red)':'var(--text3)'}">${openR.length}</div>
+      <div style="font-size:10px;color:${openR.length?'var(--red)':'var(--text3)'};line-height:1.3">Non<br>traités</div>
     </div>
     <div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:8px 14px;display:flex;align-items:center;gap:8px;min-width:80px">
       <div style="font-size:22px;font-weight:700;color:var(--text)">${actCount}</div>
       <div style="font-size:10px;color:var(--text3);line-height:1.3">Actions<br>en cours</div>
     </div>
-    ${lateActCount?`<div style="background:#fff5f5;border:1px solid #f5b8b8;border-radius:var(--r);padding:8px 14px;display:flex;align-items:center;gap:8px;min-width:80px">
-      <div style="font-size:22px;font-weight:700;color:#c0392b">${lateActCount}</div>
-      <div style="font-size:10px;color:#c0392b;line-height:1.3">Actions<br>en retard</div>
+    ${lateActCount?`<div style="background:var(--red-bg);border:1px solid var(--red);border-radius:var(--r);padding:8px 14px;display:flex;align-items:center;gap:8px;min-width:80px">
+      <div style="font-size:22px;font-weight:700;color:var(--red)">${lateActCount}</div>
+      <div style="font-size:10px;color:var(--red);line-height:1.3">Actions<br>en retard</div>
     </div>`:''}
     ${cr.dateProchaine?`<div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:8px 14px;display:flex;align-items:center;gap:8px">
       <div style="font-size:11px;color:var(--text3)">Prochaine réunion<br><strong style="color:var(--text);font-size:13px">${fmtMeetingDisplay(cr.dateProchaine)}</strong></div>
@@ -2059,7 +2220,7 @@ function renderRemarques(cr){
       </button>`).join('')}
     <div style="flex:1;min-width:120px;display:flex;align-items:center;gap:6px;background:var(--bg2);border-radius:20px;padding:5px 10px;margin-left:4px">
       <svg class="ico ico-xs" style="color:var(--text3)"><use href="#i-search"/></svg>
-      <input placeholder="Rechercher…" id="remarque-search" value="${remarqueSearch}"
+      <input placeholder="Rechercher dans ce CR…" id="remarque-search" value="${remarqueSearch}"
         oninput="remarqueSearch=this.value;renderRemarques(CRS.find(c=>c.id==='${cr.id}'))"
         style="border:none;background:none;outline:none;font-size:12px;color:var(--text);width:100%;font-family:inherit">
       ${remarqueSearch?`<button onclick="remarqueSearch='';renderRemarques(CRS.find(c=>c.id==='${cr.id}'))" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:12px">✕</button>`:''}
@@ -2092,9 +2253,9 @@ function renderRemarques(cr){
       <div class="lot-head" onclick="toggleLot('${cr.id}','${lot.id}')">
         <div class="lot-head-left">
           <div class="lot-dot" style="background:${color}"></div>
-          <div class="lot-title">${lot.titre}</div>
+          <div class="lot-title">${e(lot.titre)}</div>
           ${lotFlags?`<span class="badge bamber" style="font-size:9px">${lotFlags} À suivre</span>`:''}
-          ${linkedLabel?`<span class="lot-int-badge" style="font-size:10px;color:${color};background:${color}18;padding:2px 7px;border-radius:10px;font-weight:500">${linkedLabel}</span>`:''}
+          ${linkedLabel?`<span class="lot-int-badge" style="font-size:10px;color:${color};background:${color}18;padding:2px 7px;border-radius:10px;font-weight:500">${e(linkedLabel)}</span>`:''}
         </div>
         <div style="display:flex;align-items:center;gap:6px">
           <span class="badge ${lotDone===lot.remarques.length&&lot.remarques.length>0?'bgreen':'bgray'}" style="font-size:9px">${lot.remarques.length}${lotDone?" · "+lotDone+"✓":""}</span>
@@ -2150,7 +2311,7 @@ function renderRemarques(cr){
                 ${r.done?ico('check','ico-xs'):''}
               </div>
               <div style="flex:1;min-width:0">
-                <div class="ri-text ${r.done?'done-text':''}" style="line-height:1.4">${r.texte}</div>
+                <div class="ri-text ${r.done?'done-text':''}" style="line-height:1.4">${e(r.texte)}</div>
                 <div style="margin-top:3px;display:flex;gap:4px;align-items:center;flex-wrap:wrap">
                   ${badge}
                   ${r.doneAt&&r.done?'<span style="font-size:9px;color:var(--text3)">'+r.doneAt+'</span>':''}
@@ -2202,7 +2363,7 @@ function renderRemarques(cr){
                 <div class="remarque-item" style="opacity:.6;background:var(--green-bg)">
                   <div class="ri-check done" ${canEdit(cr.id)?`onclick="unarchiveRemarque('${cr.id}','${lot.id}','${r.id}')"`:'style="cursor:default"'} title="${canEdit(cr.id)?'Remettre visible':'Lecture seule'}">${ico('check','ico-xs')}</div>
                   <div style="flex:1;min-width:0">
-                    <div class="ri-text done-text">${r.texte}</div>
+                    <div class="ri-text done-text">${e(r.texte)}</div>
                     ${r.archivedAt?`<div style="font-size:10px;color:var(--green);margin-top:2px">Archivé le ${r.archivedAt}</div>`:''}
                   </div>
                   ${canDelete(cr.id)?`<button class="btn-g" style="padding:3px" onclick="deleteRemarque('${cr.id}','${lot.id}','${r.id}')" title="Supprimer définitivement"><svg class="ico ico-xs" style="color:var(--red)"><use href="#i-trash"/></svg></button>`:''}
@@ -2278,12 +2439,12 @@ function renderIntervenants(cr){
     <div class="int-grid">
       ${cr.intervenants.map((i,idx)=>`
         <div class="int-card" data-intidx="${idx}" style="border-left:3px solid ${getColor(i,cr)}">
-          <div class="int-lot">${i.lot}</div>
-          <div class="int-ent">${i.entreprise||i.lot}</div>
-          <div class="int-contact" style="white-space:pre-line">${i.contacts||'—'}</div>
+          <div class="int-lot">${e(i.lot)}</div>
+          <div class="int-ent">${e(i.entreprise||i.lot)}</div>
+          <div class="int-contact" style="white-space:pre-line">${e(i.contacts||'—')}</div>
           <div style="margin-top:8px;display:flex;align-items:center;flex-wrap:wrap;gap:4px">
             <span class="badge ${i.convoque!==false?'baccent':'bgray'}" style="font-size:9px;${canEdit(cr.id)?'cursor:pointer':''}" ${canEdit(cr.id)?`onclick="toggleConvoque('${cr.id}','${i.id}')"`:''} title="Convoqué à cette réunion">${i.convoque!==false?'Convoqué':'Non convoqué'}</span>
-            <span class="badge ${i.present?'bgreen':'bgray'}" style="font-size:9px;${canEdit(cr.id)?'cursor:pointer':''}" ${canEdit(cr.id)?`onclick="togglePresence('${cr.id}','${i.lot}')"`:''}>${i.present?'Présent':'Absent'}</span>
+            <span class="badge ${i.present?'bgreen':'bgray'}" style="font-size:9px;${canEdit(cr.id)?'cursor:pointer':''}" ${canEdit(cr.id)?`onclick="togglePresence('${cr.id}','${i.id}')"`:''}>${i.present?'Présent':'Absent'}</span>
             ${(canEdit(cr.id)||canDelete(cr.id))?`<div style="display:flex;gap:3px;margin-left:auto">
               ${canEdit(cr.id)?`<button class="btn-g" style="padding:3px" onclick="editIntervenant('${cr.id}',${idx})" title="Modifier">${ico('edit','ico-xs')}</button>`:''}
               ${canDelete(cr.id)?`<button class="btn-g" style="padding:3px" onclick="deleteIntervenant('${cr.id}',${idx})" title="Supprimer"><svg class="ico ico-xs" style="color:var(--red)"><use href="#i-trash"/></svg></button>`:''}
@@ -2338,7 +2499,7 @@ function renderActions(cr){
     const active=actionFilter===intId;
     return `<button onclick="actionFilter='${active?'':intId}';renderActions(CRS.find(c=>c.id==='${cr.id}'))"
       style="font-size:10px;padding:2px 9px;border-radius:10px;border:1.5px solid ${col};background:${active?col:'transparent'};color:${active?'#fff':col};cursor:pointer;font-family:inherit;font-weight:600">
-      ${iv.entreprise||iv.lot}
+      ${e(iv.entreprise||iv.lot)}
     </button>`;
   }).join('');
 
@@ -2361,10 +2522,10 @@ function renderActions(cr){
         ${isDone?ico('check','ico-xs'):late?'!':soon?'~':ico('alert','ico-xs')}
       </div>
       <div style="flex:1;min-width:0">
-        <div style="font-size:13px;${isDone?'text-decoration:line-through;color:var(--text3)':''}">${a.texte}</div>
+        <div style="font-size:13px;${isDone?'text-decoration:line-through;color:var(--text3)':''}">${e(a.texte)}</div>
         <div style="font-size:11px;margin-top:3px;display:flex;gap:7px;align-items:center;flex-wrap:wrap">
-          ${linkedLabel?`<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;background:${linkedColor}18;color:${linkedColor}">${linkedLabel}</span>`:''}
-          ${a.echeance?`<span style="color:${late?'var(--red)':soon?'var(--amber)':'var(--text3)'};font-weight:${late||soon?'600':'400'}">${ico('calendar','ico-xs')} ${a.echeance}${late?' EN RETARD':soon?' Bientot':''}</span>`:''}
+          ${linkedLabel?`<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;background:${linkedColor}18;color:${linkedColor}">${e(linkedLabel)}</span>`:''}
+          ${a.echeance?`<span style="color:${late?'var(--red)':soon?'var(--amber)':'var(--text3)'};font-weight:${late||soon?'600':'400'}">${ico('calendar','ico-xs')} ${e(a.echeance)}${late?' EN RETARD':soon?' Bientôt':''}</span>`:''}
         </div>
         ${imgGrid}
       </div>
@@ -2633,7 +2794,7 @@ function renderHistorique(currentCR){
 
   const html=`<div style="padding:20px 28px;max-width:800px">
     <div style="font-size:13px;font-weight:500;margin-bottom:18px;color:var(--text2)">
-      ${siblings.length} compte${siblings.length>1?'s':''} rendu${siblings.length>1?'s':''} — ${currentCR.projet}
+      ${siblings.length} compte${siblings.length>1?'s':''} rendu${siblings.length>1?'s':''} — ${e(currentCR.projet)}
     </div>
 
     <!-- Timeline -->
@@ -2664,7 +2825,7 @@ function renderHistorique(currentCR){
                 </div>
                 <div style="font-size:12px;font-weight:500;color:var(--text2)">${cr.date}</div>
                 ${cr.dateProchaine?`<div style="font-size:11px;color:var(--text3);margin-top:1px">Prochaine réunion : ${fmtMeetingDisplay(cr.dateProchaine)}</div>`:''}
-                ${cr.redacteur?`<div style="font-size:11px;color:var(--text3)">Rédacteur : ${cr.redacteur}</div>`:''}
+                ${cr.redacteur?`<div style="font-size:11px;color:var(--text3)">Rédacteur : ${e(cr.redacteur)}</div>`:''}
               </div>
 
             </div>
@@ -2703,7 +2864,7 @@ function renderHistorique(currentCR){
             <!-- Lots summary (only show if not too many) -->
             ${s.flags>0?`<div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:5px">
               ${cr.lots.filter(l=>l.remarques.some(r=>r.flag&&!r.archived)).map(l=>`
-                <span style="font-size:10px;padding:2px 7px;border-radius:10px;background:${getColor(l,cr)}18;color:${getColor(l,cr)}">${l.titre}</span>
+                <span style="font-size:10px;padding:2px 7px;border-radius:10px;background:${getColor(l,cr)}18;color:${getColor(l,cr)}">${e(l.titre)}</span>
               `).join('')}
             </div>`:''}
           </div>
@@ -2913,9 +3074,9 @@ function saveRemarque(crId,lotId,rId){
   if(r) logActivity('remarque_edited','remarque','Remarque : '+(r.texte||''),crId);
   closeModal();markDirty();renderCR();renderList();
 }
-function togglePresence(crId,lot){
+function togglePresence(crId,intId){
   const cr=CRS.find(c=>c.id===crId);
-  const i=cr?.intervenants.find(x=>x.lot===lot);
+  const i=cr?.intervenants.find(x=>x.id===intId);
   if(i)i.present=!i.present;
   markDirty(crId);renderCR();
 }
@@ -2945,7 +3106,7 @@ function deleteAction(crId,aId){
 function openAddAction(crId){
   if(!guardEdit(crId))return;
   const cr=CRS.find(c=>c.id===crId);
-  const intOptions=cr?cr.intervenants.map(i=>`<option value="${i.id}">${i.entreprise||i.lot}</option>`).join(''):'';
+  const intOptions=cr?cr.intervenants.map(i=>`<option value="${i.id}">${e(i.entreprise||i.lot)}</option>`).join(''):'';
   showModal(`<h3>Ajouter une action</h3>
     <div class="fi"><label>Action *</label><input id="aa-texte" placeholder="Description de l'action…"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -3130,7 +3291,7 @@ function openNewCR(){
     </div>
     <div class="mo-foot">
       <button class="btn" onclick="closeModal()">Annuler</button>
-      <button class="btn btn-p" onclick="saveNewCR()">${ico('plus','ico-sm')} Créer manuellement</button>
+      <button class="btn btn-p" onclick="saveNewCR()">${ico('plus','ico-sm')} Créer le CR</button>
     </div>`);
   setTimeout(()=>document.getElementById('nc-proj')?.focus(),50);
 }
@@ -3142,6 +3303,11 @@ function saveNewCR(){
   // projetId: reuse existing if same project name, else new
   const existingProj=CRS.find(function(cr){return (cr.projet||'').trim().toLowerCase()===(proj||'').trim().toLowerCase();});
   const projetId=existingProj?existingProj.projetId:('p'+(uid++));
+  // N° par défaut : (plus haut N° du projet)+1 — évite les collisions à la création.
+  const nextFree=_maxNumeroInProject(projetId)+1;
+  const enteredNum=parseInt(document.getElementById('nc-num')?.value);
+  const numero=(enteredNum&&enteredNum>0)?enteredNum:nextFree;
+  const collided=_numeroCollision(projetId,numero);
   const newCR={
     id:'cr'+(uid++),
     projetId:projetId,
@@ -3149,7 +3315,7 @@ function saveNewCR(){
     adresse:document.getElementById('nc-addr')?.value||'',
     date,
     dateProchaine:document.getElementById('nc-datep')?.value||'',
-    numero:parseInt(document.getElementById('nc-num')?.value)||CRS.length+1,
+    numero:numero,
     redacteur:document.getElementById('nc-red')?.value||'',
     statut:'draft',
     intervenants:[],
@@ -3164,7 +3330,8 @@ function saveNewCR(){
   activeTab='intervenants';
   renderList();
   renderCR();
-  toast('Compte rendu créé ✓');
+  if(collided) toast('CR créé — n° déjà utilisé dans ce projet (prochain libre : n°'+nextFree+').','info');
+  else toast('Compte rendu créé ✓');
 }
 function openEditCR(crId){
   if(!guardSettings(crId))return;
@@ -3200,10 +3367,16 @@ function saveEditCR(crId){
   cr.adresse=document.getElementById('ec-addr')?.value||cr.adresse;
   cr.date=document.getElementById('ec-date')?.value||cr.date;
   cr.dateProchaine=document.getElementById('ec-datep')?.value||cr.dateProchaine;
-  cr.numero=parseInt(document.getElementById('ec-num')?.value)||cr.numero;
+  const newNum=parseInt(document.getElementById('ec-num')?.value)||cr.numero;
+  const collided=_numeroCollision(cr.projetId,newNum,cr.id);
+  cr.numero=newNum;
   cr.redacteur=document.getElementById('ec-red')?.value||cr.redacteur;
   logActivity('cr_updated','cr',_crLabel(cr),cr.id);
-  saveCRS();closeModal();renderList();renderCR();toast('Modifications enregistrées ✓');
+  saveCRS();closeModal();renderList();renderCR();
+  if(collided){
+    const nf=_maxNumeroInProject(cr.projetId,cr.id)+1;
+    toast('Modifications enregistrées — n° déjà utilisé dans ce projet (prochain libre : n°'+nf+').','info');
+  } else toast('Modifications enregistrées ✓');
 }
 
 /* ══ EXPORT / PRINT ══ */
@@ -3493,7 +3666,7 @@ function editAction(crId,aId){
   const cr=CRS.find(c=>c.id===crId);
   const a=cr?.actions.find(x=>x.id===aId);
   if(!a)return;
-  const intOptions=cr.intervenants.map(i=>`<option value="${i.id}" ${a.intId===i.id?'selected':''}>${i.entreprise||i.lot}</option>`).join('');
+  const intOptions=cr.intervenants.map(i=>`<option value="${i.id}" ${a.intId===i.id?'selected':''}>${e(i.entreprise||i.lot)}</option>`).join('');
   showModal(`<h3>${ico('edit','ico-sm')} Modifier l'action</h3>
     <div class="fi"><label>Action *</label><textarea id="ea-texte" style="min-height:72px">${e(a.texte)}</textarea></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -4356,7 +4529,7 @@ function cloneCR(crId){
   if(!cr)return;
   const pendingOpen=cr.lots.flatMap(l=>l.remarques).filter(r=>!r.done&&!r.archived).length;
   const pendingActions=cr.actions.filter(a=>!a.done).length;
-  showModal(`<h3><svg class="ico ico-sm" style="color:var(--accent)"><use href="#i-copy"/></svg> Creer le CR suivant</h3>
+  showModal(`<h3><svg class="ico ico-sm" style="color:var(--accent)"><use href="#i-copy"/></svg> Créer le CR suivant</h3>
     <div style="background:var(--accent-bg);border-radius:var(--r);padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--text2)">
       Reprend la structure complète et reporte automatiquement les
       <strong>${pendingOpen} points non traités</strong> et <strong>${pendingActions} actions non terminées</strong>.
@@ -4494,7 +4667,7 @@ function remarkToAction(crId,lotId,rId){
   if(!r)return;
   const linked=lot.intId?cr.intervenants.find(i=>i.id===lot.intId):null;
   const intOptions=cr.intervenants.map(i=>
-    `<option value="${i.id}" ${lot.intId===i.id?'selected':''}>${i.entreprise||i.lot}</option>`
+    `<option value="${i.id}" ${lot.intId===i.id?'selected':''}>${e(i.entreprise||i.lot)}</option>`
   ).join('');
   showModal(`<h3>${ico('check','ico-sm')} Convertir en action</h3>
     <div style="background:var(--bg2);border-radius:var(--r);padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--text2)">
@@ -5197,21 +5370,63 @@ function confirmCopyRemarque(crId,lotId,rId){
 }
 
 /* ══ PDF SETTINGS MODAL ══ */
+// ── Identité visuelle du cabinet ────────────────────────────────────────
+// Nom affiché : priorité au réglage utilisateur (PDF_SETTINGS.firmName) ;
+// sinon, dérivé du domaine de connexion (LOGIN_DOMAIN) ; sinon repli neutre.
+// Aucun nom de cabinet réel n'est codé en dur dans ce fichier partagé.
+function firmNameFromDomain(){
+  try{
+    const host=(LOGIN_DOMAIN||'').split('@').pop().trim();
+    const base=(host.split('.')[0]||'').trim();
+    if(!base) return '';
+    return base.split(/[-_]+/).filter(Boolean)
+      .map(function(w){return w.charAt(0).toUpperCase()+w.slice(1);})
+      .join(' ');
+  }catch(e){ return ''; }
+}
+function firmDisplayName(){
+  const fn=((PDF_SETTINGS&&PDF_SETTINGS.firmName)||'').trim();
+  if(fn && fn!=='PlanSync') return fn;          // réglage explicite du cabinet
+  return firmNameFromDomain() || 'PlanSync';    // dérivé du domaine, sinon repli
+}
+function firmInitials(){
+  const ini=firmDisplayName().split(/\s+/).map(function(w){return w[0]||'';})
+    .filter(Boolean).slice(0,2).join('').toUpperCase();
+  return ini||'CR';
+}
+// Met à jour le favicon : logo du cabinet si défini, sinon pastille initiales
+// sur fond accent. Reste neutre tant qu'aucune marque n'est configurée.
+function updateFavicon(){
+  try{
+    const s=PDF_SETTINGS||{};
+    let link=document.querySelector("link[rel='icon']");
+    if(!link){ link=document.createElement('link'); link.rel='icon'; document.head.appendChild(link); }
+    if(s.logoLeft){ link.href=s.logoLeft; return; }
+    const accent=s.accentColor||'#2d4ef5';
+    const svg="<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'>"
+      +"<rect width='32' height='32' rx='6' fill='"+accent+"'/>"
+      +"<text x='50%' y='55%' font-size='14' text-anchor='middle' dominant-baseline='middle' "
+      +"fill='white' font-family='Arial' font-weight='bold'>"+firmInitials()+"</text></svg>";
+    link.href='data:image/svg+xml,'+encodeURIComponent(svg);
+  }catch(e){}
+}
+
 function updateSidebarLogo(){
   const s=PDF_SETTINGS;
   const mark=document.getElementById('sb-logo-mark');
   const nameEl=document.getElementById('sb-firm-name');
   const subEl=document.getElementById('sb-firm-sub');
+  updateFavicon();
   if(!mark)return;
   if(s.logoLeft){
     mark.style.cssText='width:34px;height:34px;border-radius:6px;overflow:hidden;padding:0;background:none;display:flex;align-items:center;justify-content:center;flex-shrink:0';
     mark.innerHTML='<img src="'+s.logoLeft+'" style="width:34px;height:34px;object-fit:contain;display:block">';
   } else {
-    const initials=(s.firmName||'PS').split(' ').map(function(w){return w[0]||'';}).filter(Boolean).slice(0,2).join('').toUpperCase()||'PS';
+    const initials=firmInitials();
     mark.style.cssText='width:34px;height:34px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;flex-shrink:0;letter-spacing:-.5px';
     mark.innerHTML=initials;
   }
-  if(nameEl)nameEl.textContent=s.firmName||'Cabinet';
+  if(nameEl)nameEl.textContent=firmDisplayName();
   if(subEl)subEl.textContent=s.firmSub||'Compte Rendus';
 }
 
@@ -5548,8 +5763,8 @@ function openAddImage(crId, lotId, rId){
     <div class="fi"><label>Image (JPG, PNG, GIF…)</label>
       <input type="file" id="img-file" accept="image/*" style="font-size:12px">
     </div>
-    <div class="fi"><label>Legende (optionnel)</label>
-      <input id="img-caption" placeholder="Ex: Vue facade nord" style="width:100%">
+    <div class="fi"><label>Légende (optionnel)</label>
+      <input id="img-caption" placeholder="Ex: Vue façade nord" style="width:100%">
     </div>
     <div class="mo-foot">
       <button class="btn" onclick="closeModal()">Annuler</button>
@@ -5570,7 +5785,7 @@ function confirmAddImage(crId,lotId,rId){
     if(!r.images)r.images=[];
     r.images.push({id:'img'+(uid++),data:e.target.result,caption:caption,name:file.name});
     closeModal();markDirty();renderCR();
-    toast('Image ajoutee');
+    toast('Image ajoutée');
   };
   reader.readAsDataURL(file);
 }
@@ -5605,8 +5820,8 @@ function openAddActionImage(crId,aId){
     <div class="fi"><label>Image (JPG, PNG, GIF…)</label>
       <input type="file" id="aimg-file" accept="image/*" style="font-size:12px">
     </div>
-    <div class="fi"><label>Legende (optionnel)</label>
-      <input id="aimg-caption" placeholder="Legende" style="width:100%">
+    <div class="fi"><label>Légende (optionnel)</label>
+      <input id="aimg-caption" placeholder="Légende" style="width:100%">
     </div>
     <div class="mo-foot">
       <button class="btn" onclick="closeModal()">Annuler</button>
@@ -5626,7 +5841,7 @@ function confirmAddActionImage(crId,aId){
     if(!a.images)a.images=[];
     a.images.push({id:'img'+(uid++),data:e.target.result,caption:caption,name:file.name});
     closeModal();markDirty();renderCR();
-    toast('Image ajoutee');
+    toast('Image ajoutée');
   };
   reader.readAsDataURL(file);
 }
