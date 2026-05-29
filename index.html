@@ -19,7 +19,9 @@
   --bg:#f4f3ef;--bg2:#eceae4;--bg3:#e3e1da;
   --panel:#faf9f7;--border:#dbd9d1;--border2:#ccc9bf;
   --text:#1c1b18;--text2:#4a4840;--text3:#8a877e;
-  --blue:#C0B7B6;--blue-bg:#f5f2f2;--blue-lt:#e8e2e1;
+  /* Primary accent — original warm mauve-grey/beige palette.
+     Dark ink (#3d3533) is used as text on the light accent background. */
+  --accent:#C0B7B6;--accent-bg:#f5f2f2;--accent-lt:#e8e2e1;--accent-ink:#3d3533;
   --green:#1a7a4a;--green-bg:#e8f5ee;
   --amber:#c47a00;--amber-bg:#fef3d8;
   --red:#c0392b;--red-bg:#fdecea;
@@ -35,7 +37,7 @@ body{background:var(--bg);height:100vh;overflow:hidden;font-family:inherit}
 .sidebar{width:260px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
 .sb-head{padding:14px 14px 10px;border-bottom:1px solid var(--border)}
 .logo{display:flex;align-items:center;gap:9px;margin-bottom:4px}
-.logo-mark{width:34px;height:34px;background:var(--blue);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;flex-shrink:0;letter-spacing:-.5px}
+.logo-mark{width:34px;height:34px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;flex-shrink:0;letter-spacing:-.5px}
 .sb-list{flex:1;overflow-y:auto;padding:8px}
 .cr-item{padding:8px 10px 8px 6px;border-radius:var(--r);cursor:default;border:1px solid transparent;margin-bottom:4px;transition:all .12s;display:flex;align-items:flex-start;gap:4px}
 .cr-item:hover{background:var(--bg2)}
@@ -49,7 +51,7 @@ body{background:var(--bg);height:100vh;overflow:hidden;font-family:inherit}
 .proj-cr-list{padding-left:10px;border-left:2px solid var(--border);margin:2px 0 2px 12px}
 .proj-arch-toggle{width:100%;display:flex;align-items:center;gap:5px;padding:4px 8px 4px 14px;border:none;background:none;cursor:pointer;font-family:inherit;font-size:10px;color:var(--text3);text-align:left;margin-top:2px}
 .cr-item.cr-arch{opacity:.6;border-left:3px solid var(--amber)}
-.cr-item.active{background:var(--blue-bg);border-color:var(--blue-lt)}
+.cr-item.active{background:var(--accent-bg);border-color:var(--accent-lt)}
 .cr-item-date{font-size:11px;font-weight:600;color:var(--text2);margin-bottom:2px}
 .cr-item-proj{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cr-item-sub{font-size:11px;color:var(--text3);margin-top:2px;display:flex;gap:8px;align-items:center}
@@ -58,7 +60,7 @@ body{background:var(--bg);height:100vh;overflow:hidden;font-family:inherit}
 .topbar{background:var(--panel);border-bottom:1px solid var(--border);padding:0 20px;height:52px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 .btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border:1px solid var(--border2);border-radius:var(--r);background:var(--panel);color:var(--text);font-size:12px;cursor:pointer;font-weight:500;font-family:inherit;transition:all .12s;white-space:nowrap}
 .btn:hover{background:var(--bg2)}
-.btn-p{background:var(--blue);color:#3d3533;border-color:var(--blue)}
+.btn-p{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .btn-p:hover{background:#a89e9d}
 .btn-sm{padding:5px 10px;font-size:11.5px}
 .btn-g{border:none;background:none;cursor:pointer;font-family:inherit}
@@ -67,7 +69,7 @@ body{background:var(--bg);height:100vh;overflow:hidden;font-family:inherit}
 .badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px}
 .bgreen{background:var(--green-bg);color:var(--green)}
 .bamber{background:var(--amber-bg);color:var(--amber)}
-.bblue{background:var(--blue-bg);color:var(--blue)}
+.baccent{background:var(--accent-bg);color:var(--accent)}
 .bred{background:var(--red-bg);color:var(--red)}
 .bgray{background:var(--bg2);color:var(--text3)}
 .bpurple{background:var(--purple-bg);color:var(--purple)}
@@ -93,7 +95,7 @@ body{background:var(--bg);height:100vh;overflow:hidden;font-family:inherit}
 .remarque-item{display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)}
 .remarque-item:last-child{border-bottom:none}
 .ri-check{width:18px;height:18px;border-radius:4px;border:1.5px solid var(--border2);flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s}
-.ri-check.done{background:var(--blue);border-color:var(--blue);color:#3d3533;}
+.ri-check.done{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);}
 .ri-check.flagged{background:var(--amber-bg);border-color:var(--amber)}
 .ri-text{flex:1;font-size:13px;line-height:1.5}
 .ri-text.done-text{text-decoration:line-through;color:var(--text3)}
@@ -107,14 +109,14 @@ body{background:var(--bg);height:100vh;overflow:hidden;font-family:inherit}
 /* Tabs */
 .tabbar{display:flex;background:var(--panel);border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto}
 .tab{padding:15px 20px;font-size:14px;font-weight:500;border:none;background:none;cursor:pointer;color:var(--text3);border-bottom:2px solid transparent;font-family:inherit;white-space:nowrap}
-.tab.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:600}
+.tab.active{color:var(--accent-ink);border-bottom-color:var(--accent);font-weight:600}
 /* New CR form */
 .form-section{background:var(--panel);border:1px solid var(--border);border-radius:var(--r2);padding:18px;margin-bottom:14px}
 .form-section-title{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px;display:flex;align-items:center;gap:7px}
 .fi{margin-bottom:12px}
 .fi label{display:block;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
 .fi input,.fi select,.fi textarea{width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:8px;font-size:13px;background:var(--bg);color:var(--text);outline:none;font-family:inherit}
-.fi input:focus,.fi select:focus,.fi textarea:focus{border-color:var(--blue);background:var(--panel)}
+.fi input:focus,.fi select:focus,.fi textarea:focus{border-color:var(--accent);background:var(--panel)}
 .fi textarea{resize:vertical;min-height:72px}
 /* Modal */
 .mo-ov{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:100;backdrop-filter:blur(2px)}
@@ -122,7 +124,44 @@ body{background:var(--bg);height:100vh;overflow:hidden;font-family:inherit}
 .mo-box h3{font-size:15px;font-weight:600;margin-bottom:16px}
 .mo-foot{display:flex;gap:7px;margin-top:16px;justify-content:flex-end}
 /* Toast */
-.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--green);color:#fff;padding:8px 18px;border-radius:20px;font-size:12px;font-weight:500;opacity:0;transition:opacity .3s;pointer-events:none;z-index:200;white-space:nowrap}
+.toast{position:fixed;bottom:20px;right:20px;left:auto;transform:none;background:var(--green);color:#fff;padding:10px 18px;border-radius:12px;font-size:12.5px;font-weight:500;opacity:0;transition:opacity .3s;pointer-events:none;z-index:200;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow2);max-width:calc(100vw - 40px)}
+.toast-success{background:var(--green)}
+.toast-error{background:var(--red)}
+.toast-info{background:var(--text);color:#fff}
+.toast-undo{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.5);color:#fff;border-radius:8px;padding:4px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap}
+.toast-undo:hover{background:rgba(255,255,255,.3)}
+@media (max-width:900px){.toast{bottom:14px;right:14px;left:14px;max-width:none;justify-content:space-between}}
+/* Hamburger toggle (hidden on desktop) */
+.hamburger{display:none;align-items:center;justify-content:center;width:40px;height:40px;border:1px solid var(--border2);border-radius:var(--r);background:var(--panel);cursor:pointer;flex-shrink:0;margin-right:8px}
+.hamburger svg{width:20px;height:20px;stroke:var(--text);stroke-width:2;fill:none;stroke-linecap:round}
+#sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:48}
+#sidebar-backdrop.show{display:block}
+/* ══ RESPONSIVE (phone / tablet) ══ */
+@media (max-width:900px){
+  body{overflow:auto}
+  .app{display:block;height:auto;min-height:100vh}
+  .sidebar{position:fixed;top:0;left:0;height:100vh;width:280px;max-width:85vw;z-index:49;transform:translateX(-100%);transition:transform .22s ease;box-shadow:var(--shadow2)}
+  .sidebar.open{transform:translateX(0)}
+  .main{height:auto;min-height:100vh;overflow:visible}
+  .content{overflow:visible}
+  .hamburger{display:inline-flex}
+  .topbar{position:sticky;top:0;z-index:30;height:auto;min-height:52px;padding:8px 12px;flex-wrap:wrap;gap:6px}
+  #tb-actions{flex-wrap:wrap}
+  .tabbar{position:sticky;top:0;z-index:20}
+  .int-grid{grid-template-columns:1fr}
+  .mo-box{width:96vw;padding:18px}
+  /* Bigger tap targets on touch */
+  .btn{padding:9px 14px}
+  .btn-sm{padding:8px 12px}
+  .tab{padding:14px 18px}
+  .ri-actions{opacity:1}
+  .ri-check{width:24px;height:24px}
+}
+@media (max-width:480px){
+  .topbar{padding:8px}
+  .cr-header{padding:12px 14px}
+  #tb-actions .btn-sm{flex:1;justify-content:center}
+}
 /* Print */
 @media print{
   *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
@@ -141,7 +180,7 @@ body{background:var(--bg);height:100vh;overflow:hidden;font-family:inherit}
 .ico-lg{width:19px;height:19px}
 .ico-sm{width:14px;height:14px}
 .ico-xs{width:12px;height:12px}
-.sortable-ghost{opacity:.3;background:var(--blue-bg)!important;border-color:var(--blue)!important}
+.sortable-ghost{opacity:.3;background:var(--accent-bg)!important;border-color:var(--accent)!important}
 @keyframes spin{to{transform:rotate(360deg)}}
 .sort-handle{cursor:grab;user-select:none;display:inline-flex;align-items:center}.sort-handle:active{cursor:grabbing}
 
@@ -181,27 +220,257 @@ body{background:var(--bg);height:100vh;overflow:hidden;font-family:inherit}
 <symbol id="i-grip" viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="6" r="1.5" fill="currentColor" stroke="none"/><circle cx="9" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="9" cy="18" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="18" r="1.5" fill="currentColor" stroke="none"/></symbol>
 <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></symbol>
 <symbol id="i-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></symbol>
+<symbol id="i-refresh" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></symbol>
+<symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol>
 </svg>
 
 
 <div id="auth-overlay">
   <div class="auth-box">
-    <div class="logo-mark" id="auth-logo-mark" style="background:var(--blue);display:flex;align-items:center;justify-content:center;color:#3d3533;font-weight:700;font-size:16px">PS</div>
+    <div class="logo-mark" id="auth-logo-mark" style="background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px">PS</div>
     <div style="font-weight:700;font-size:18px;margin-bottom:4px" id="auth-firm-name">PlanSync</div>
     <div style="font-size:12px;color:var(--text3);margin-bottom:24px">Compte Rendus Chantier</div>
     <div class="fi" style="text-align:left">
+      <label style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px">Identifiant</label>
+      <input type="text" id="auth-email" autocomplete="username" placeholder="Votre identifiant"
+        style="width:100%;padding:10px 12px;border:1px solid var(--border2);border-radius:8px;font-size:14px;background:var(--bg);color:var(--text);outline:none;font-family:inherit"
+        onkeydown="if(event.key==='Enter')document.getElementById('auth-pwd').focus()">
+    </div>
+    <div class="fi" style="text-align:left">
       <label style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px">Mot de passe</label>
-      <input type="password" id="auth-pwd" placeholder="••••••••"
+      <input type="password" id="auth-pwd" autocomplete="current-password" placeholder="••••••••"
         style="width:100%;padding:10px 12px;border:1px solid var(--border2);border-radius:8px;font-size:14px;background:var(--bg);color:var(--text);outline:none;font-family:inherit"
         onkeydown="if(event.key==='Enter')checkAuth()">
     </div>
     <div class="auth-error" id="auth-error"></div>
-    <button class="btn btn-p" style="width:100%;justify-content:center;margin-top:12px;padding:10px" onclick="checkAuth()">
-      Accéder
+    <button class="btn btn-p" id="auth-submit" style="width:100%;justify-content:center;margin-top:12px;padding:10px" onclick="checkAuth()">
+      Se connecter
     </button>
-    <div style="font-size:10px;color:var(--text3);margin-top:16px">Usage interne — accès restreint</div>
+    <div style="font-size:10px;color:var(--text3);margin-top:16px">Espace privé</div>
   </div>
 </div>
+<!--
+  ════════════════════════════════════════════════════════════════════════
+  SÉCURITÉ — À LIRE AVANT MISE EN PRODUCTION
+  ════════════════════════════════════════════════════════════════════════
+  ⚠️ ATTENTION — PORTE D'ENTRÉE COSMÉTIQUE
+  L'écran de connexion ci-dessus utilise un identifiant et un mot de passe
+  CODÉS EN DUR dans le JavaScript (voir checkAuth). Ce n'est PAS une vraie
+  protection : le mot de passe est visible par quiconque ouvre le code source
+  de la page, et il n'authentifie PAS auprès de Supabase. Il sert uniquement à
+  masquer l'application aux regards occasionnels.
+  La VRAIE protection des données reste assurée — et UNIQUEMENT — par les
+  politiques Row-Level Security (RLS) ci-dessous, liées à de vraies sessions
+  Supabase Auth (auth.uid()). Tant qu'aucune session Supabase réelle n'est
+  ouverte, la lecture/écriture serveur dépend entièrement de ces politiques.
+
+  Le code conserve l'intégralité du dispositif Supabase Auth + RLS + rôles
+  ci-dessous. Pour revenir à une authentification réelle, réactivez la
+  connexion par e-mail/mot de passe Supabase dans checkAuth().
+
+  ── Le reste de ce bloc décrit la configuration Supabase (RLS, rôles,
+     partage par CR) qui constitue la seule protection réelle des données ──
+
+  L'option d'authentification réelle repose sur Supabase Auth (e-mail /
+  mot de passe). Elle ne protège réellement les données QUE si les politiques
+  Row-Level Security (RLS) sont activées côté Supabase. La clé publiable
+  embarquée dans cette page n'est PAS un secret : sans RLS, n'importe qui peut
+  lire/écrire la table `crs`.
+
+  ÉTAPES OBLIGATOIRES dans le tableau de bord Supabase :
+
+  1) Authentication → Providers : activer "Email" (et désactiver les
+     inscriptions publiques si vous gérez les comptes manuellement :
+     Authentication → Settings → "Allow new users to sign up" = OFF).
+
+  2) Créer les utilisateurs autorisés (Authentication → Users → Add user).
+
+  3) Repointer le propriétaire des lignes existantes. Les anciennes lignes
+     utilisent user_id = 'bell-architecture' (texte). Repointez-les vers l'UUID
+     du compte admin, puis convertissez la colonne en uuid :
+
+       -- Remplacez <UUID_ADMIN> par l'uid réel (Authentication → Users)
+       update public.crs
+         set user_id = '<UUID_ADMIN>'
+         where user_id = 'bell-architecture';
+
+       -- Conversion de type (ignorez si user_id est déjà uuid) :
+       alter table public.crs
+         alter column user_id type uuid using user_id::uuid;
+       alter table public.crs
+         alter column user_id set default auth.uid();
+
+  4) MODÈLE PER-CR (Option A : rôle par CR). ⚠️ Ce bloc REMPLACE / ÉTEND la
+     migration précédente (rôle global + cr_access binaire). Les politiques RLS
+     ci-dessous constituent le SEUL enforcement réel ; l'écran Membres et les
+     boutons masqués ne servent qu'au confort d'usage. Tant que cette migration
+     n'est pas exécutée, les politiques précédentes restent en vigueur et les
+     nouveaux écrans admin affichent un message d'erreur explicatif au lieu de
+     planter.
+
+     -- Bloc de migration copiable-collable (SQL, à exécuter dans Supabase) :
+
+       -- a) Profils : rôle GLOBAL réduit à 'admin' (unique, fixe) ou 'member'.
+       create table if not exists public.profiles (
+         id    uuid primary key references auth.users(id) on delete cascade,
+         email text,
+         role  text not null default 'member'
+                check (role in ('admin','member'))
+       );
+       -- Si la table existait avec l'ancien check (editor/contributor/viewer),
+       -- on remplace la contrainte et on rétrograde les anciens rôles non-admin.
+       alter table public.profiles drop constraint if exists profiles_role_check;
+       update public.profiles set role = 'member' where role <> 'admin';
+       alter table public.profiles
+         add constraint profiles_role_check check (role in ('admin','member'));
+
+       -- b) Accès par CR, désormais PORTEUR DU RÔLE (per-CR).
+       create table if not exists public.cr_access (
+         cr_id   text not null,
+         user_id uuid not null references public.profiles(id) on delete cascade,
+         role    text not null default 'viewer'
+                  check (role in ('editor','contributor','viewer')),
+         primary key (cr_id, user_id)
+       );
+       -- Si la table existait sans colonne role : on l'ajoute et on initialise
+       -- les lignes existantes à 'editor' pour préserver le comportement actuel.
+       alter table public.cr_access
+         add column if not exists role text not null default 'viewer'
+           check (role in ('editor','contributor','viewer'));
+       update public.cr_access set role = 'editor' where role is null;
+       -- S'assurer que la FK cascade bien depuis profiles (ON DELETE CASCADE) :
+       -- (supprimez/recréez la contrainte si elle pointait vers auth.users)
+       -- alter table public.cr_access drop constraint if exists cr_access_user_id_fkey;
+       -- alter table public.cr_access add constraint cr_access_user_id_fkey
+       --   foreign key (user_id) references public.profiles(id) on delete cascade;
+
+       -- c) L'utilisateur courant est-il l'admin (unique, fixe) ?
+       create or replace function public.is_admin() returns boolean
+         language sql stable security definer as $$
+           select exists(select 1 from public.profiles
+                         where id = auth.uid() and role = 'admin');
+         $$;
+
+       -- d) Rôle du membre courant SUR un CR donné (remplace my_role()).
+       --    'admin' si admin, sinon le rôle dans cr_access pour ce CR, sinon NULL.
+       create or replace function public.my_role_on(p_cr text) returns text
+         language sql stable security definer as $$
+           select case
+             when public.is_admin() then 'admin'
+             else (select role from public.cr_access
+                   where cr_id = p_cr and user_id = auth.uid())
+           end;
+         $$;
+
+       -- e) RLS sur profiles : chacun lit son profil ; l'admin gère tout.
+       alter table public.profiles enable row level security;
+       drop policy if exists "profiles_self_read" on public.profiles;
+       drop policy if exists "profiles_admin_write" on public.profiles;
+       create policy "profiles_self_read" on public.profiles
+         for select using (id = auth.uid() or public.is_admin());
+       create policy "profiles_admin_write" on public.profiles
+         for all using (public.is_admin()) with check (public.is_admin());
+
+       -- f) RLS sur cr_access : admin écrit tout ; le membre lit ses lignes.
+       alter table public.cr_access enable row level security;
+       drop policy if exists "cr_access_read" on public.cr_access;
+       drop policy if exists "cr_access_admin_write" on public.cr_access;
+       create policy "cr_access_read" on public.cr_access
+         for select using (user_id = auth.uid() or public.is_admin());
+       create policy "cr_access_admin_write" on public.cr_access
+         for all using (public.is_admin()) with check (public.is_admin());
+
+       -- g) RLS sur crs : exprimées via my_role_on(id). On retire les anciennes.
+       drop policy if exists "crs_select_own" on public.crs;
+       drop policy if exists "crs_insert_own" on public.crs;
+       drop policy if exists "crs_update_own" on public.crs;
+       drop policy if exists "crs_delete_own" on public.crs;
+       drop policy if exists "crs_select" on public.crs;
+       drop policy if exists "crs_insert" on public.crs;
+       drop policy if exists "crs_update" on public.crs;
+       drop policy if exists "crs_delete" on public.crs;
+       alter table public.crs enable row level security;
+
+       -- SELECT : admin OU un rôle existe pour ce CR.
+       create policy "crs_select" on public.crs
+         for select using (
+           public.is_admin() or public.my_role_on(id) is not null
+         );
+
+       -- INSERT : admin uniquement (l'admin crée les CRs).
+       create policy "crs_insert" on public.crs
+         for insert with check ( public.is_admin() );
+
+       -- UPDATE : admin OU rôle editor/contributor sur ce CR.
+       create policy "crs_update" on public.crs
+         for update using (
+           public.is_admin() or public.my_role_on(id) in ('editor','contributor')
+         ) with check (
+           public.is_admin() or public.my_role_on(id) in ('editor','contributor')
+         );
+
+       -- DELETE : admin OU editor sur ce CR (contributor/viewer jamais).
+       create policy "crs_delete" on public.crs
+         for delete using (
+           public.is_admin() or public.my_role_on(id) = 'editor'
+         );
+
+       -- h) JOURNAL D'ACTIVITÉ (audit log) — immuable (ni UPDATE ni DELETE).
+       create table if not exists public.audit_log (
+         id bigserial primary key,
+         at timestamptz not null default now(),
+         user_id uuid not null references auth.users(id) on delete set null,
+         user_email text,
+         cr_id text,
+         action text not null,
+         entity_type text not null,
+         entity_label text,
+         details jsonb
+       );
+       create index if not exists audit_log_at_idx on public.audit_log (at desc);
+       create index if not exists audit_log_cr_at_idx on public.audit_log (cr_id, at desc);
+       alter table public.audit_log enable row level security;
+       -- INSERT : tout utilisateur authentifié, mais uniquement en son nom.
+       create policy "audit_insert_self" on public.audit_log
+         for insert with check ( user_id = auth.uid() );
+       -- SELECT : admin voit tout ; membre voit les événements globaux ou
+       --          ceux des CRs auxquels il a accès.
+       create policy "audit_select" on public.audit_log
+         for select using (
+           public.is_admin()
+           or cr_id is null
+           or public.my_role_on(cr_id) is not null
+         );
+       -- Pas de policy UPDATE/DELETE => journal immuable.
+
+  5) DÉFINIR L'ADMIN FIXE puis migrer les données existantes (un seul admin) :
+
+       -- Remplacez <UUID_ADMIN> par l'uid du compte admin (Authentication → Users)
+       insert into public.profiles (id, email, role)
+         values ('<UUID_ADMIN>', '<email_admin>', 'admin')
+         on conflict (id) do update set role = 'admin';
+
+       -- Accorder à l'admin un rôle 'editor' sur tous les CRs existants
+       -- (l'admin voit déjà tout via is_admin(), mais cela conserve un historique
+       --  d'accès cohérent ; étape facultative) :
+       insert into public.cr_access (cr_id, user_id, role)
+         select id, '<UUID_ADMIN>', 'editor' from public.crs
+         where id not like '\_\_order\_\_%'
+         on conflict (cr_id, user_id) do update set role = 'editor';
+
+  6) AJOUTER DES MEMBRES : créez/invitez chaque membre dans Authentication →
+     Users (le membre définit lui-même son mot de passe via l'e-mail d'invitation
+     ou de réinitialisation — l'application ne stocke ni ne définit aucun mot de
+     passe). Ajoutez-les ensuite via l'onglet « Comptes » de l'écran Membres
+     (insère une ligne profiles role='member'), puis attribuez un rôle par CR
+     via l'onglet « Accès par CR ».
+
+  Tant que les étapes 4 et 5 ne sont pas faites, les données NE SONT PAS
+  protégées et le partage par rôle n'est pas actif : ne vous fiez pas à
+  l'écran de connexion ni aux boutons masqués seuls.
+  ════════════════════════════════════════════════════════════════════════
+-->
+
 
 <div class="app">
   <!-- SIDEBAR -->
@@ -227,11 +496,19 @@ body{background:var(--bg);height:100vh;overflow:hidden;font-family:inherit}
     <div class="sb-list" id="cr-list"></div>
 
     <div class="sb-foot">
+      <div style="display:flex;gap:6px;margin-bottom:8px">
+        <button class="btn" id="btn-membres" style="flex:1;justify-content:center;display:none" onclick="openMembers()" title="Membres (admin)">
+          <svg class="ico ico-sm"><use href="#i-users"/></svg> Membres
+        </button>
+        <button class="btn" style="padding:7px 10px;flex-shrink:0" onclick="signOut()" title="Se déconnecter">
+          <svg class="ico ico-sm"><use href="#i-logout"/></svg>
+        </button>
+      </div>
       <div style="display:flex;gap:6px">
         <button class="btn btn-p" style="flex:1;justify-content:center" onclick="openNewCR()">
           <svg class="ico ico-sm"><use href="#i-plus"/></svg> Nouveau CR
         </button>
-        <button class="btn" style="padding:7px 10px;flex-shrink:0;font-size:14px;line-height:1" onclick="refreshFromStorage()" title="Actualiser la liste depuis le stockage local">↺</button>
+        <button class="btn" style="padding:7px 10px;flex-shrink:0" onclick="refreshFromStorage()" title="Actualiser depuis le serveur"><svg class="ico ico-sm"><use href="#i-refresh"/></svg></button>
         <button class="btn" style="padding:7px 10px;flex-shrink:0" onclick="openTemplates()" title="Modèles">
           <svg class="ico ico-sm"><use href="#i-file"/></svg>
         </button>
@@ -246,12 +523,15 @@ body{background:var(--bg);height:100vh;overflow:hidden;font-family:inherit}
   <!-- MAIN -->
   <div class="main">
     <div class="topbar" id="topbar">
+      <button class="hamburger" id="hamburger" onclick="toggleSidebar()" aria-label="Menu" title="Menu">
+        <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
       <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
-        <svg class="ico ico-lg" style="color:var(--blue);flex-shrink:0" id="tb-icon"><use href="#i-file"/></svg>
+        <svg class="ico ico-lg" style="color:var(--accent);flex-shrink:0" id="tb-icon"><use href="#i-file"/></svg>
         <div style="min-width:0">
           <div style="display:flex;align-items:center;gap:6px">
             <div style="font-weight:600;font-size:15px;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="tb-title">Compte Rendus Chantier</div>
-            <div id="dirty-dot" style="display:none;width:7px;height:7px;border-radius:50%;background:var(--amber);flex-shrink:0" title="Modifications non exportées"></div>
+            <div id="dirty-dot" style="display:none;align-items:center;gap:4px;flex-shrink:0;font-size:10px;font-weight:600;color:var(--amber);background:var(--amber-bg);border:1px solid var(--amber);border-radius:20px;padding:1px 8px" title="Vos modifications sont enregistrées, mais ne figurent pas encore dans le dernier PDF exporté. Ré-exportez pour un PDF à jour."><span style="width:6px;height:6px;border-radius:50%;background:var(--amber)"></span>À ré-exporter</div>
           </div>
           <div style="font-size:11px;color:var(--text3)" id="tb-sub">Sélectionnez un compte rendu</div>
         </div>
@@ -264,19 +544,20 @@ body{background:var(--bg);height:100vh;overflow:hidden;font-family:inherit}
       <button class="tab" onclick="switchTab('intervenants',this)">Intervenants</button>
       <button class="tab" onclick="switchTab('dates',this)">Historique tâches</button>
       <button class="tab" onclick="switchTab('pv',this)">Historique PV</button>
-      <button class="tab" onclick="openCRSettings(activeCR)" style="margin-left:auto">Réglages</button>
+      <button class="tab" id="tab-reglages" onclick="openCRSettings(activeCR)" style="margin-left:auto">Réglages</button>
     </div>
     <div class="content" id="content">
       <div style="display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:12px;color:var(--text3)">
         <svg class="ico" style="width:40px;height:40px"><use href="#i-file"/></svg>
         <div style="font-weight:500;font-size:14px">Aucun compte rendu sélectionné</div>
-        <div style="font-size:12px">Sélectionnez un CR ou créez-en un nouveau</div>
-        <button class="btn btn-p btn-sm" onclick="openNewCR()"><svg class="ico ico-sm"><use href="#i-plus"/></svg> Nouveau CR</button>
+        <div style="font-size:12px">Sélectionnez un CR dans la liste, ou créez-en un nouveau.</div>
+        <button class="btn btn-p btn-sm" onclick="openNewCR()"><svg class="ico ico-sm"><use href="#i-plus"/></svg> Créer mon premier compte rendu</button>
       </div>
     </div>
   </div>
 </div>
 
+<div id="sidebar-backdrop" onclick="toggleSidebar(false)"></div>
 <div class="toast" id="toast"></div>
 <div id="modal-root"></div>
 <div id="print-area"></div>
@@ -285,11 +566,55 @@ body{background:var(--bg);height:100vh;overflow:hidden;font-family:inherit}
 /* ══ UTILS ══ */
 function ico(id,cls=''){return`<svg class="ico ${cls}"><use href="#i-${id}"/></svg>`;}
 function e(s){return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
-function markDirty(){isDirty=true;const d=document.getElementById('dirty-dot');if(d)d.style.display='block';saveCRS();}
+// "dirty" here means: saved (localStorage + Supabase) but NOT yet reflected in
+// the last exported PDF. markDirty() persists immediately; the indicator only
+// signals that a fresh PDF export would differ from the current data.
+function markDirty(){isDirty=true;const d=document.getElementById('dirty-dot');if(d)d.style.display='inline-flex';saveCRS();}
 function markClean(){isDirty=false;const d=document.getElementById('dirty-dot');if(d)d.style.display='none';}
-function toast(msg,color='var(--green)'){const t=document.getElementById('toast');t.textContent=msg;t.style.background=color;t.style.opacity='1';setTimeout(()=>t.style.opacity='0',2200);}
+function toast(msg,color){
+  const t=document.getElementById('toast');
+  t.className='toast';
+  // Accept legacy color arg or a semantic type ('success'|'error'|'info')
+  if(color==='error'||color==='var(--red)') t.classList.add('toast-error');
+  else if(color==='info'||color==='neutral') t.classList.add('toast-info');
+  else if(color&&color.indexOf('--')===-1&&color!=='success') t.style.background=color;
+  else t.classList.add('toast-success');
+  t.innerHTML='<span>'+e(msg)+'</span>';
+  t.style.opacity='1';
+  clearTimeout(t._timer);
+  t._timer=setTimeout(()=>t.style.opacity='0',2200);
+}
+/* Undo toast: shows an "Annuler" action for ~5s. onUndo runs if clicked. */
+let _undoTimer=null;
+function undoToast(msg,onUndo,ms){
+  ms=ms||5000;
+  const t=document.getElementById('toast');
+  t.className='toast toast-info';
+  t.style.background='';
+  t.innerHTML='<span>'+e(msg)+'</span><button type="button" class="toast-undo" id="toast-undo-btn">Annuler</button>';
+  t.style.opacity='1';
+  t.style.pointerEvents='auto';
+  clearTimeout(_undoTimer);
+  clearTimeout(t._timer);
+  const btn=document.getElementById('toast-undo-btn');
+  if(btn) btn.onclick=function(){
+    clearTimeout(_undoTimer);
+    t.style.opacity='0';t.style.pointerEvents='none';
+    try{onUndo&&onUndo();}catch(err){console.warn(err);}
+  };
+  _undoTimer=setTimeout(function(){t.style.opacity='0';t.style.pointerEvents='none';},ms);
+}
 function showModal(html){document.getElementById('modal-root').innerHTML=`<div class="mo-ov" onclick="if(event.target===this)closeModal()"><div class="mo-box" onclick="event.stopPropagation()">${html}</div></div>`;}
 function closeModal(){document.getElementById('modal-root').innerHTML='';}
+/* ── Mobile off-canvas sidebar ── */
+function toggleSidebar(force){
+  const sb=document.querySelector('.sidebar');
+  const bd=document.getElementById('sidebar-backdrop');
+  if(!sb)return;
+  const open=(force===undefined)?!sb.classList.contains('open'):!!force;
+  sb.classList.toggle('open',open);
+  if(bd)bd.classList.toggle('show',open);
+}
 let uid=100;
 
 /* ══ LOT COLORS ══ */
@@ -396,24 +721,30 @@ try {
   if (saved) TEMPLATES = JSON.parse(saved);
 } catch(e) { TEMPLATES = []; }
 
-// Tombstone: session list of deleted PV ids — prevents refresh from re-adding them
+// Tombstone: persistent list of deleted PV ids — prevents refresh AND a stale
+// device's sync from silently re-adding a CR that was deleted elsewhere.
+// Previously these expired after 24h, which let a stale device re-insert a
+// deleted row once the window passed. Tombstones are now kept indefinitely
+// (capped at 500 most-recent entries) and only the in-memory Set is consulted
+// for the session; deletions therefore stay deleted across devices.
 const _deletedPVIds = new Set();
+const _TOMB_MAX = 500;
 function _tombstone(crId) {
   _deletedPVIds.add(crId);
-  // Also persist to localStorage so next tab/reload still ignores them briefly
   try {
-    const saved = JSON.parse(localStorage.getItem('plansync_deleted_ids')||'[]');
-    saved.push({id:crId, at:Date.now()});
-    // Keep only last 24h
-    const fresh = saved.filter(function(x){return Date.now()-x.at < 86400000;});
-    localStorage.setItem('plansync_deleted_ids', JSON.stringify(fresh));
+    let saved = JSON.parse(localStorage.getItem('plansync_deleted_ids')||'[]');
+    // normalize legacy entries {id,at} and bare strings
+    saved = saved.filter(function(x){ return x && (x.id || typeof x==='string'); });
+    if(!saved.some(function(x){return (x.id||x)===crId;})) saved.push({id:crId, at:Date.now()});
+    // keep only the most recent _TOMB_MAX, never expire by time
+    if(saved.length > _TOMB_MAX) saved = saved.slice(saved.length - _TOMB_MAX);
+    localStorage.setItem('plansync_deleted_ids', JSON.stringify(saved));
   } catch(e){}
 }
 function _loadTombstones() {
   try {
     const saved = JSON.parse(localStorage.getItem('plansync_deleted_ids')||'[]');
-    const fresh = saved.filter(function(x){return Date.now()-x.at < 86400000;});
-    fresh.forEach(function(x){_deletedPVIds.add(x.id);});
+    saved.forEach(function(x){ _deletedPVIds.add(x.id||x); });
   } catch(e){}
 }
 
@@ -430,8 +761,403 @@ function saveCRS() {
 
 /* ══ SUPABASE ══ */
 const SUPA_URL = 'https://voeumoqxsdbdmhhbnomb.supabase.co';
+// Publishable (anon) key — NOT a secret. Data is only protected by the
+// Row-Level Security policies documented in the auth overlay comment above.
 const SUPA_KEY = 'sb_publishable_4mB_iISGtX3heD2Viu7w3Q_JBb5ipL5';
-const SUPA_USER = 'bell-architecture';
+// Legacy owner used before Supabase Auth. Kept only so pre-migration data
+// remains visible until the SQL migration repoints rows to a real auth.uid().
+const LEGACY_USER = 'bell-architecture';
+let _authUserId = null; // set on sign-in to the live auth.uid()
+// All reads/writes are scoped to the signed-in user. Before sign-in we fall
+// back to LEGACY_USER so existing local data still renders, but writes are
+// blocked until authenticated (see _syncToSupabase / guards).
+function currentUserId(){ return _authUserId || LEGACY_USER; }
+
+// Garde d'interface (confort) — l'enforcement réel est dans les politiques RLS.
+function guardEdit(crId){
+  crId=crId||activeCR;
+  if(!canEdit(crId)){ toast('Vous n\'avez pas les droits pour modifier ce CR.','error'); return false; }
+  return true;
+}
+function guardDelete(crId){
+  crId=crId||activeCR;
+  if(!canDelete(crId)){ toast('Seuls l\'admin et les éditeurs peuvent supprimer.','error'); return false; }
+  return true;
+}
+function guardSettings(crId){
+  crId=crId||activeCR;
+  if(!canEditSettings(crId)){ toast('Réglages réservés à l\'admin et aux éditeurs.','error'); return false; }
+  return true;
+}
+
+/* ══ RÔLES & PARTAGE PAR CR ══
+   Le rôle du membre et ses accès par CR sont chargés depuis Supabase
+   (tables profiles + cr_access). L'enforcement réel est assuré par les
+   politiques RLS (voir le bloc de migration SQL dans l'écran de connexion).
+   Les contrôles d'interface ci-dessous ne servent qu'au confort d'usage. */
+let _myRole = null;            // 'admin' | 'member' | null (global profile role)
+let _myGrantsByCR = new Map(); // crId -> 'editor'|'contributor'|'viewer' (per-CR role)
+let _members = [];             // [{id,email,role}] — chargé pour l'écran admin
+let _accessMap = {};           // { cr_id: { user_id: role } } — pour l'écran admin
+function isAdmin(){ return _myRole==='admin'; }
+// Avant la migration (tables profiles/cr_access absentes), _myRole reste null :
+// on n'impose alors aucune restriction d'interface (les RLS ne filtrent pas non
+// plus tant qu'elles ne sont pas créées). Dès qu'un rôle existe, on l'applique.
+function _noRoleModel(){ return _myRole===null; }
+// Rôle du membre courant SUR un CR donné (per-CR). Admin => tout.
+function myRoleOn(crId){
+  if(isAdmin()) return 'admin';
+  return _myGrantsByCR.get(crId) || null;
+}
+function canSeeCR(crId){ return _noRoleModel() || isAdmin() || _myGrantsByCR.has(crId); }
+function canEdit(crId){ if(_noRoleModel()||isAdmin()) return true; const r=_myGrantsByCR.get(crId); return r==='editor'||r==='contributor'; }
+function canDelete(crId){ if(_noRoleModel()||isAdmin()) return true; return _myGrantsByCR.get(crId)==='editor'; }
+function canEditSettings(crId){ if(_noRoleModel()||isAdmin()) return true; return _myGrantsByCR.get(crId)==='editor'; }
+function canExport(){ return true; } // tous les rôles peuvent imprimer/exporter
+
+/* ══ JOURNAL D'ACTIVITÉ (audit log) ══
+   Capture côté client, best-effort. L'enforcement réel (immutabilité, qui voit
+   quoi) est assuré par les politiques RLS de la table audit_log. logActivity ne
+   doit JAMAIS faire échouer une action utilisateur : toute erreur est avalée. */
+function _auditUserEmail(){
+  // Avec le gate, pas de session Supabase : on retombe sur l'identifiant saisi.
+  return _gateEmail || (_members.find(function(m){return m.id===_authUserId;})||{}).email || null;
+}
+function logActivity(action, entityType, entityLabel, crId, details){
+  try{
+    const sb=getSupabase();
+    if(!sb) return;
+    let label=entityLabel||'';
+    if(label.length>120) label=label.slice(0,117)+'…';
+    const row={
+      user_id: _authUserId || undefined, // undefined => laissé à auth.uid() côté défaut si dispo
+      user_email: _auditUserEmail(),
+      cr_id: crId || null,
+      action: action,
+      entity_type: entityType,
+      entity_label: label,
+      details: details || null
+    };
+    // Fire-and-forget : on n'attend pas, et on avale toute erreur.
+    Promise.resolve(sb.from('audit_log').insert([row])).catch(function(){});
+  }catch(e){ /* logging ne doit jamais casser une action */ }
+}
+// Libellé court d'un CR pour le journal.
+function _crLabel(cr){ if(!cr) return ''; return (cr.projet||'CR')+' n°'+(cr.numero||'?'); }
+// Charge le profil (rôle global) et les rôles par CR du membre connecté.
+async function loadMyProfile(){
+  const sb=getSupabase();
+  if(!sb){ _myRole=null; return; }
+  try{
+    const { data: prof } = await sb.from('profiles').select('role').eq('id', currentUserId()).maybeSingle();
+    _myRole = prof && prof.role ? prof.role : null;
+  }catch(e){ _myRole=null; }
+  _myGrantsByCR = new Map();
+  if(!isAdmin() && _myRole!==null){
+    try{
+      const { data: grants } = await sb.from('cr_access').select('cr_id, role').eq('user_id', currentUserId());
+      (grants||[]).forEach(function(g){ _myGrantsByCR.set(g.cr_id, g.role||'viewer'); });
+    }catch(e){}
+  }
+}
+
+/* ══ ÉCRAN MEMBRES (admin uniquement) ══
+   L'admin gère les rôles globaux et les rôles par CR. Toute modification est
+   écrite dans profiles / cr_access. L'enforcement réel reste assuré par les RLS. */
+const ROLE_LABELS={admin:'Admin',member:'Membre',editor:'Éditeur',contributor:'Contributeur',viewer:'Lecteur'};
+async function loadMembersData(){
+  const sb=getSupabase();
+  if(!sb) return false;
+  try{
+    const { data: profs, error: e1 } = await sb.from('profiles').select('id, email, role');
+    if(e1) throw e1;
+    _members = profs||[];
+    // _accessMap : { cr_id: { user_id: role } }
+    const { data: acc, error: e2 } = await sb.from('cr_access').select('cr_id, user_id, role');
+    if(e2) throw e2;
+    _accessMap={};
+    (acc||[]).forEach(function(a){
+      if(!_accessMap[a.cr_id]) _accessMap[a.cr_id]={};
+      _accessMap[a.cr_id][a.user_id]=a.role||'viewer';
+    });
+    return true;
+  }catch(e){ console.warn('Membres: chargement impossible', e.message); return false; }
+}
+
+// État de l'écran Membres
+let _membersTab='comptes';        // 'comptes' | 'acces' | 'journal'
+let _accessView='member';         // 'member' | 'cr' (vue de l'onglet Accès)
+let _journalRows=[];              // lignes chargées du journal
+let _journalOffset=0;
+const _JOURNAL_PAGE=100;
+
+async function openMembers(){
+  if(!isAdmin()){ toast('Accès réservé à l\'administrateur.','error'); return; }
+  _membersTab='comptes';
+  showModal(_membersShell('<div style="font-size:12px;color:var(--text3);padding:24px 0;text-align:center">Chargement…</div>'));
+  const ok=await loadMembersData();
+  if(!ok){
+    showModal(_membersShell('<div style="font-size:12.5px;color:var(--text2);line-height:1.6;padding:8px 0">Impossible de charger les données. Vérifiez que les tables <strong>profiles</strong>, <strong>cr_access</strong> et <strong>audit_log</strong> existent et que les politiques RLS sont en place (voir le bloc de migration SQL dans le code). Tant que la migration n\'est pas exécutée, cet écran reste inactif.</div>'));
+    return;
+  }
+  renderMembers();
+}
+
+// Coquille commune : en-tête + barre d'onglets + zone de contenu défilante.
+function _membersShell(inner){
+  function tabBtn(id,label){
+    const on=_membersTab===id;
+    return '<button onclick="switchMembersTab(\''+id+'\')" style="padding:8px 14px;border:none;background:none;cursor:pointer;font-family:inherit;font-size:12.5px;font-weight:600;color:'+(on?'var(--accent-ink)':'var(--text3)')+';border-bottom:2px solid '+(on?'var(--accent)':'transparent')+'">'+label+'</button>';
+  }
+  return '<h3 style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'+ico('users','ico-sm')+' Membres</h3>'
+    +'<div style="display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:14px">'
+      +tabBtn('comptes','Comptes')+tabBtn('acces','Accès par CR')+tabBtn('journal','Journal')
+    +'</div>'
+    +'<div id="members-body" style="max-height:58vh;overflow-y:auto;margin:0 -4px;padding:0 4px">'+inner+'</div>'
+    +'<div class="mo-foot"><button class="btn" onclick="closeModal()">Fermer</button></div>';
+}
+
+function switchMembersTab(tab){
+  _membersTab=tab;
+  if(tab==='journal'){ _journalOffset=0; _journalRows=[]; renderMembers(); loadJournal(true); }
+  else renderMembers();
+}
+
+function renderMembers(){
+  let inner='';
+  if(_membersTab==='comptes') inner=_renderComptesTab();
+  else if(_membersTab==='acces') inner=_renderAccesTab();
+  else inner=_renderJournalTab();
+  // Re-render the whole shell so the active tab styling updates.
+  showModal(_membersShell(inner));
+}
+
+const _realCRs=function(){ return CRS.filter(function(c){return c.id.indexOf('__order__')!==0;}); };
+function _nonAdminMembers(){ return _members.filter(function(m){return m.role!=='admin';}); }
+function _roleBadge(role){
+  if(role==='editor') return '<span class="badge baccent" style="font-size:9px">Éditeur</span>';
+  if(role==='contributor') return '<span class="badge bgray" style="font-size:9px;background:var(--bg2);color:var(--text2)">Contributeur</span>';
+  if(role==='viewer') return '<span class="badge bgray" style="font-size:9px">Lecteur</span>';
+  return '<span style="font-size:9px;color:var(--text3)">— aucun accès —</span>';
+}
+
+/* ── Onglet 1 : Comptes ── */
+function _renderComptesTab(){
+  let rows='';
+  if(!_members.length){
+    rows='<div style="font-size:12.5px;color:var(--text2);line-height:1.6;padding:6px 0">Aucun membre. Créez d\'abord les comptes dans Supabase, puis ajoutez-les ci-dessous.</div>';
+  } else {
+    _members.forEach(function(m){
+      const fixed=(m.role==='admin');
+      const badge=fixed?'<span class="badge baccent" style="font-size:10px">Admin (fixe)</span>':'<span class="badge bgray" style="font-size:10px">Membre</span>';
+      const del=fixed?'':'<button class="btn btn-sm" onclick="removeMember(\''+m.id+'\')" style="color:var(--red)" title="Retire le membre de l\'équipe (rôles et accès). Le compte d\'authentification doit être supprimé séparément dans Supabase.">Supprimer de l\'équipe</button>';
+      rows+='<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;margin-bottom:8px;background:var(--panel)">'
+        +'<div style="min-width:0;display:flex;align-items:center;gap:8px"><span style="font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis">'+e(m.email||m.id)+'</span>'+badge+'</div>'
+        +'<div>'+del+'</div>'
+      +'</div>';
+    });
+  }
+  return '<div style="background:var(--accent-bg);border:1px solid var(--accent-lt);border-radius:var(--r);padding:11px 13px;margin-bottom:14px;font-size:11.5px;color:var(--text2);line-height:1.55">'
+      +'Les comptes et mots de passe se créent dans Supabase (Authentication → Users → Add user). Cet écran ne crée pas de compte ; il gère uniquement les rôles et les accès par CR.</div>'
+    +rows
+    +'<div id="add-member-zone" style="margin-top:6px"><button class="btn btn-sm" onclick="showAddMemberForm()">'+ico('plus','ico-xs')+' Ajouter un membre</button></div>';
+}
+
+function showAddMemberForm(){
+  const zone=document.getElementById('add-member-zone');
+  if(!zone) return;
+  zone.innerHTML='<div style="border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;background:var(--bg2)">'
+    +'<div style="font-size:10px;color:var(--text3);line-height:1.5;margin-bottom:8px">Créez d\'abord l\'utilisateur dans Supabase (Authentication → Users → Add user), puis copiez son UUID et son e-mail ici.</div>'
+    +'<div class="fi"><label>UUID Supabase</label><input id="am-uuid" placeholder="00000000-0000-0000-0000-000000000000"></div>'
+    +'<div class="fi"><label>E-mail</label><input id="am-email" type="text" placeholder="membre@cabinet.fr"></div>'
+    +'<div style="display:flex;gap:6px;justify-content:flex-end;margin-top:4px"><button class="btn btn-sm" onclick="renderMembers()">Annuler</button>'
+    +'<button class="btn btn-p btn-sm" onclick="addMemberRow()">'+ico('plus','ico-xs')+' Ajouter</button></div>'
+  +'</div>';
+}
+
+async function addMemberRow(){
+  const uuid=(document.getElementById('am-uuid')?.value||'').trim();
+  const email=(document.getElementById('am-email')?.value||'').trim();
+  const uuidRe=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if(!uuidRe.test(uuid)){ toast('UUID invalide — copiez-le depuis Supabase.','error'); return; }
+  if(!email){ toast('Entrez l\'e-mail du membre.','error'); return; }
+  const sb=getSupabase();
+  if(!sb){ toast('Service indisponible.','error'); return; }
+  try{
+    const { error } = await sb.from('profiles').insert([{ id: uuid, email: email, role: 'member' }]);
+    if(error) throw error;
+    logActivity('member_added','member',email,null,{uuid:uuid});
+    toast('Membre ajouté ✓');
+    await loadMembersData();
+    renderMembers();
+  }catch(e){ toast('Échec de l\'ajout (UUID déjà présent ?).','error'); }
+}
+
+async function removeMember(userId){
+  const m=_members.find(function(x){return x.id===userId;});
+  if(!m||m.role==='admin') return;
+  if(!confirm('Retirer '+(m.email||userId)+' de l\'équipe ?\n\nSes rôles et accès par CR seront supprimés. Le compte d\'authentification Supabase n\'est PAS supprimé (à faire séparément dans le tableau de bord).'))return;
+  const sb=getSupabase();
+  if(!sb) return;
+  try{
+    const { error } = await sb.from('profiles').delete().eq('id', userId);
+    if(error) throw error;
+    logActivity('member_removed','member',m.email||userId,null);
+    toast('Membre retiré ✓');
+    await loadMembersData();
+    renderMembers();
+  }catch(e){ toast('Échec de la suppression.','error'); }
+}
+
+/* ── Onglet 2 : Accès par CR ── */
+function _renderAccesTab(){
+  const members=_nonAdminMembers();
+  const crs=_realCRs();
+  const toggle='<div style="display:flex;gap:6px;margin-bottom:14px">'
+    +'<button class="btn btn-sm'+(_accessView==='member'?' btn-p':'')+'" onclick="setAccessView(\'member\')">Par membre</button>'
+    +'<button class="btn btn-sm'+(_accessView==='cr'?' btn-p':'')+'" onclick="setAccessView(\'cr\')">Par CR</button></div>';
+  if(!members.length) return toggle+'<div style="font-size:12px;color:var(--text3)">Aucun membre (hors admin). Ajoutez des membres dans l\'onglet Comptes.</div>';
+  if(!crs.length) return toggle+'<div style="font-size:12px;color:var(--text3)">Aucun CR à partager pour le moment.</div>';
+
+  function roleSelect(userId,crId){
+    const cur=(_accessMap[crId]&&_accessMap[crId][userId])||'none';
+    const opts=[['none','Aucun accès'],['viewer','Viewer'],['contributor','Contributor'],['editor','Editor']];
+    return '<select onchange="setMemberCRRole(\''+userId+'\',\''+crId+'\',this.value)" style="padding:4px 7px;border:1px solid var(--border2);border-radius:6px;font-size:11.5px;background:var(--bg);color:var(--text);font-family:inherit">'
+      +opts.map(function(o){return '<option value="'+o[0]+'"'+(cur===o[0]?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select>';
+  }
+
+  let html=toggle;
+  if(_accessView==='member'){
+    members.forEach(function(m){
+      let list=crs.map(function(cr){
+        return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)">'
+          +'<span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">'+e(cr.projet)+' — n°'+cr.numero+'</span>'
+          +roleSelect(m.id,cr.id)+'</div>';
+      }).join('');
+      html+='<div style="border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:10px;background:var(--panel)">'
+        +'<div style="font-weight:600;font-size:13px;margin-bottom:6px">'+e(m.email||m.id)+'</div>'+list+'</div>';
+    });
+  } else {
+    crs.forEach(function(cr){
+      let list=members.map(function(m){
+        return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)">'
+          +'<span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">'+e(m.email||m.id)+'</span>'
+          +roleSelect(m.id,cr.id)+'</div>';
+      }).join('');
+      html+='<div style="border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:10px;background:var(--panel)">'
+        +'<div style="font-weight:600;font-size:13px;margin-bottom:6px">'+e(cr.projet)+' — n°'+cr.numero+'</div>'+list+'</div>';
+    });
+  }
+  return html;
+}
+
+function setAccessView(v){ _accessView=v; renderMembers(); }
+
+async function setMemberCRRole(userId, crId, role){
+  const sb=getSupabase();
+  if(!sb) return;
+  const member=_members.find(function(x){return x.id===userId;})||{};
+  const cr=CRS.find(function(c){return c.id===crId;});
+  try{
+    if(role==='none'){
+      const { error } = await sb.from('cr_access').delete().eq('cr_id', crId).eq('user_id', userId);
+      if(error) throw error;
+      if(_accessMap[crId]) delete _accessMap[crId][userId];
+    } else {
+      const { error } = await sb.from('cr_access')
+        .upsert([{ cr_id: crId, user_id: userId, role: role }], { onConflict: 'cr_id,user_id' });
+      if(error) throw error;
+      if(!_accessMap[crId]) _accessMap[crId]={};
+      _accessMap[crId][userId]=role;
+    }
+    const label=(member.email||userId)+' → '+_crLabel(cr)+' : '+(role==='none'?'aucun':role);
+    logActivity('grant_changed','cr_access',label,crId,{user_id:userId,role:role});
+    toast('Accès mis à jour ✓');
+  }catch(e){ toast('Échec de la modification d\'accès.','error'); }
+}
+
+/* ── Onglet 3 : Journal ── */
+function _renderJournalTab(){
+  const members=_members.slice();
+  const crs=_realCRs();
+  const memberOpts='<option value="">Tous les membres</option>'+members.map(function(m){return '<option value="'+e(m.email||'')+'">'+e(m.email||m.id)+'</option>';}).join('');
+  const crOpts='<option value="">Tous les CRs</option>'+crs.map(function(cr){return '<option value="'+cr.id+'">'+e(cr.projet)+' n°'+cr.numero+'</option>';}).join('');
+  const actions=['cr_created','cr_updated','cr_archived','cr_unarchived','cr_deleted','lot_created','lot_renamed','lot_deleted','remarque_added','remarque_edited','remarque_done_toggled','remarque_archived','remarque_deleted','action_added','action_edited','action_completed','action_deleted','intervenant_added','intervenant_edited','intervenant_deleted','pdf_exported','grant_changed','member_added','member_removed'];
+  const actOpts='<option value="">Toutes les actions</option>'+actions.map(function(a){return '<option value="'+a+'">'+a+'</option>';}).join('');
+  const inp='padding:6px 8px;border:1px solid var(--border2);border-radius:6px;font-size:11.5px;background:var(--bg);color:var(--text);font-family:inherit';
+  return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">'
+      +'<select id="jf-member" onchange="loadJournal(true)" style="'+inp+'">'+memberOpts+'</select>'
+      +'<select id="jf-cr" onchange="loadJournal(true)" style="'+inp+'">'+crOpts+'</select>'
+      +'<select id="jf-action" onchange="loadJournal(true)" style="'+inp+'">'+actOpts+'</select>'
+      +'<div></div>'
+      +'<label style="font-size:10px;color:var(--text3)">Du<input type="datetime-local" id="jf-from" onchange="loadJournal(true)" style="'+inp+';width:100%;margin-top:2px"></label>'
+      +'<label style="font-size:10px;color:var(--text3)">Au<input type="datetime-local" id="jf-to" onchange="loadJournal(true)" style="'+inp+';width:100%;margin-top:2px"></label>'
+    +'</div>'
+    +'<div id="journal-list"><div style="font-size:12px;color:var(--text3);padding:14px 0;text-align:center">Chargement…</div></div>';
+}
+
+async function loadJournal(reset){
+  if(reset){ _journalOffset=0; _journalRows=[]; }
+  const sb=getSupabase();
+  const listEl=document.getElementById('journal-list');
+  if(!sb){ if(listEl) listEl.innerHTML='<div style="font-size:12px;color:var(--text3);padding:14px 0">Service indisponible.</div>'; return; }
+  const fMember=document.getElementById('jf-member')?.value||'';
+  const fCr=document.getElementById('jf-cr')?.value||'';
+  const fAction=document.getElementById('jf-action')?.value||'';
+  const fFrom=document.getElementById('jf-from')?.value||'';
+  const fTo=document.getElementById('jf-to')?.value||'';
+  try{
+    let q=sb.from('audit_log').select('at,user_email,cr_id,action,entity_type,entity_label,details').order('at',{ascending:false});
+    if(fMember) q=q.eq('user_email',fMember);
+    if(fCr) q=q.eq('cr_id',fCr);
+    if(fAction) q=q.eq('action',fAction);
+    if(fFrom) q=q.gte('at',new Date(fFrom).toISOString());
+    if(fTo) q=q.lte('at',new Date(fTo).toISOString());
+    q=q.range(_journalOffset,_journalOffset+_JOURNAL_PAGE-1);
+    const { data, error } = await q;
+    if(error) throw error;
+    if(reset) _journalRows=data||[]; else _journalRows=_journalRows.concat(data||[]);
+    _journalOffset+=(data||[]).length;
+    _renderJournalList((data||[]).length===_JOURNAL_PAGE);
+  }catch(e){
+    if(listEl) listEl.innerHTML='<div style="font-size:12px;color:var(--text2);line-height:1.5;padding:14px 0">Impossible de lire le journal. La table <strong>audit_log</strong> et ses politiques RLS doivent être en place (voir migration SQL).</div>';
+  }
+}
+
+function _renderJournalList(hasMore){
+  const listEl=document.getElementById('journal-list');
+  if(!listEl) return;
+  if(!_journalRows.length){
+    listEl.innerHTML='<div style="font-size:12px;color:var(--text3);padding:14px 0;text-align:center">Aucune activité enregistrée pour ces filtres.</div>';
+    return;
+  }
+  const crById={};
+  _realCRs().forEach(function(cr){crById[cr.id]=cr;});
+  let rows=_journalRows.map(function(r){
+    const dt=new Date(r.at);
+    const when=isNaN(dt)?e(r.at||''):dt.toLocaleString('fr-FR');
+    const cr=r.cr_id?crById[r.cr_id]:null;
+    const crLabel=cr?(e(cr.projet)+' n°'+cr.numero):(r.cr_id?'—':'');
+    return '<tr style="border-bottom:1px solid var(--border)">'
+      +'<td style="padding:5px 7px;font-size:11px;white-space:nowrap;color:var(--text2)">'+when+'</td>'
+      +'<td style="padding:5px 7px;font-size:11px;overflow:hidden;text-overflow:ellipsis;max-width:130px">'+e(r.user_email||'—')+'</td>'
+      +'<td style="padding:5px 7px;font-size:11px;color:var(--accent-ink)">'+e(r.action||'')+'</td>'
+      +'<td style="padding:5px 7px;font-size:11px">'+crLabel+'</td>'
+      +'<td style="padding:5px 7px;font-size:11px;color:var(--text2)">'+e(r.entity_label||'')+'</td>'
+    +'</tr>';
+  }).join('');
+  listEl.innerHTML='<table style="width:100%;border-collapse:collapse">'
+    +'<thead><tr style="text-align:left;border-bottom:1px solid var(--border)">'
+      +'<th style="padding:5px 7px;font-size:10px;color:var(--text3);text-transform:uppercase">Date/heure</th>'
+      +'<th style="padding:5px 7px;font-size:10px;color:var(--text3);text-transform:uppercase">Membre</th>'
+      +'<th style="padding:5px 7px;font-size:10px;color:var(--text3);text-transform:uppercase">Action</th>'
+      +'<th style="padding:5px 7px;font-size:10px;color:var(--text3);text-transform:uppercase">CR</th>'
+      +'<th style="padding:5px 7px;font-size:10px;color:var(--text3);text-transform:uppercase">Détail</th>'
+    +'</tr></thead><tbody>'+rows+'</tbody></table>'
+    +(hasMore?'<div style="text-align:center;margin-top:10px"><button class="btn btn-sm" onclick="loadJournal(false)">Charger plus</button></div>':'');
+}
+
+
 let _supa = null;
 let _pendingSync = false;
 
@@ -443,14 +1169,21 @@ function getSupabase(){
   return _supa;
 }
 
+let _crOwners = {}; // cr_id -> user_id (creator/owner), learned from fetch
 async function _syncToSupabase(){
   const sb = getSupabase();
   if(!sb) return;
   _pendingSync = true;
   try {
-    const upserts = CRS.map(function(cr){
-      return { id: cr.id, user_id: SUPA_USER, data: cr, updated_at: new Date().toISOString() };
-    });
+    const upserts = CRS.filter(function(cr){ return !_deletedPVIds.has(cr.id); })
+      .map(function(cr){
+        // Preserve the original owner if known; otherwise the current user
+        // becomes the owner (new CR). Editors saving a shared CR must not
+        // hijack ownership.
+        const owner = _crOwners[cr.id] || currentUserId();
+        return { id: cr.id, user_id: owner, data: cr, updated_at: new Date().toISOString() };
+      });
+    if(!upserts.length){ _pendingSync=false; return; }
     const { error } = await sb.from('crs').upsert(upserts);
     if(error) console.warn('PlanSync: Supabase sync error:', error.message);
   } catch(e) { console.warn('PlanSync: Supabase unreachable:', e.message); }
@@ -461,7 +1194,8 @@ async function _deleteFromSupabase(crId){
   const sb = getSupabase();
   if(!sb) return;
   try {
-    await sb.from('crs').delete().eq('id', crId).eq('user_id', SUPA_USER);
+    // RLS enforces who may delete (admin or editor with a grant).
+    await sb.from('crs').delete().eq('id', crId);
   } catch(e) {}
 }
 
@@ -473,11 +1207,16 @@ async function refreshFromStorage(){
       await new Promise(function(resolve){setTimeout(resolve, 3000);});
     }
     try {
-      const { data, error } = await sb
+      // Plus de filtre user_id : les politiques RLS renvoient uniquement les CRs
+      // visibles par le membre (admin = tout ; sinon CRs partagés via cr_access).
+      let { data, error } = await sb
         .from('crs')
-        .select('id, data, updated_at')
-        .eq('user_id', SUPA_USER)
+        .select('id, data, updated_at, user_id')
         .order('updated_at', { ascending: false });
+      // Filtre client de confort (l'enforcement réel reste côté RLS).
+      if(!error && data && !isAdmin() && _myRole!==null){
+        data = data.filter(function(row){ return row.id.indexOf('__order__')===0 || canSeeCR(row.id); });
+      }
       if(!error && data && data.length){
         // Remove tombstoned rows before merging
         data = data.filter(function(row){return !_deletedPVIds.has(row.id);});
@@ -491,14 +1230,34 @@ async function refreshFromStorage(){
 
         const merged = [];
         const seenIds = new Set();
+        let conflictOnActive = false;
 
         data.forEach(function(row){
+          // The special "__order__*" rows carry sidebar ordering, not a CR.
+          if(row.id.indexOf('__order__')===0){
+            if(row.id==='__order__'+currentUserId() || row.id==='__order__'){
+              if(row.data && Array.isArray(row.data.order)){ CR_ORDER=row.data.order; }
+            }
+            return;
+          }
+          if(row.user_id) _crOwners[row.id]=row.user_id;
           const remoteUpdated = new Date(row.updated_at).getTime();
           const local = localMap[row.id];
+          const localUpdated = (local && local._updatedAt) ? new Date(local._updatedAt).getTime() : 0;
           // Si version locale existe et est plus récente, la garder
-          if(local && local._updatedAt && new Date(local._updatedAt).getTime() > remoteUpdated){
+          if(local && local._updatedAt && localUpdated > remoteUpdated){
             merged.push(local);
           } else {
+            // Remote wins. If this is the CR currently open AND the local copy
+            // had genuinely different content (not just an older timestamp),
+            // a concurrent edit happened on another device — warn the user.
+            if(local && row.id===activeCR && remoteUpdated>localUpdated){
+              try{
+                const a=JSON.stringify(Object.assign({},local,{_updatedAt:0}));
+                const b=JSON.stringify(Object.assign({},row.data,{_updatedAt:0}));
+                if(a!==b) conflictOnActive = true;
+              }catch(e){}
+            }
             merged.push(row.data);
           }
           seenIds.add(row.id);
@@ -513,6 +1272,14 @@ async function refreshFromStorage(){
         localStorage.setItem('plansync_crs', JSON.stringify(CRS));
         // Pousser les CRs locaux manquants vers Supabase
         _syncToSupabase();
+        if(conflictOnActive){
+          // Non-destructive notice: the on-screen CR was updated elsewhere and
+          // has been refreshed to the latest version. Surfaced instead of a
+          // silent last-write-wins so the user knows their view changed.
+          setTimeout(function(){
+            toast('Ce CR a été modifié sur un autre appareil — affichage mis à jour.','info');
+          },300);
+        }
       } else {
         const saved = localStorage.getItem('plansync_crs');
         if(saved) CRS = JSON.parse(saved).filter(function(cr){return !_deletedPVIds.has(cr.id);});
@@ -557,8 +1324,7 @@ function _initSupabaseRealtime(){
   const sb = getSupabase();
   if(!sb) return;
   sb.channel('crs-realtime')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'crs',
-        filter: 'user_id=eq.'+SUPA_USER },
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'crs' },
       function(){ refreshFromStorage(); })
     .subscribe();
 }
@@ -583,8 +1349,9 @@ async function _saveCROrderSupabase(){
   const sb=getSupabase();
   if(!sb)return;
   try {
+    // Per-user order row so each member keeps their own sidebar ordering.
     await sb.from('crs').upsert([{
-      id:'__order__', user_id:SUPA_USER,
+      id:'__order__'+currentUserId(), user_id:currentUserId(),
       data:{order:CR_ORDER}, updated_at:new Date().toISOString()
     }]);
   } catch(e){}
@@ -608,8 +1375,11 @@ function applyCROrder(list){
 }
 
 /* ══ PDF SETTINGS ══ */
+// Defaults only apply to fresh installs; existing users' branding is loaded
+// from localStorage below and is never overwritten. Kept neutral to match the
+// generic "PlanSync"/"PS" default used elsewhere (no real firm hard-coded).
 let PDF_SETTINGS = {
-  firmName: 'BELL ARCHITECTURE',
+  firmName: 'PlanSync',
   firmSub: 'Architecte',
   logoLeft: null,   // base64 image data URL
   logoRight: null,  // base64 image data URL
@@ -643,57 +1413,90 @@ let isAuthenticated=false;
 let actionFilter='';         // filter by intId
 let actionStatusFilter='all'; // all | late | soon | open | done
 
-/* ══ AUTH ══ */
-// ⚠️ Protection côté client uniquement — ne remplace pas une vraie protection Vercel/Auth côté serveur.
-// Stocker le SHA-256 du mot de passe (jamais le mot de passe en clair).
-const AUTH_HASH='963364b3915b6b43f2192109c3b2511b1344b0406dacfbc3685ff8b9d3b18efd';
+/* ══ AUTH (Supabase) ══ */
+// Authentification réelle via Supabase Auth. La protection effective des
+// données dépend des politiques RLS côté Supabase (voir le commentaire dans
+// l'écran de connexion en haut du <body>). La clé publiable n'est pas secrète.
 
+// ⚠️ PORTE D'ENTRÉE COSMÉTIQUE — identifiant + mot de passe codés en dur.
+// Ce n'est PAS une protection réelle (le mot de passe est visible dans le code
+// source). Voir le commentaire SÉCURITÉ en haut du <body>. La protection réelle
+// des données dépend des politiques RLS Supabase.
+const GATE_ID  = 'admin';     // identifiant attendu
+const GATE_PWD = 'bell2026';  // mot de passe attendu (en clair, non secret)
+let _gateEmail = null;        // identifiant saisi (pour libellé du journal)
+
+// Called once the local gate is passed: grants admin access in the UI.
+async function _onAuthenticatedLocal(){
+  isAuthenticated = true;
+  _authUserId = null;          // pas de vraie session Supabase
+  _myRole = 'admin';           // accès admin local (UI)
+  _myGrantsByCR = new Map();
+  try{ sessionStorage.setItem('ps_gate','1'); }catch(e){}
+  const overlay=document.getElementById('auth-overlay');
+  if(overlay) overlay.classList.add('hidden');
+  const bm=document.getElementById('btn-membres');
+  if(bm) bm.style.display=isAdmin()?'':'none';
+  updateSidebarLogo();
+  renderList();
+  if(activeCR) renderCR();
+  // Charge les données (Supabase si dispo, sinon localStorage). Sans session
+  // Supabase réelle, seules les données accessibles selon les RLS reviennent.
+  await refreshFromStorage();
+  _initSupabaseRealtime();
+  maybeShowOnboarding();
+}
+
+// (Conservé) Chemin d'authentification réelle Supabase, si vous le réactivez.
+async function _onAuthenticated(session){
+  _authUserId = session?.user?.id || null;
+  isAuthenticated = true;
+  const overlay=document.getElementById('auth-overlay');
+  if(overlay) overlay.classList.add('hidden');
+  await loadMyProfile();
+  const bm=document.getElementById('btn-membres');
+  if(bm) bm.style.display=isAdmin()?'':'none';
+  updateSidebarLogo();
+  renderList();
+  if(activeCR) renderCR();
+  await refreshFromStorage();
+  _initSupabaseRealtime();
+  maybeShowOnboarding();
+}
+
+// Vérification du gate codé en dur.
 async function checkAuth(){
+  const id=(document.getElementById('auth-email')?.value||'').trim();
   const pwd=document.getElementById('auth-pwd')?.value||'';
-  if(!pwd){showAuthError('Entrez le mot de passe');return;}
-  try{
-    const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(pwd));
-    const hash=Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-    if(hash===AUTH_HASH){
-      isAuthenticated=true;
-      sessionStorage.setItem('ps_auth','1');
-      document.getElementById('auth-overlay').classList.add('hidden');
-      updateSidebarLogo();
-      renderList();
-      if(activeCR) renderCR();
-      await refreshFromStorage(); // sync depuis Supabase en arrière-plan
-      _initSupabaseRealtime();
-    } else {
-      showAuthError('Mot de passe incorrect');
-      document.getElementById('auth-pwd').value='';
-      document.getElementById('auth-pwd').focus();
-    }
-  }catch(e){
-    showAuthError('Erreur de vérification — navigateur non compatible');
+  if(!id){showAuthError('Entrez votre identifiant');return;}
+  if(!pwd){showAuthError('Entrez votre mot de passe');return;}
+  if(id===GATE_ID && pwd===GATE_PWD){
+    _gateEmail = (id.indexOf('@')>=0)? id : (id+'@local');
+    await _onAuthenticatedLocal();
+  } else {
+    showAuthError('Identifiant ou mot de passe incorrect');
+    const p=document.getElementById('auth-pwd'); if(p){p.value='';p.focus();}
   }
 }
+
+function signOut(){
+  // Effacer la session locale d'abord, puis recharger immédiatement.
+  try{ sessionStorage.removeItem('ps_gate'); }catch(e){}
+  _authUserId=null; isAuthenticated=false; _myRole=null; _gateEmail=null;
+  // Déconnexion Supabase éventuelle : best-effort, sans bloquer le rechargement
+  // (sous le gate il n'y a pas de session réelle et l'appel peut traîner).
+  try{ const sb=getSupabase(); if(sb&&sb.auth&&sb.auth.signOut) sb.auth.signOut(); }catch(e){}
+  location.reload();
+}
+
 function showAuthError(msg){
   const el=document.getElementById('auth-error');
-  if(el)el.textContent=msg;
-  setTimeout(()=>{if(el)el.textContent='';},3000);
+  if(el){ el.style.color=''; el.textContent=msg; }
+  setTimeout(()=>{if(el)el.textContent='';},3500);
 }
-function initAuth(){
-  // Restore session if still valid
-  if(sessionStorage.getItem('ps_auth')==='1'){
-    isAuthenticated=true;
-    const overlay=document.getElementById('auth-overlay');
-    if(overlay)overlay.classList.add('hidden');
-    // Show localStorage data immediately so the sidebar isn't blank
-    updateSidebarLogo();
-    renderList();
-    if(activeCR) renderCR();
-    // Then sync from Supabase in background and update if needed
-    refreshFromStorage().then(function(){ _initSupabaseRealtime(); });
-  } else {
-    // Focus password field
-    setTimeout(()=>document.getElementById('auth-pwd')?.focus(),100);
-  }
-  // Sync firm name on auth screen
+
+async function initAuth(){
+  // Sync firm name / logo on the auth screen first.
   const fn=document.getElementById('auth-firm-name');
   if(fn)fn.textContent=PDF_SETTINGS.firmName||'PlanSync';
   const lm=document.getElementById('auth-logo-mark');
@@ -706,6 +1509,52 @@ function initAuth(){
       lm.textContent=initials;
     }
   }
+  // Restaure le gate pour la session courante (onglet) s'il a déjà été passé.
+  let restored=false;
+  try{ restored = sessionStorage.getItem('ps_gate')==='1'; }catch(e){}
+  if(restored){
+    await _onAuthenticatedLocal();
+  } else {
+    setTimeout(()=>document.getElementById('auth-email')?.focus(),100);
+  }
+}
+
+/* ══ ONBOARDING (première utilisation) ══ */
+function maybeShowOnboarding(){
+  try{ if(localStorage.getItem('plansync_onboarded')==='1') return; }catch(e){}
+  // Only show when the user hasn't created real data yet (starter model only / empty).
+  const real=CRS.filter(function(c){return c.id!=='cr_modele';});
+  if(real.length>0){ try{localStorage.setItem('plansync_onboarded','1');}catch(e){} return; }
+  showOnboarding();
+}
+function dismissOnboarding(){
+  try{ localStorage.setItem('plansync_onboarded','1'); }catch(e){}
+  closeModal();
+}
+function showOnboarding(){
+  showModal(`<h3 style="margin-bottom:6px">Bienvenue 👋</h3>
+    <div style="font-size:12.5px;color:var(--text2);line-height:1.6;margin-bottom:16px">Voici comment s'organise un compte rendu de chantier dans l'application.</div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:14px">
+      <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">La hiérarchie</div>
+      <div style="display:flex;flex-direction:column;gap:7px;font-size:12.5px">
+        <div><strong>Projet</strong> <span style="color:var(--text3)">— le chantier (ex. Villa Dupont)</span></div>
+        <div style="padding-left:14px;border-left:2px solid var(--border)">↳ <strong>Compte rendu (CR)</strong> <span style="color:var(--text3)">— une réunion datée</span></div>
+        <div style="padding-left:28px;border-left:2px solid var(--border);margin-left:14px">↳ <strong>Lot</strong> <span style="color:var(--text3)">— un corps de métier (Gros Œuvre, Électricité…)</span></div>
+        <div style="padding-left:42px;border-left:2px solid var(--border);margin-left:28px">↳ <strong>Remarque</strong> <span style="color:var(--text3)">— un point relevé sur le chantier</span></div>
+        <div style="padding-left:56px;border-left:2px solid var(--border);margin-left:42px">↳ <strong>Action</strong> <span style="color:var(--text3)">— une tâche à réaliser, avec responsable et échéance</span></div>
+      </div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:6px">
+      <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Les statuts d'une remarque</div>
+      <div style="display:flex;flex-direction:column;gap:8px;font-size:12.5px;line-height:1.5">
+        <div><span style="text-decoration:line-through;color:var(--text3)">Traité</span> — le point est résolu&nbsp;; il reste affiché, barré, dans le lot.</div>
+        <div><span class="badge bgreen">Archivé</span> — le point traité est rangé&nbsp;; masqué par défaut et non imprimé dans le PDF.</div>
+        <div><span class="badge baccent">Action</span> — une tâche de suivi distincte, listée dans l'onglet «&nbsp;Actions / Décisions&nbsp;».</div>
+      </div>
+    </div>
+    <div class="mo-foot">
+      <button class="btn btn-p" onclick="dismissOnboarding()">J'ai compris</button>
+    </div>`);
 }
 
 /* ══ SIDEBAR ══ */
@@ -742,7 +1591,7 @@ function renderList(){
       <svg class="ico" style="width:36px;height:36px;display:block;margin:0 auto 12px;opacity:.4"><use href="#i-file"/></svg>
       <div style="font-size:13px;font-weight:500;margin-bottom:6px;color:var(--text2)">Aucun compte rendu</div>
       <div style="font-size:11px;margin-bottom:16px">Créez votre premier CR pour commencer.</div>
-      <button class="btn btn-p btn-sm" onclick="openNewCR()" style="width:100%;justify-content:center">${ico('plus','ico-sm')} Nouveau CR</button>
+      <button class="btn btn-p btn-sm" onclick="openNewCR()" style="width:100%;justify-content:center">${ico('plus','ico-sm')} Créer mon premier compte rendu</button>
     </div>`;
     return;
   }
@@ -785,15 +1634,15 @@ function renderList(){
     const nextMeeting=latestActive?latestActive.dateProchaine:'';
     const flagTotal=projCRs.reduce(function(s,cr){return s+cr.lots.flatMap(function(l){return l.remarques;}).filter(function(r){return r.flag&&!r.done&&!r.archived;}).length;},0);
     h+=`<div class="proj-group" data-projid="${pid}">
-      <div onclick="openProject('${pid}')" style="cursor:pointer;padding:12px 14px;border-radius:var(--r);border:${isActiveProj?'1.5px solid var(--blue-lt)':'1px solid var(--border)'};background:${isActiveProj?'var(--blue-bg)':'var(--panel)'};margin-bottom:4px;transition:background .12s">
+      <div onclick="openProject('${pid}')" style="cursor:pointer;padding:12px 14px;border-radius:var(--r);border:${isActiveProj?'1.5px solid var(--accent-lt)':'1px solid var(--border)'};background:${isActiveProj?'var(--accent-bg)':'var(--panel)'};margin-bottom:4px;transition:background .12s">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
           <div style="min-width:0;flex:1">
-            <div style="font-size:13px;font-weight:600;color:${isActiveProj?'var(--blue)':'var(--text)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px">${e(proj.name)}${isArchivedProj?' <span style="font-size:9px;background:var(--amber-bg);color:var(--amber);padding:1px 5px;border-radius:3px">Archivé</span>':''}</div>
+            <div style="font-size:13px;font-weight:600;color:${isActiveProj?'var(--accent)':'var(--text)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px">${e(proj.name)}${isArchivedProj?' <span style="font-size:9px;background:var(--amber-bg);color:var(--amber);padding:1px 5px;border-radius:3px">Archivé</span>':''}</div>
             ${proj.adresse?`<div style="font-size:11px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px">${e(proj.adresse)}</div>`:''}
             <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
               <span style="font-size:10px;color:var(--text3)">${proj.active.length} PV actif${proj.active.length!==1?'s':''}</span>
               ${flagTotal?`<span style="font-size:10px;font-weight:600;color:var(--amber)">${flagTotal} à suivre</span>`:''}
-              ${nextMeeting?`<span style="font-size:10px;color:var(--text3)">Prochain : ${e(nextMeeting)}</span>`:''}
+              ${nextMeeting?`<span style="font-size:10px;color:var(--text3)">Prochain : ${e(fmtMeetingDisplay(nextMeeting))}</span>`:''}
             </div>
           </div>
           <div style="position:relative;flex-shrink:0" onclick="event.stopPropagation()">
@@ -903,6 +1752,7 @@ function unarchiveProject(pid){
 }
 
 function deleteProject(pid){
+  if(!guardDelete())return;
   const projCRs=CRS.filter(function(cr){return cr.projetId===pid;});
   const name=projCRs.length?projCRs[0].projet:'ce projet';
   // Safety: block deletion of active (non-fully-archived) projects
@@ -914,7 +1764,7 @@ function deleteProject(pid){
   const total=projCRs.reduce(function(s,cr){return s+cr.lots.reduce(function(s2,l){return s2+l.remarques.length;},0);},0);
   if(!confirm('Supprimer définitivement le projet "'+name+'" ?\n\n'+projCRs.length+' PV(s), '+total+' point(s).\n\nCette action est irréversible.'))return;
   // Tombstone all PV ids before removing
-  projCRs.forEach(function(cr){_tombstone(cr.id);});
+  projCRs.forEach(function(cr){ logActivity('cr_deleted','cr',_crLabel(cr)+' (projet supprimé)',cr.id); _tombstone(cr.id);});
   CRS=CRS.filter(function(cr){return cr.projetId!==pid;});
   saveCRS();
   // Delete from Supabase (async, best-effort)
@@ -922,7 +1772,7 @@ function deleteProject(pid){
     const sb=getSupabase();
     if(!sb)return;
     for(const cr of projCRs){
-      try{await sb.from('crs').delete().eq('id',cr.id).eq('user_id',SUPA_USER);}catch(e){}
+      try{await sb.from('crs').delete().eq('id',cr.id);}catch(e){}
     }
   })();
   if(activeCR&&projCRs.find(function(cr){return cr.id===activeCR;})){
@@ -956,6 +1806,7 @@ function openCR(id){
   if(cr&&cr.projetId) _projCollapsed[cr.projetId]=false;
   renderList();
   renderCR();
+  if(window.matchMedia&&window.matchMedia('(max-width:900px)').matches) toggleSidebar(false);
 }
 
 function renderCR(){
@@ -963,7 +1814,7 @@ function renderCR(){
   if(!cr)return;
 
   document.getElementById('tb-title').textContent=cr.projet;
-  document.getElementById('tb-sub').textContent=`CR n°${cr.numero} — ${cr.date} — Prochaine réunion: ${cr.dateProchaine}`;
+  document.getElementById('tb-sub').textContent=`CR n°${cr.numero} — ${cr.date} — Prochaine réunion: ${fmtMeetingDisplay(cr.dateProchaine)}`;
   document.getElementById('tb-icon').innerHTML=`<use href="#i-file"/>`;
   document.getElementById('tabbar').style.display='flex';
 
@@ -977,8 +1828,8 @@ function renderCR(){
     banner.style.cssText='background:var(--amber-bg);border-bottom:1px solid var(--amber);padding:8px 20px;font-size:12px;color:var(--amber);display:flex;align-items:center;gap:8px;flex-shrink:0';
     banner.innerHTML=`<svg class="ico ico-sm"><use href="#i-archive"/></svg> Ce compte rendu est archivé — il est en lecture seule dans l'historique.
       <div style="display:flex;gap:10px;align-items:center;margin-left:auto">
-        <button onclick="toggleArchiveCR('${cr.id}')" style="background:none;border:none;cursor:pointer;color:var(--blue);font-size:12px;font-family:inherit;text-decoration:underline">Désarchiver</button>
-        <button onclick="deleteSinglePV('${cr.id}')" style="background:none;border:1px solid var(--red);color:var(--red);border-radius:var(--r);padding:3px 10px;font-size:11px;cursor:pointer;font-family:inherit">Supprimer définitivement</button>
+        ${canEditSettings(cr.id)?`<button onclick="toggleArchiveCR('${cr.id}')" style="background:none;border:none;cursor:pointer;color:var(--accent);font-size:12px;font-family:inherit;text-decoration:underline">Désarchiver</button>`:''}
+        ${canDelete(cr.id)?`<button onclick="deleteSinglePV('${cr.id}')" style="background:none;border:1px solid var(--red);color:var(--red);border-radius:var(--r);padding:3px 10px;font-size:11px;cursor:pointer;font-family:inherit">Supprimer définitivement</button>`:''}
       </div>`;
     const tabbar=document.getElementById('tabbar');
     tabbar.parentNode.insertBefore(banner,tabbar);
@@ -991,15 +1842,18 @@ function renderCR(){
     const tabs=['remarques','actions','intervenants','dates','pv'];
     t.classList.toggle('active',tabs[i]===activeTab);
   });
+  // Réglages tab only for those who may edit settings (admin/editor)
+  const regTab=document.getElementById('tab-reglages');
+  if(regTab) regTab.style.display=canEditSettings(cr.id)?'':'none';
 
   const isArchived=cr.statut==='archived';
   document.getElementById('tb-actions').innerHTML=`
     <button class="btn btn-sm" onclick="previewPDF('${cr.id}')" title="Aperçu PDF avant impression"><svg class="ico ico-sm"><use href="#i-printer"/></svg> Aperçu PDF</button>
-    <button class="btn btn-sm" onclick="openEditCR('${cr.id}')">${ico('edit','ico-sm')} Modifier</button>
-    <button class="btn btn-sm ${isArchived?'':'btn-amber'}" onclick="toggleArchiveCR('${cr.id}')" title="${isArchived?'Désarchiver':'Archiver ce CR'}" style="${isArchived?'':'color:var(--amber);border-color:var(--amber)'}">
+    ${canEditSettings(cr.id)?`<button class="btn btn-sm" onclick="openEditCR('${cr.id}')">${ico('edit','ico-sm')} Modifier</button>`:''}
+    ${canEditSettings(cr.id)?`<button class="btn btn-sm ${isArchived?'':'btn-amber'}" onclick="toggleArchiveCR('${cr.id}')" title="${isArchived?'Désarchiver':'Archiver ce CR'}" style="${isArchived?'':'color:var(--amber);border-color:var(--amber)'}">
       <svg class="ico ico-sm"><use href="#i-archive"/></svg> ${isArchived?'Désarchiver':'Archiver'}
-    </button>
-    <button class="btn btn-p btn-sm" onclick="cloneCR('${cr.id}')" style="background:var(--green);border-color:var(--green);color:#fff;font-weight:600">${ico('plus','ico-sm')} CR Suivant</button>`;
+    </button>`:''}
+    ${canEdit(cr.id)?`<button class="btn btn-p btn-sm" onclick="cloneCR('${cr.id}')" style="background:var(--green);border-color:var(--green);color:#fff;font-weight:600">${ico('plus','ico-sm')} CR Suivant</button>`:''}`;
 
   if(activeTab==='remarques') renderRemarques(cr);
   else if(activeTab==='intervenants') renderIntervenants(cr);
@@ -1046,7 +1900,7 @@ function renderRemarques(cr){
       <div style="font-size:10px;color:#c0392b;line-height:1.3">Actions<br>en retard</div>
     </div>`:''}
     ${cr.dateProchaine?`<div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:8px 14px;display:flex;align-items:center;gap:8px">
-      <div style="font-size:11px;color:var(--text3)">Prochaine réunion<br><strong style="color:var(--text);font-size:13px">${cr.dateProchaine}</strong></div>
+      <div style="font-size:11px;color:var(--text3)">Prochaine réunion<br><strong style="color:var(--text);font-size:13px">${fmtMeetingDisplay(cr.dateProchaine)}</strong></div>
     </div>`:''}
     <div style="display:flex;flex-direction:column;gap:4px;justify-content:center;margin-left:auto">
       <button class="btn btn-sm" onclick="exportCSV('${cr.id}')" title="CSV"><svg class="ico ico-xs"><use href="#i-download"/></svg></button>
@@ -1076,7 +1930,16 @@ function renderRemarques(cr){
   </div>`;
 
 
-  html+=`<div style="display:flex;justify-content:flex-end;margin-bottom:8px">`+`<button class="btn btn-sm" onclick="openAddLot('${cr.id}')">${ico('plus','ico-xs')} + Lot</button>`+`</div>`;
+  html+=`<div style="display:flex;justify-content:flex-end;margin-bottom:8px">`+(canEdit(cr.id)?`<button class="btn btn-sm" onclick="openAddLot('${cr.id}')">${ico('plus','ico-xs')} + Lot</button>`:'')+`</div>`;
+
+  if(!cr.lots.length){
+    html+=`<div style="border:1px dashed var(--border2);border-radius:var(--r2);padding:28px 20px;text-align:center;color:var(--text3);background:var(--panel)">
+      <svg class="ico" style="width:34px;height:34px;color:var(--border2);margin-bottom:8px"><use href="#i-grid"/></svg>
+      <div style="font-size:13.5px;font-weight:500;color:var(--text2);margin-bottom:4px">Aucun lot pour ce CR.</div>
+      <div style="font-size:12px;line-height:1.5;max-width:380px;margin:0 auto 14px">${canEdit(cr.id)?'Créez un lot (ex.&nbsp;Gros Œuvre, Électricité) pour y ajouter vos remarques.':'Aucun lot n\'a encore été créé pour ce CR.'}</div>
+      ${canEdit(cr.id)?`<button class="btn btn-p btn-sm" onclick="openAddLot('${cr.id}')">${ico('plus','ico-xs')} Créer un lot</button>`:''}
+    </div>`;
+  }
 
   cr.lots.forEach(lot=>{
     // Color priority: linked intervenant > lot's own color > derived from title
@@ -1098,8 +1961,8 @@ function renderRemarques(cr){
         </div>
         <div style="display:flex;align-items:center;gap:6px">
           <span class="badge ${lotDone===lot.remarques.length&&lot.remarques.length>0?'bgreen':'bgray'}" style="font-size:9px">${lot.remarques.length}${lotDone?" · "+lotDone+"✓":""}</span>
-          <button class="btn-g" style="padding:3px" onclick="event.stopPropagation();renameLot('${cr.id}','${lot.id}')" title="Renommer">${ico('edit','ico-xs')}</button>
-          <button class="btn-g" style="padding:3px" onclick="event.stopPropagation();deleteLot('${cr.id}','${lot.id}')" title="Supprimer le lot"><svg class="ico ico-xs" style="color:var(--red)"><use href="#i-trash"/></svg></button>
+          ${canEditSettings(cr.id)?`<button class="btn-g" style="padding:3px" onclick="event.stopPropagation();renameLot('${cr.id}','${lot.id}')" title="Renommer">${ico('edit','ico-xs')}</button>`:''}
+          ${canDelete(cr.id)?`<button class="btn-g" style="padding:3px" onclick="event.stopPropagation();deleteLot('${cr.id}','${lot.id}')" title="Supprimer le lot"><svg class="ico ico-xs" style="color:var(--red)"><use href="#i-trash"/></svg></button>`:''}
           ${ico(lot.ouvert?'chevron-up':'chevron-down','ico-sm')}
         </div>
       </div>
@@ -1141,12 +2004,12 @@ function renderRemarques(cr){
               <div style="position:relative;border-radius:5px;overflow:hidden;border:1px solid var(--border)">
                 <img src="${img.data}" style="width:80px;height:60px;object-fit:cover;display:block" title="${e(img.caption||img.name)}">
                 ${img.caption?`<div style="padding:2px 4px;font-size:9px;color:var(--text3);background:var(--bg2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px">${e(img.caption)}</div>`:''}
-                <button onclick="deleteImage('${cr.id}','${lot.id}','${r.id}','${img.id}')" style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,.55);border:none;color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">x</button>
+                ${canDelete(cr.id)?`<button onclick="deleteImage('${cr.id}','${lot.id}','${r.id}','${img.id}')" style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,.55);border:none;color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">x</button>`:''}
               </div>`).join('')}</div>`:'';
             return `<div class="remarque-item" style="${r.done?'opacity:.65':''}${r.flag&&!r.done?';border-left:2px solid var(--amber);padding-left:8px;margin-left:-2px':''}">
               <span class="r-drag-handle" data-lotid="${lot.id}" title="Glisser pour réordonner" style="color:var(--text3);font-size:16px;line-height:1;cursor:grab;flex-shrink:0;padding:0 3px;user-select:none;align-self:center">&#8801;</span>
 
-              <div class="ri-check ${r.done?'done':r.flag?'flagged':''}" onclick="toggleDone('${cr.id}','${lot.id}','${r.id}')" title="${r.done?'Décocher':'Marquer traité'}" style="flex-shrink:0">
+              <div class="ri-check ${r.done?'done':r.flag?'flagged':''}" ${canEdit(cr.id)?`onclick="toggleDone('${cr.id}','${lot.id}','${r.id}')"`:'style="cursor:default"'} title="${canEdit(cr.id)?(r.done?'Décocher':'Marquer traité'):'Lecture seule'}" style="flex-shrink:0">
                 ${r.done?ico('check','ico-xs'):''}
               </div>
               <div style="flex:1;min-width:0">
@@ -1158,7 +2021,7 @@ function renderRemarques(cr){
                 ${imgGrid}
               </div>
               <!-- Context menu "…" -->
-              <div class="ri-actions" style="position:relative">
+              ${canEdit(cr.id)?`<div class="ri-actions" style="position:relative">
                 <button class="btn-g" style="padding:4px 6px;font-size:14px;font-weight:700;color:var(--text3);line-height:1" onclick="toggleRemarqueMenu(event,'rmenu-${r.id}')" title="Plus d\'actions">…</button>
                 <div id="rmenu-${r.id}" style="display:none;position:absolute;right:0;top:24px;background:var(--panel);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow2);z-index:50;min-width:180px;padding:4px 0">
                   ${!r.done?`<button onclick="toggleFlag('${cr.id}','${lot.id}','${r.id}');closeAllMenus()" style="width:100%;text-align:left;padding:7px 14px;border:none;background:none;cursor:pointer;font-size:12px;font-family:inherit;color:${r.flag?'var(--amber)':'var(--text2)'}">
@@ -1182,12 +2045,12 @@ function renderRemarques(cr){
                   ${!r.done?`<button onclick="remarkToAction('${cr.id}','${lot.id}','${r.id}');closeAllMenus()" style="width:100%;text-align:left;padding:7px 14px;border:none;background:none;cursor:pointer;font-size:12px;font-family:inherit">
                     Convertir en action
                   </button>`:''}
-                  <div style="height:1px;background:var(--border);margin:3px 0"></div>
+                  ${canDelete(cr.id)?`<div style="height:1px;background:var(--border);margin:3px 0"></div>
                   <button onclick="deleteRemarque('${cr.id}','${lot.id}','${r.id}');closeAllMenus()" style="width:100%;text-align:left;padding:7px 14px;border:none;background:none;cursor:pointer;font-size:12px;font-family:inherit;color:var(--red)">
                     Supprimer
-                  </button>
+                  </button>`:''}
                 </div>
-              </div>
+              </div>`:''}
             </div>`;
           }).join('');
           out+='</div>';
@@ -1200,12 +2063,12 @@ function renderRemarques(cr){
               <div id="${archId}" style="display:none">
                 ${archived.map(r=>`
                 <div class="remarque-item" style="opacity:.6;background:var(--green-bg)">
-                  <div class="ri-check done" onclick="unarchiveRemarque('${cr.id}','${lot.id}','${r.id}')" title="Remettre visible">${ico('check','ico-xs')}</div>
+                  <div class="ri-check done" ${canEdit(cr.id)?`onclick="unarchiveRemarque('${cr.id}','${lot.id}','${r.id}')"`:'style="cursor:default"'} title="${canEdit(cr.id)?'Remettre visible':'Lecture seule'}">${ico('check','ico-xs')}</div>
                   <div style="flex:1;min-width:0">
                     <div class="ri-text done-text">${r.texte}</div>
                     ${r.archivedAt?`<div style="font-size:10px;color:var(--green);margin-top:2px">Archivé le ${r.archivedAt}</div>`:''}
                   </div>
-                  <button class="btn-g" style="padding:3px" onclick="deleteRemarque('${cr.id}','${lot.id}','${r.id}')" title="Supprimer définitivement"><svg class="ico ico-xs" style="color:var(--red)"><use href="#i-trash"/></svg></button>
+                  ${canDelete(cr.id)?`<button class="btn-g" style="padding:3px" onclick="deleteRemarque('${cr.id}','${lot.id}','${r.id}')" title="Supprimer définitivement"><svg class="ico ico-xs" style="color:var(--red)"><use href="#i-trash"/></svg></button>`:''}
                 </div>`).join('')}
               </div>
             </div>`;
@@ -1213,7 +2076,7 @@ function renderRemarques(cr){
           return out;
         })()}
         <!-- Ajout rapide -->
-        <div style="padding:8px 0 2px;border-top:1px solid var(--border);margin-top:8px">
+        ${canEdit(cr.id)?`<div style="padding:8px 0 2px;border-top:1px solid var(--border);margin-top:8px">
           <div style="display:flex;gap:6px;align-items:center">
             <input placeholder="Ajouter un point…" id="new-r-${lot.id}"
               style="flex:1;padding:6px 9px;border:1px solid var(--border2);border-radius:7px;font-size:12px;background:var(--bg);color:var(--text);outline:none;font-family:inherit"
@@ -1223,7 +2086,7 @@ function renderRemarques(cr){
             </label>
             <button class="btn btn-p btn-sm" onclick="addRemarque('${cr.id}','${lot.id}')">${ico('plus','ico-xs')}</button>
           </div>
-        </div>
+        </div>`:''}
       </div>`:``}
     </div>`;
   });
@@ -1273,7 +2136,7 @@ function renderIntervenants(cr){
       <span style="font-size:13px;font-weight:500">${cr.intervenants.length} intervenants</span>
       <span class="badge bgreen">${present.length} présents</span>
       <span class="badge bgray">${absent.length} absents</span>
-      <button class="btn btn-sm" style="margin-left:auto" onclick="openAddIntervenant('${cr.id}')">${ico('plus','ico-sm')} Ajouter</button>
+      ${canEdit(cr.id)?`<button class="btn btn-sm" style="margin-left:auto" onclick="openAddIntervenant('${cr.id}')">${ico('plus','ico-sm')} Ajouter</button>`:''}
     </div>
     <div class="int-grid">
       ${cr.intervenants.map((i,idx)=>`
@@ -1282,12 +2145,12 @@ function renderIntervenants(cr){
           <div class="int-ent">${i.entreprise||i.lot}</div>
           <div class="int-contact" style="white-space:pre-line">${i.contacts||'—'}</div>
           <div style="margin-top:8px;display:flex;align-items:center;flex-wrap:wrap;gap:4px">
-            <span class="badge ${i.convoque!==false?'bblue':'bgray'}" style="font-size:9px;cursor:pointer" onclick="toggleConvoque('${cr.id}','${i.id}')" title="Convoqué à cette réunion">${i.convoque!==false?'Convoqué':'Non convoqué'}</span>
-            <span class="badge ${i.present?'bgreen':'bgray'}" style="font-size:9px;cursor:pointer" onclick="togglePresence('${cr.id}','${i.lot}')">${i.present?'Présent':'Absent'}</span>
-            <div style="display:flex;gap:3px;margin-left:auto">
-              <button class="btn-g" style="padding:3px" onclick="editIntervenant('${cr.id}',${idx})" title="Modifier">${ico('edit','ico-xs')}</button>
-              <button class="btn-g" style="padding:3px" onclick="deleteIntervenant('${cr.id}',${idx})" title="Supprimer"><svg class="ico ico-xs" style="color:var(--red)"><use href="#i-trash"/></svg></button>
-            </div>
+            <span class="badge ${i.convoque!==false?'baccent':'bgray'}" style="font-size:9px;${canEdit(cr.id)?'cursor:pointer':''}" ${canEdit(cr.id)?`onclick="toggleConvoque('${cr.id}','${i.id}')"`:''} title="Convoqué à cette réunion">${i.convoque!==false?'Convoqué':'Non convoqué'}</span>
+            <span class="badge ${i.present?'bgreen':'bgray'}" style="font-size:9px;${canEdit(cr.id)?'cursor:pointer':''}" ${canEdit(cr.id)?`onclick="togglePresence('${cr.id}','${i.lot}')"`:''}>${i.present?'Présent':'Absent'}</span>
+            ${(canEdit(cr.id)||canDelete(cr.id))?`<div style="display:flex;gap:3px;margin-left:auto">
+              ${canEdit(cr.id)?`<button class="btn-g" style="padding:3px" onclick="editIntervenant('${cr.id}',${idx})" title="Modifier">${ico('edit','ico-xs')}</button>`:''}
+              ${canDelete(cr.id)?`<button class="btn-g" style="padding:3px" onclick="deleteIntervenant('${cr.id}',${idx})" title="Supprimer"><svg class="ico ico-xs" style="color:var(--red)"><use href="#i-trash"/></svg></button>`:''}
+            </div>`:''}
           </div>
         </div>`).join('')}
     </div>
@@ -1354,10 +2217,10 @@ function renderActions(cr){
       <div style="position:relative;border-radius:5px;overflow:hidden;border:1px solid var(--border)">
         <img src="${img.data}" style="width:80px;height:60px;object-fit:cover;display:block" title="${e(img.caption||img.name)}">
         ${img.caption?`<div style="padding:2px 4px;font-size:9px;color:var(--text3);background:var(--bg2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px">${e(img.caption)}</div>`:''}
-        <button onclick="deleteActionImage('${cr.id}','${a.id}','${img.id}')" style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,.55);border:none;color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">x</button>
+        ${canDelete(cr.id)?`<button onclick="deleteActionImage('${cr.id}','${a.id}','${img.id}')" style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,.55);border:none;color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">x</button>`:''}
       </div>`).join('')}</div>`:'';
     return `<div class="action-row ${isDone?'done':''}" style="${late?'border-left:3px solid var(--red)':soon?'border-left:3px solid var(--amber)':''}">
-      <div class="ar-status" style="background:${statusBg};color:${statusColor};cursor:pointer" onclick="toggleAction('${cr.id}','${a.id}')">
+      <div class="ar-status" style="background:${statusBg};color:${statusColor};${canEdit(cr.id)?'cursor:pointer':''}" ${canEdit(cr.id)?`onclick="toggleAction('${cr.id}','${a.id}')"`:''}>
         ${isDone?ico('check','ico-xs'):late?'!':soon?'~':ico('alert','ico-xs')}
       </div>
       <div style="flex:1;min-width:0">
@@ -1368,11 +2231,11 @@ function renderActions(cr){
         </div>
         ${imgGrid}
       </div>
-      <div style="display:flex;gap:3px;flex-shrink:0">
-        <button class="btn-g" style="padding:3px" onclick="openAddActionImage('${cr.id}','${a.id}')" title="Ajouter une image"><svg class="ico ico-xs"><use href="#i-upload"/></svg></button>
-        <button class="btn-g" style="padding:3px" onclick="editAction('${cr.id}','${a.id}')" title="Modifier">${ico('edit','ico-xs')}</button>
-        <button class="btn-g" style="padding:3px" onclick="deleteAction('${cr.id}','${a.id}')" title="Supprimer"><svg class="ico ico-xs" style="color:var(--red)"><use href="#i-trash"/></svg></button>
-      </div>
+      ${(canEdit(cr.id)||canDelete(cr.id))?`<div style="display:flex;gap:3px;flex-shrink:0">
+        ${canEdit(cr.id)?`<button class="btn-g" style="padding:3px" onclick="openAddActionImage('${cr.id}','${a.id}')" title="Ajouter une image"><svg class="ico ico-xs"><use href="#i-upload"/></svg></button>`:''}
+        ${canEdit(cr.id)?`<button class="btn-g" style="padding:3px" onclick="editAction('${cr.id}','${a.id}')" title="Modifier">${ico('edit','ico-xs')}</button>`:''}
+        ${canDelete(cr.id)?`<button class="btn-g" style="padding:3px" onclick="deleteAction('${cr.id}','${a.id}')" title="Supprimer"><svg class="ico ico-xs" style="color:var(--red)"><use href="#i-trash"/></svg></button>`:''}
+      </div>`:''}
     </div>`;
   }
 
@@ -1384,7 +2247,7 @@ function renderActions(cr){
         ${lateActions.length?`<span class="badge bred">${lateActions.length} en retard</span>`:''}
         ${soonActions.length?`<span class="badge bamber">${soonActions.length} bientôt</span>`:''}
       </div>
-      <button class="btn btn-p btn-sm" onclick="openAddAction('${cr.id}')">${ico('plus','ico-sm')} Ajouter</button>
+      ${canEdit(cr.id)?`<button class="btn btn-p btn-sm" onclick="openAddAction('${cr.id}')">${ico('plus','ico-sm')} Ajouter</button>`:''}
     </div>
 
     <!-- Status quick filters -->
@@ -1517,7 +2380,7 @@ function renderDates(cr){
 
   function filterBtn(key,label,count,col){
     const active=ds.filter===key;
-    const c2=col||(active?'var(--blue)':'var(--text3)');
+    const c2=col||(active?'var(--accent)':'var(--text3)');
     return '<button onclick="window._datesState.filter=\''+key+'\';renderCR()" style="'
       +'padding:5px 11px;border-radius:20px;border:1.5px solid '+(active?c2:'var(--border2)')
       +';background:'+(active?c2+'1a':'none')
@@ -1529,7 +2392,7 @@ function renderDates(cr){
   // Lot chip buttons (only if >1 lot)
   const lotChips=lotIds.length>1
     ?'<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px">'
-      +'<button onclick="window._datesState.lot=\'\';renderCR()" style="padding:3px 9px;border-radius:20px;border:1.5px solid '+(ds.lot?'var(--border2)':'var(--blue)')+';background:'+(ds.lot?'none':'var(--blue-bg)')+';color:'+(ds.lot?'var(--text3)':'var(--blue)')+';font-size:10px;cursor:pointer;font-family:inherit">Tous les lots</button>'
+      +'<button onclick="window._datesState.lot=\'\';renderCR()" style="padding:3px 9px;border-radius:20px;border:1.5px solid '+(ds.lot?'var(--border2)':'var(--accent)')+';background:'+(ds.lot?'none':'var(--accent-bg)')+';color:'+(ds.lot?'var(--text3)':'var(--accent)')+';font-size:10px;cursor:pointer;font-family:inherit">Tous les lots</button>'
       +lotIds.map(function(lid){
         const lot=lotMap[lid];
         const col=getColor(lot,cr);
@@ -1648,22 +2511,22 @@ function renderHistorique(currentCR){
         return `<div style="display:flex;gap:16px;margin-bottom:18px;position:relative">
           <!-- Timeline dot -->
           <div style="width:40px;flex-shrink:0;display:flex;justify-content:center;padding-top:10px;position:relative;z-index:1">
-            <div style="width:14px;height:14px;border-radius:50%;border:2.5px solid ${isCurrent?'var(--blue)':isArchived?'var(--amber)':'var(--border2)'};background:${isCurrent?'var(--blue)':isArchived?'var(--amber-bg)':'var(--panel)'}"></div>
+            <div style="width:14px;height:14px;border-radius:50%;border:2.5px solid ${isCurrent?'var(--accent)':isArchived?'var(--amber)':'var(--border2)'};background:${isCurrent?'var(--accent)':isArchived?'var(--amber-bg)':'var(--panel)'}"></div>
           </div>
 
           <!-- Card -->
-          <div onclick="jumpToCR('${cr.id}')" style="flex:1;background:${isCurrent?'var(--blue-bg)':'var(--panel)'};border:${isCurrent?'1.5px solid var(--blue-lt)':isArchived?'1px solid var(--amber)':'1px solid var(--border)'};border-radius:var(--r2);padding:14px 16px;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='var(--blue-lt)'" onmouseout="this.style.borderColor='${isCurrent?'var(--blue-lt)':'var(--border)'}'">
+          <div onclick="jumpToCR('${cr.id}')" style="flex:1;background:${isCurrent?'var(--accent-bg)':'var(--panel)'};border:${isCurrent?'1.5px solid var(--accent-lt)':isArchived?'1px solid var(--amber)':'1px solid var(--border)'};border-radius:var(--r2);padding:14px 16px;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='var(--accent-lt)'" onmouseout="this.style.borderColor='${isCurrent?'var(--accent-lt)':'var(--border)'}'">
 
             <!-- Header -->
             <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px">
               <div>
                 <div style="display:flex;align-items:center;gap:7px;margin-bottom:2px">
-                  <span style="font-weight:600;font-size:13.5px;color:${isCurrent?'var(--blue)':'var(--text)'}">CR n°${cr.numero}</span>
-                  ${isCurrent?`<span class="badge bblue" style="font-size:9px">En cours</span>`:''}
+                  <span style="font-weight:600;font-size:13.5px;color:${isCurrent?'var(--accent)':'var(--text)'}">CR n°${cr.numero}</span>
+                  ${isCurrent?`<span class="badge baccent" style="font-size:9px">En cours</span>`:''}
                   ${isArchived?`<span class="badge bamber" style="font-size:9px">Archivé</span>`:''}
                 </div>
                 <div style="font-size:12px;font-weight:500;color:var(--text2)">${cr.date}</div>
-                ${cr.dateProchaine?`<div style="font-size:11px;color:var(--text3);margin-top:1px">Prochaine réunion : ${cr.dateProchaine}</div>`:''}
+                ${cr.dateProchaine?`<div style="font-size:11px;color:var(--text3);margin-top:1px">Prochaine réunion : ${fmtMeetingDisplay(cr.dateProchaine)}</div>`:''}
                 ${cr.redacteur?`<div style="font-size:11px;color:var(--text3)">Rédacteur : ${cr.redacteur}</div>`:''}
               </div>
 
@@ -1696,7 +2559,7 @@ function renderHistorique(currentCR){
               <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text3)">
               </div>
               <div style="margin-left:auto">
-                <span style="font-size:11px;color:${isCurrent?'var(--blue)':'var(--text3)'};font-weight:500">${isCurrent?'Vue actuelle →':'Ouvrir →'}</span>
+                <span style="font-size:11px;color:${isCurrent?'var(--accent)':'var(--text3)'};font-weight:500">${isCurrent?'Vue actuelle →':'Ouvrir →'}</span>
               </div>
             </div>
 
@@ -1793,6 +2656,7 @@ function toggleDone(crId,lotId,rId){
     // If un-checking, also un-archive
     if(!r.done) r.archived=false;
   }
+  if(r){ const cr0=CRS.find(c=>c.id===crId); logActivity('remarque_done_toggled','remarque','Remarque : '+(r.texte||''),crId,{done:r.done}); }
   markDirty();renderCR();renderList();
 }
 function archiveRemarque(crId,lotId,rId){
@@ -1803,6 +2667,7 @@ function archiveRemarque(crId,lotId,rId){
     r.archived=true;
     r.archivedAt=r.doneAt||new Date().toLocaleDateString('fr-FR');
   }
+  if(r) logActivity('remarque_archived','remarque','Remarque : '+(r.texte||''),crId);
   markDirty();renderCR();renderList();
 }
 function unarchiveRemarque(crId,lotId,rId){
@@ -1819,11 +2684,27 @@ function toggleFlag(crId,lotId,rId){
   if(r)r.flag=!r.flag;
   renderCR();renderList();
 }
-function deleteRemarque(crId,lotId,rId){
+function deleteRemarque(crId,lotId,rId,skipConfirm){
+  if(!guardDelete(crId))return;
   const cr=CRS.find(c=>c.id===crId);
   const lot=cr?.lots.find(l=>l.id===lotId);
-  if(lot)lot.remarques=lot.remarques.filter(r=>r.id!==rId);
-  renderCR();renderList();
+  if(!lot)return;
+  const idx=lot.remarques.findIndex(r=>r.id===rId);
+  if(idx<0)return;
+  if(!skipConfirm && !confirm('Supprimer définitivement ? Cette action est irréversible.'))return;
+  const removed=lot.remarques[idx];
+  lot.remarques.splice(idx,1);
+  logActivity('remarque_deleted','remarque','Remarque : '+(removed.texte||''),crId);
+  markDirty();renderCR();renderList();
+  // Undo: deletions sync to Supabase immediately, so offer a 5s window to restore.
+  undoToast('Remarque supprimée',function(){
+    const cr2=CRS.find(c=>c.id===crId);
+    const lot2=cr2?.lots.find(l=>l.id===lotId);
+    if(!lot2)return;
+    const at=Math.min(idx,lot2.remarques.length);
+    lot2.remarques.splice(at,0,removed);
+    markDirty();renderCR();renderList();
+  });
 }
 function moveRemarque(crId,lotId,rId,dir){
   const cr=CRS.find(c=>c.id===crId);
@@ -1838,6 +2719,7 @@ function moveRemarque(crId,lotId,rId,dir){
   markDirty();renderCR();
 }
 function addRemarque(crId,lotId){
+  if(!guardEdit(crId))return;
   const inp=document.getElementById('new-r-'+lotId);
   if(!inp||!inp.value.trim())return;
   const cr=CRS.find(c=>c.id===crId);
@@ -1857,6 +2739,7 @@ function addRemarque(crId,lotId){
   lot.remarques.push(newR);
   inp.value='';
   if(flagCb)flagCb.checked=false;
+  logActivity('remarque_added','remarque','Remarque : '+newR.texte,crId);
   markDirty();renderCR();renderList();
 }
 function editRemarque(crId,lotId,rId){
@@ -1890,6 +2773,7 @@ function saveRemarque(crId,lotId,rId){
     if(r.done&&!wasDone) r.doneAt=new Date().toLocaleDateString('fr-FR');
     if(!r.done){r.doneAt=null;r.archived=false;r.archivedAt=null;}
   }
+  if(r) logActivity('remarque_edited','remarque','Remarque : '+(r.texte||''),crId);
   closeModal();markDirty();renderCR();renderList();
 }
 function togglePresence(crId,lot){
@@ -1908,14 +2792,21 @@ function toggleAction(crId,aId){
   const cr=CRS.find(c=>c.id===crId);
   const a=cr?.actions.find(x=>x.id===aId);
   if(a)a.done=!a.done;
+  if(a) logActivity(a.done?'action_completed':'action_edited','action','Action : '+(a.texte||''),crId,{done:a.done});
   renderCR();renderList();
 }
 function deleteAction(crId,aId){
+  if(!guardDelete(crId))return;
   const cr=CRS.find(c=>c.id===crId);
-  if(cr)cr.actions=cr.actions.filter(a=>a.id!==aId);
-  renderCR();
+  if(!cr)return;
+  if(!confirm('Supprimer définitivement cette action ? Cette action est irréversible.'))return;
+  const removed=cr.actions.find(a=>a.id===aId);
+  cr.actions=cr.actions.filter(a=>a.id!==aId);
+  if(removed) logActivity('action_deleted','action','Action : '+(removed.texte||''),crId);
+  markDirty();renderCR();renderList();
 }
 function openAddAction(crId){
+  if(!guardEdit(crId))return;
   const cr=CRS.find(c=>c.id===crId);
   const intOptions=cr?cr.intervenants.map(i=>`<option value="${i.id}">${i.entreprise||i.lot}</option>`).join(''):'';
   showModal(`<h3>Ajouter une action</h3>
@@ -1947,6 +2838,61 @@ function dateFRToInput(val){
   if(p.length===3)return p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0');
   return '';
 }
+// ── Prochaine réunion : date + heure ──
+// New CRs store an ISO datetime-local string ("YYYY-MM-DDTHH:mm"). Older CRs may
+// hold free text (e.g. "21/05/2026 14:00") — those are displayed as-is and, when
+// possible, parsed for the "Bientôt" / "Avant prochaine réunion" filters.
+function isISODateTime(v){ return typeof v==='string' && /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?$/.test(v); }
+function fmtMeetingDisplay(v){
+  if(!v) return '';
+  if(isISODateTime(v)){
+    const [d,t]=v.split('T');
+    const [Y,M,D]=d.split('-');
+    return D+'/'+M+'/'+Y+(t?(' '+t):'');
+  }
+  return v; // legacy free text
+}
+// Returns a Date for filtering, or null if unparseable.
+function parseMeeting(v){
+  if(!v) return null;
+  if(isISODateTime(v)){ const dt=new Date(v); return isNaN(dt)?null:dt; }
+  // legacy "dd/mm/yyyy[ hh:mm]"
+  const m=String(v).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2}))?/);
+  if(m){ const dt=new Date(+m[3],+m[2]-1,+m[1],+(m[4]||0),+(m[5]||0)); return isNaN(dt)?null:dt; }
+  return null;
+}
+// Convert a legacy free-text meeting date to ISO datetime-local if it clearly
+// parses. Returns the ISO string, or null if it can't be parsed safely.
+function meetingToISO(v){
+  if(!v || isISODateTime(v)) return null;
+  const m=String(v).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2}))?/);
+  if(!m) return null;
+  const Y=m[3], M=m[2].padStart(2,'0'), D=m[1].padStart(2,'0');
+  const h=(m[4]||'00').padStart(2,'0'), mi=(m[5]||'00').padStart(2,'0');
+  const iso=Y+'-'+M+'-'+D+'T'+h+':'+mi;
+  return isISODateTime(iso) && !isNaN(new Date(iso)) ? iso : null;
+}
+// One-click: normalize every CR's legacy meeting date that clearly parses.
+// Non-parseable values are left untouched. Persists and reports the count.
+function normalizeMeetingDates(silent){
+  if(!(isAdmin()||_noRoleModel())){ if(!silent) toast('Action réservée à l\'administrateur.','error'); return 0; }
+  let n=0;
+  CRS.forEach(function(cr){
+    const iso=meetingToISO(cr.dateProchaine);
+    if(iso){ cr.dateProchaine=iso; n++; }
+  });
+  if(n){ markDirty(); renderList(); if(activeCR) renderCR(); }
+  if(!silent){
+    toast(n? (n+' date(s) normalisée(s) ✓') : 'Aucune date à normaliser.', n?'success':'info');
+  }
+  return n;
+}
+// Returns true if any CR holds a legacy, still-parseable meeting date.
+function hasNormalizableDates(){
+  return CRS.some(function(cr){ return meetingToISO(cr.dateProchaine)!=null; });
+}
+
+
 function saveAction(crId){
   const texte=document.getElementById('aa-texte')?.value?.trim();
   if(!texte)return;
@@ -1960,9 +2906,11 @@ function saveAction(crId){
     echeance:dateInputToFR(document.getElementById('aa-ech')?.value)||'',
     done:false
   });
-  closeModal();renderCR();
+  if(cr) logActivity('action_added','action','Action : '+texte,crId);
+  closeModal();markDirty();renderCR();
 }
 function openAddLot(crId){
+  if(!guardEdit(crId))return;
   const cr=CRS.find(c=>c.id===crId);
   if(!cr)return;
   if(!cr.intervenants.length){
@@ -1993,9 +2941,11 @@ function saveLot(crId){
   const int=cr.intervenants.find(function(iv){return iv.id===intId;});
   const titre=document.getElementById('al-titre')?.value?.trim()||(int?int.lot:'Nouveau lot');
   if(cr)cr.lots.push({id:'l'+(uid++),titre:titre,ouvert:true,intId:intId,remarques:[]});
-  closeModal();renderCR();
+  if(cr) logActivity('lot_created','lot','Lot : '+titre,crId);
+  closeModal();markDirty();renderCR();
 }
 function openAddIntervenant(crId){
+  if(!guardEdit(crId))return;
   showModal(`<h3>Ajouter un intervenant</h3>
     <div class="fi"><label>Lot / Fonction *</label><input id="ai-lot" placeholder="Ex: Lot Carrelage, Ingénieur…"></div>
     <div class="fi"><label>Entreprise</label><input id="ai-ent" placeholder="Nom de l'entreprise"></div>
@@ -2012,7 +2962,8 @@ function saveIntervenant(crId){
   if(!lot)return;
   const cr=CRS.find(c=>c.id===crId);
   if(cr)cr.intervenants.push({id:'i'+(uid++),lot,entreprise:document.getElementById('ai-ent')?.value||'',contacts:document.getElementById('ai-contacts')?.value||'',present:document.getElementById('ai-present')?.checked||false,convoque:document.getElementById('ai-convoque')?.checked!==false});
-  closeModal();renderCR();
+  if(cr) logActivity('intervenant_added','intervenant','Intervenant : '+(document.getElementById('ai-ent')?.value||lot),crId);
+  closeModal();markDirty();renderCR();
 }
 
 /* ══ NEW / EDIT CR ══ */
@@ -2022,7 +2973,7 @@ function openNewCR(){
       <div class="fi" style="grid-column:1/-1"><label>Nom du projet *</label><input id="nc-proj" placeholder="Ex: Villa Dupont"></div>
       <div class="fi" style="grid-column:1/-1"><label>Adresse du chantier</label><input id="nc-addr" placeholder="Ex: 12 rue du Chantier, 75001 Paris"></div>
       <div class="fi"><label>Date de la réunion *</label><input type="date" id="nc-date"></div>
-      <div class="fi"><label>Date prochaine réunion</label><input id="nc-datep" placeholder="21/05/2026 14:00"></div>
+      <div class="fi"><label>Date et heure de la prochaine réunion</label><input type="datetime-local" id="nc-datep"></div>
       <div class="fi"><label>N° de CR</label><input type="number" id="nc-num" placeholder="1" min="1"></div>
       <div class="fi"><label>Rédacteur</label><input id="nc-red" placeholder="Ex: Martin Dupont — Cabinet Martin"></div>
     </div>
@@ -2070,6 +3021,7 @@ function saveNewCR(){
   };
   CRS.unshift(newCR);
   saveCRS();
+  logActivity('cr_created','cr',_crLabel(newCR),newCR.id);
   closeModal();
   activeCR=newCR.id;
   activeTab='intervenants';
@@ -2078,13 +3030,14 @@ function saveNewCR(){
   toast('Compte rendu créé ✓');
 }
 function openEditCR(crId){
+  if(!guardSettings(crId))return;
   const cr=CRS.find(c=>c.id===crId);if(!cr)return;
   showModal(`<h3>${ico('edit','ico-sm')} Modifier le CR</h3>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div class="fi" style="grid-column:1/-1"><label>Nom du projet</label><input id="ec-proj" value="${e(cr.projet)}"></div>
       <div class="fi" style="grid-column:1/-1"><label>Adresse</label><input id="ec-addr" value="${e(cr.adresse)}"></div>
       <div class="fi"><label>Date réunion</label><input id="ec-date" value="${e(cr.date)}"></div>
-      <div class="fi"><label>Prochaine réunion</label><input id="ec-datep" value="${e(cr.dateProchaine)}"></div>
+      <div class="fi"><label>Date et heure de la prochaine réunion</label><input type="datetime-local" id="ec-datep" value="${isISODateTime(cr.dateProchaine)?e(cr.dateProchaine):''}">${(cr.dateProchaine&&!isISODateTime(cr.dateProchaine))?`<div style="font-size:10px;color:var(--text3);margin-top:3px">Valeur actuelle : ${e(cr.dateProchaine)} — choisissez une date/heure pour la mettre à jour.</div>`:''}</div>
       <div class="fi"><label>N° CR</label><input type="number" id="ec-num" value="${cr.numero}"></div>
       <div class="fi"><label>Rédacteur</label><input id="ec-red" value="${e(cr.redacteur)}"></div>
     </div>
@@ -2096,6 +3049,9 @@ function openEditCR(crId){
         <button class="btn btn-sm" onclick="exportData()" style="color:var(--text3)">
           <svg class="ico ico-xs"><use href="#i-download"/></svg> Exporter les données
         </button>
+        ${hasNormalizableDates()?`<button class="btn btn-sm" onclick="normalizeMeetingDates();closeModal()" style="color:var(--amber)" title="Convertir les anciennes dates de réunion en format date/heure pour réactiver les filtres « Bientôt »">
+          <svg class="ico ico-xs"><use href="#i-calendar"/></svg> Normaliser les dates
+        </button>`:''}
       </div>
       <button class="btn" onclick="closeModal()">Annuler</button>
       <button class="btn btn-p" onclick="saveEditCR('${crId}')">${ico('save','ico-sm')} Enregistrer</button>
@@ -2109,12 +3065,15 @@ function saveEditCR(crId){
   cr.dateProchaine=document.getElementById('ec-datep')?.value||cr.dateProchaine;
   cr.numero=parseInt(document.getElementById('ec-num')?.value)||cr.numero;
   cr.redacteur=document.getElementById('ec-red')?.value||cr.redacteur;
+  logActivity('cr_updated','cr',_crLabel(cr),cr.id);
   saveCRS();closeModal();renderList();renderCR();toast('Modifications enregistrées ✓');
 }
 
 /* ══ EXPORT / PRINT ══ */
 
 /* ══ SHARED PDF PAGINATION ══ */
+// Legacy estimator kept as a fallback hint only. Real pagination now measures
+// rendered block heights (see paginate() below) instead of guessing pixels.
 function _estimateRmarkHeight(texte, images) {
   const LINE_H = 17;
   const CHARS_PER_LINE = 90;
@@ -2124,9 +3083,31 @@ function _estimateRmarkHeight(texte, images) {
   return h;
 }
 
+// A4 portrait content area at the CSS px scale used by the print stylesheet.
+// 210x297mm minus 12mm margins ≈ 186x273mm. At ~3.78px/mm that's ~703x1032px.
+// We measure against PDF_PAGE_W and break before PDF_PAGE_H.
+const PDF_PAGE_W = 703;   // content width in px (used by the measuring sandbox)
+const PDF_PAGE_H = 1020;  // usable content height in px before a page break
+
+// Measure the rendered height of an HTML fragment inside an off-screen A4-width
+// sandbox. Returns a number of px. Falls back to a rough estimate if the DOM
+// isn't available (should not happen in the browser).
+let _measureSandbox = null;
+function _measureBlock(html){
+  try{
+    if(!_measureSandbox){
+      _measureSandbox=document.createElement('div');
+      _measureSandbox.style.cssText='position:absolute;left:-99999px;top:0;visibility:hidden;'
+        +'width:'+PDF_PAGE_W+'px;font-family:Arial,sans-serif;font-size:9pt;color:#000;';
+      document.body.appendChild(_measureSandbox);
+    }
+    _measureSandbox.innerHTML='<div style="font-size:9pt">'+html+'</div>';
+    return _measureSandbox.firstChild.offsetHeight || 0;
+  }catch(e){ return 0; }
+}
+
 function buildPDFPages(cr) {
   const s = PDF_SETTINGS;
-  const A4_CONTENT_H = 1020;
   const PAGE_STYLE = 'padding:20px;font-family:Arial,sans-serif;font-size:9pt;color:#000;page-break-after:always';
 
   function pageHeader(pageNum) {
@@ -2151,7 +3132,7 @@ function buildPDFPages(cr) {
       <tr><td colspan="2" style="padding:5px 8px;border:1px solid #000;border-top:none;font-size:9pt"><strong>PROJET : ${e(cr.projet)}</strong>&nbsp;&nbsp;&nbsp;${e(cr.adresse)}</td></tr>
       <tr>
         <td style="padding:5px 8px;border:1px solid #000;border-top:none;font-size:9pt;width:50%"><strong>DATE :</strong> ${e(cr.date)}</td>
-        <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;font-size:9pt"><strong>PROCHAINE RÉUNION :</strong> ${e(cr.dateProchaine||'—')}</td>
+        <td style="padding:5px 8px;border:1px solid #000;border-top:none;border-left:none;font-size:9pt"><strong>PROCHAINE RÉUNION :</strong> ${e(fmtMeetingDisplay(cr.dateProchaine)||'—')}</td>
       </tr>
     </table>
     <div style="text-align:right;font-size:7pt;color:#888;margin-bottom:4px">Page ${pageNum} / __TOTAL__</div>`;
@@ -2164,22 +3145,56 @@ function buildPDFPages(cr) {
     return `rgb(${Math.round(r*.2+255*.8)},${Math.round(g*.2+255*.8)},${Math.round(b*.2+255*.8)})`;
   }
 
-  const pages = [];
-  let pageNum = 1;
-  let currentBlocks = [];
-  let currentH = 0;
-
-  function flushPage() {
-    if (!currentBlocks.length) return;
-    pages.push(`<div class="pr-page" style="${PAGE_STYLE}">${pageHeader(pageNum)}${currentBlocks.join('')}</div>`);
-    pageNum++;
-    currentBlocks = [];
-    currentH = 0;
+  // Collect blocks first, then paginate with measured heights. addBlock keeps
+  // its old signature; the second arg is only a fallback hint. keepNext marks a
+  // block (e.g. a lot/section header) that must not be the last on a page.
+  const blocks = [];
+  function addBlock(html, hintH, keepNext) {
+    blocks.push({ html: html, hint: hintH||0, keepNext: !!keepNext, sectionBreak:false });
   }
-  function addBlock(html, estH) {
-    if (currentH + estH > A4_CONTENT_H && currentBlocks.length > 0) flushPage();
-    currentBlocks.push(html);
-    currentH += estH;
+  function flushPage() {
+    // Marks a soft section boundary (intervenants / remarques / actions). The
+    // packer starts a new page at these boundaries to mirror prior behavior.
+    if(blocks.length && !blocks[blocks.length-1].sectionBreak)
+      blocks.push({ html:'', hint:0, keepNext:false, sectionBreak:true });
+  }
+
+  // The packing routine; called at the end once all blocks are collected.
+  function paginate(){
+    const pages = [];
+    let pageNum = 1;
+    let current = [];
+    let curH = 0;
+    const headerH = _measureBlock(pageHeader(1)) || 150;
+    const avail = PDF_PAGE_H - headerH;
+    function flush(){
+      if(!current.length) return;
+      pages.push(`<div class="pr-page" style="${PAGE_STYLE}">${pageHeader(pageNum)}${current.map(function(b){return b.html;}).join('')}</div>`);
+      pageNum++; current=[]; curH=0;
+    }
+    for(let i=0;i<blocks.length;i++){
+      const b=blocks[i];
+      if(b.sectionBreak){ flush(); continue; }
+      if(!b.html) continue;
+      let h=_measureBlock(b.html);
+      if(!h) h=b.hint||20; // fallback if measurement unavailable
+      // If this block won't fit and the page already has content, break first.
+      if(curH + h > avail && current.length){ flush(); }
+      // keepNext: if a header would land at the very bottom with no room for the
+      // following block, push it to the next page so it stays with its content.
+      if(b.keepNext && current.length){
+        const next=blocks[i+1];
+        if(next && !next.sectionBreak){
+          let nh=_measureBlock(next.html)||next.hint||20;
+          if(curH + h + Math.min(nh,120) > avail) flush();
+        }
+      }
+      // A single block taller than a page: place it alone (it will overflow but
+      // won't be split awkwardly mid-content with other blocks).
+      current.push(b); curH += h;
+    }
+    flush();
+    return pages;
   }
 
   // ── Intervenants ──
@@ -2194,11 +3209,10 @@ function buildPDFPages(cr) {
     <td style="padding:4px 7px;border:1px solid #000;border-left:none;font-weight:600;font-size:8.5pt">Contact</td>
     <td style="padding:4px 7px;border:1px solid #000;border-left:none;font-weight:600;font-size:8.5pt;width:50px;text-align:center">Conv.</td>
     <td style="padding:4px 7px;border:1px solid #000;border-left:none;font-weight:600;font-size:8.5pt;width:50px;text-align:center">Présent</td>
-    <td style="padding:4px 7px;border:1px solid #000;border-left:none;font-weight:600;font-size:8.5pt;width:70px;text-align:center">Prochain</td>
   </tr>`;
   let intRows = '';
   grps.forEach(function(g){
-    intRows+=`<tr style="background:#e8e8e8"><td colspan="6" style="padding:4px 7px;border:1px solid #000;border-top:none;font-weight:600;font-size:8pt">${g.label}</td></tr>`;
+    intRows+=`<tr style="background:#e8e8e8"><td colspan="5" style="padding:4px 7px;border:1px solid #000;border-top:none;font-weight:600;font-size:8pt">${g.label}</td></tr>`;
     g.rows.forEach(function(i){
       intRows+=`<tr>
         <td style="padding:3px 7px;border:1px solid #000;border-top:none;font-size:8pt;font-weight:600;vertical-align:top;width:95px">${e(i.lot.toUpperCase())}</td>
@@ -2206,7 +3220,6 @@ function buildPDFPages(cr) {
         <td style="padding:3px 7px;border:1px solid #000;border-top:none;border-left:none;font-size:7.5pt;vertical-align:top;white-space:pre-line">${e(i.contacts)}</td>
         <td style="padding:3px 7px;border:1px solid #000;border-top:none;border-left:none;text-align:center;font-size:8.5pt">${i.convoque!==false?'X':''}</td>
         <td style="padding:3px 7px;border:1px solid #000;border-top:none;border-left:none;text-align:center;font-size:8.5pt;font-weight:700">${i.present?'X':''}</td>
-        <td style="padding:3px 7px;border:1px solid #000;border-top:none;border-left:none;text-align:center;font-size:8.5pt">☐</td>
       </tr>`;
     });
   });
@@ -2222,13 +3235,13 @@ function buildPDFPages(cr) {
     const bg=hexToLight(col);
     const lotHdr=`<div style="background:${bg};padding:5px 8px;border:1px solid #000;font-weight:700;font-size:9pt;text-transform:uppercase;color:${col};page-break-after:avoid">REMARQUES — ${e(lot.titre.toUpperCase())}</div>`;
     if(!active.length){
-      addBlock(lotHdr+`<div style="border:1px solid #000;border-top:none;padding:5px 10px;font-size:8pt;color:#999;font-style:italic">Aucune remarque active.</div>`, 52);
+      addBlock(lotHdr+`<div style="border:1px solid #000;border-top:none;padding:5px 10px;font-size:8pt;color:#999;font-style:italic">Aucune remarque active.</div>`, 52, true);
     } else {
       // First remark stays with header
       const r0=active[0];
       const r0html=`<div style="padding:3px 0;font-size:9pt;line-height:1.5;border-bottom:1px solid #f0f0f0">- ${e(r0.texte)}</div>`
         +(r0.images&&r0.images.length?`<div style="display:flex;gap:5px;flex-wrap:wrap;margin:3px 0">${r0.images.map(img=>`<div style="display:inline-block"><img src="${img.data}" style="max-width:100px;max-height:80px;object-fit:contain;border:1px solid #ccc;border-radius:2px;display:block">${img.caption?`<div style="font-size:7pt;color:#666">${e(img.caption)}</div>`:''}</div>`).join('')}</div>`:'');
-      addBlock(lotHdr+`<div style="border:1px solid #000;border-top:none;padding:5px 10px">${r0html}</div>`, 46+_estimateRmarkHeight(r0.texte,r0.images));
+      addBlock(lotHdr+`<div style="border:1px solid #000;border-top:none;padding:5px 10px">${r0html}</div>`, 46+_estimateRmarkHeight(r0.texte,r0.images), true);
       active.slice(1).forEach(function(r){
         const rh=`<div style="border:1px solid #000;border-top:none;padding:4px 10px">- ${e(r.texte)}`
           +(r.images&&r.images.length?`<div style="display:flex;gap:5px;flex-wrap:wrap;margin:3px 0">${r.images.map(img=>`<div style="display:inline-block"><img src="${img.data}" style="max-width:100px;max-height:80px;object-fit:contain;border:1px solid #ccc;border-radius:2px;display:block">${img.caption?`<div style="font-size:7pt;color:#666">${e(img.caption)}</div>`:''}</div>`).join('')}</div>`:'')
@@ -2243,7 +3256,7 @@ function buildPDFPages(cr) {
 
   // ── Actions ──
   if(cr.actions.length){
-    const actHdr=`<div style="background:#d4d4d4;padding:4px 8px;border:1px solid #000;font-weight:700;font-size:9pt;margin-bottom:0">ACTIONS / DÉCISIONS</div>
+    let actTable=`<div style="background:#d4d4d4;padding:4px 8px;border:1px solid #000;font-weight:700;font-size:9pt;margin-bottom:0">ACTIONS / DÉCISIONS</div>
     <table style="width:100%;border-collapse:collapse"><tr style="background:#eee">
       <td style="padding:4px 7px;border:1px solid #000;border-top:none;font-weight:600;font-size:8pt;width:25px">N°</td>
       <td style="padding:4px 7px;border:1px solid #000;border-top:none;border-left:none;font-weight:600;font-size:8pt">Action</td>
@@ -2251,25 +3264,27 @@ function buildPDFPages(cr) {
       <td style="padding:4px 7px;border:1px solid #000;border-top:none;border-left:none;font-weight:600;font-size:8pt;width:75px">Échéance</td>
       <td style="padding:4px 7px;border:1px solid #000;border-top:none;border-left:none;font-weight:600;font-size:8pt;width:52px;text-align:center">Statut</td>
     </tr>`;
-    addBlock(actHdr, 52);
-    const lastAi=cr.actions.length-1;
     cr.actions.forEach(function(a,ai){
-      const ahtml=`<tr style="${a.done?'color:#999;text-decoration:line-through':''}">
+      actTable+=`<tr style="${a.done?'color:#999;text-decoration:line-through':''}">
         <td style="padding:3px 7px;border:1px solid #000;border-top:none;font-size:8pt;text-align:center;vertical-align:top">${ai+1}</td>
         <td style="padding:3px 7px;border:1px solid #000;border-top:none;border-left:none;font-size:8pt;vertical-align:top">${e(a.texte)}${(a.images&&a.images.length)?`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:2px">${a.images.map(img=>`<img src="${img.data}" style="max-width:70px;max-height:55px;object-fit:contain;border:1px solid #ccc;border-radius:2px">`).join('')}</div>`:''}</td>
         <td style="padding:3px 7px;border:1px solid #000;border-top:none;border-left:none;font-size:8pt;vertical-align:top">${e(a.responsable)}</td>
         <td style="padding:3px 7px;border:1px solid #000;border-top:none;border-left:none;font-size:8pt;vertical-align:top">${e(a.echeance)}</td>
         <td style="padding:3px 7px;border:1px solid #000;border-top:none;border-left:none;font-size:8pt;text-align:center;vertical-align:top">${a.done?'✓':'En cours'}</td>
-      </tr>${ai===lastAi?'</table>':''}`;
-      addBlock(ahtml, _estimateRmarkHeight(a.texte,a.images)+10);
+      </tr>`;
     });
+    actTable+='</table>';
+    // Single block so the table never splits a row across a page boundary.
+    addBlock(actTable, 52+cr.actions.length*22);
     if(cr.dateProchaine){
-      addBlock(`<div style="margin-top:10px;padding:7px;border:1px solid #000;font-size:9pt;text-align:center"><strong>DATE PROCHAINE RÉUNION :</strong> ${e(cr.dateProchaine)}</div>`,38);
+      addBlock(`<div style="margin-top:10px;padding:7px;border:1px solid #000;font-size:9pt;text-align:center"><strong>DATE PROCHAINE RÉUNION :</strong> ${e(fmtMeetingDisplay(cr.dateProchaine))}</div>`,38);
     }
     flushPage();
   }
 
   // Fix __TOTAL__ placeholder with real page count
+  const pages = paginate();
+  if(_measureSandbox){ try{ _measureSandbox.remove(); }catch(e){} _measureSandbox=null; }
   const total=pages.length;
   return pages.map(function(p){return p.replace(/__TOTAL__/g,String(total));});
 }
@@ -2277,6 +3292,8 @@ function buildPDFPages(cr) {
 function exportCR(crId){
   const cr=CRS.find(function(x){return x.id===crId;});
   if(!cr)return;
+  toast('Génération du PDF…','info');
+  logActivity('pdf_exported','cr',_crLabel(cr),crId);
 
   const pages=buildPDFPages(cr);
   const fullHTML='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'
@@ -2369,7 +3386,8 @@ function saveEditAction(crId,aId){
   a.responsable=linked?(linked.entreprise||linked.lot):a.responsable;
   a.echeance=dateInputToFR(document.getElementById('ea-ech')?.value)||'';
   a.done=document.getElementById('ea-done')?.checked||false;
-  closeModal();renderCR();toast('Action mise à jour ✓');
+  logActivity('action_edited','action','Action : '+(a.texte||''),crId);
+  closeModal();markDirty();renderCR();toast('Action mise à jour ✓');
 }
 
 /* ══ EDIT INTERVENANT ══ */
@@ -2414,6 +3432,8 @@ function saveEditIntervenant(crId,idx){
   i.convoque=document.getElementById('ei-convoque')?.checked!==false;
   const col=document.getElementById('ei-color')?.value;
   if(col)i.color=col;
+  logActivity('intervenant_edited','intervenant','Intervenant : '+(i.entreprise||i.lot),crId);
+  markDirty();
   closeModal();
   activeTab='intervenants';
   renderCR();
@@ -2423,10 +3443,13 @@ function saveEditIntervenant(crId,idx){
   toast('Intervenant mis à jour ✓');
 }
 function deleteIntervenant(crId,idx){
-  if(!confirm('Supprimer cet intervenant ?'))return;
+  if(!guardDelete(crId))return;
+  if(!confirm('Supprimer définitivement cet intervenant ? Cette action est irréversible.'))return;
   const cr=CRS.find(c=>c.id===crId);
+  const _iv=cr&&cr.intervenants[idx];
   if(cr)cr.intervenants.splice(idx,1);
-  renderCR();toast('Intervenant supprimé');
+  if(_iv) logActivity('intervenant_deleted','intervenant','Intervenant : '+(_iv.entreprise||_iv.lot),crId);
+  markDirty();renderCR();toast('Intervenant supprimé');
 }
 
 /* ══ LOT RENAME / DELETE ══ */
@@ -2435,21 +3458,24 @@ function renameLot(crId,lotId){
   const lot=cr?.lots.find(l=>l.id===lotId);
   if(!lot)return;
   const name=prompt('Renommer le lot :',lot.titre);
-  if(name&&name.trim())lot.titre=name.trim();
+  if(name&&name.trim()){lot.titre=name.trim();logActivity('lot_renamed','lot','Lot : '+lot.titre,crId);markDirty();}
   renderCR();
 }
 function deleteLot(crId,lotId){
+  if(!guardDelete(crId))return;
   const cr=CRS.find(c=>c.id===crId);
   if(!cr)return;
   const lot=cr.lots.find(l=>l.id===lotId);
   if(!lot)return;
-  if(!confirm(`Supprimer le lot "${lot.titre}" et ses ${lot.remarques.length} remarques ?`))return;
+  if(!confirm(`Supprimer définitivement le lot "${lot.titre}" et ses ${lot.remarques.length} remarque(s) ? Cette action est irréversible.`))return;
   cr.lots=cr.lots.filter(l=>l.id!==lotId);
-  renderCR();toast('Lot supprimé');
+  logActivity('lot_deleted','lot','Lot : '+(lot.titre||''),crId);
+  markDirty();renderCR();toast('Lot supprimé');
 }
 
 /* ══ CR SETTINGS PANEL ══ */
 function openCRSettings(crId){
+  if(!guardSettings(crId))return;
   const cr=CRS.find(c=>c.id===crId);
   if(!cr)return;
 
@@ -2549,7 +3575,7 @@ function openCRSettings(crId){
   var html=''
     +'<h3 style="margin-bottom:14px;font-size:15px;font-weight:600">Réglages</h3>'
     +'<div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:14px" id="gs-tabs">'
-      +'<button class="gs-tab" onclick="gsCRTab(0,this)" style="padding:8px 14px;border:none;background:none;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;color:var(--blue);border-bottom:2px solid var(--blue);margin-bottom:-1px">Lots</button>'
+      +'<button class="gs-tab" onclick="gsCRTab(0,this)" style="padding:8px 14px;border:none;background:none;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;color:var(--accent-ink);border-bottom:2px solid var(--accent);margin-bottom:-1px">Lots</button>'
       +'<button class="gs-tab" onclick="gsCRTab(1,this)" style="padding:8px 14px;border:none;background:none;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;color:var(--text3);border-bottom:2px solid transparent;margin-bottom:-1px">Intervenants</button>'
       +'<button class="gs-tab" onclick="gsCRTab(2,this)" style="padding:8px 14px;border:none;background:none;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;color:var(--text3);border-bottom:2px solid transparent;margin-bottom:-1px">Actions</button>'
     +'</div>'
@@ -2614,8 +3640,8 @@ function openCRSettings(crId){
 
 function gsCRTab(idx,btn){
   document.querySelectorAll('.gs-tab').forEach((t,i)=>{
-    t.style.color=i===idx?'var(--blue)':'var(--text3)';
-    t.style.borderBottomColor=i===idx?'var(--blue)':'transparent';
+    t.style.color=i===idx?'var(--accent-ink)':'var(--text3)';
+    t.style.borderBottomColor=i===idx?'var(--accent)':'transparent';
   });
   [0,1,2].forEach(i=>document.getElementById('gs-p'+i).style.display=i===idx?'block':'none');
 }
@@ -2740,10 +3766,12 @@ function toggleArchiveCR(crId){
     if(!confirm(`Archiver "${cr.projet} — ${cr.date}" ?\n\nLe CR sera masqué de la liste principale mais restera accessible dans l'historique.`))return;
     cr.statut='archived';
     saveCRS();
+    logActivity('cr_archived','cr',_crLabel(cr),cr.id);
     toast('CR archivé — visible dans l\'historique ✓');
   } else {
     cr.statut='published';
     saveCRS();
+    logActivity('cr_unarchived','cr',_crLabel(cr),cr.id);
     toast('CR désarchivé ✓');
   }
   renderList();
@@ -2751,6 +3779,7 @@ function toggleArchiveCR(crId){
 }
 
 async function deleteSinglePV(crId){
+  if(!guardDelete(crId))return;
   // Deletes ONE PV by its unique id. Never touches other PVs or projects.
   const cr=CRS.find(function(x){return x.id===crId;});
   if(!cr){return;}
@@ -2762,6 +3791,7 @@ async function deleteSinglePV(crId){
   ))return;
   const pid=cr.projetId;
   const wasActive=(activeCR===crId);
+  logActivity('cr_deleted','cr',_crLabel(cr),crId);
   // 1. Tombstone immediately so refresh cannot re-add it
   _tombstone(crId);
   // 2. Remove locally — filter by id only, never by projetId
@@ -2965,7 +3995,7 @@ function saveAsTemplate(crId){
   const cr=CRS.find(c=>c.id===crId);
   if(!cr)return;
   showModal(''
-    +'<h3 style="display:flex;align-items:center;gap:8px"><svg class="ico" style="color:var(--blue)"><use href="#i-save"/></svg> Enregistrer comme modèle</h3>'
+    +'<h3 style="display:flex;align-items:center;gap:8px"><svg class="ico" style="color:var(--accent)"><use href="#i-save"/></svg> Enregistrer comme modèle</h3>'
     +'<div class="fi"><label>Nom du modèle *</label><input id="tpl-name" value="'+e(cr.projet)+' — Structure type" placeholder="Ex: Chantier villa standard"></div>'
     +'<div class="fi"><label>Description</label><textarea id="tpl-desc" placeholder="Décrire ce modèle…" style="min-height:60px"></textarea></div>'
     +'<div style="background:var(--bg2);border-radius:var(--r);padding:10px 14px;margin-bottom:12px;font-size:12px;color:var(--text3)">'
@@ -3025,7 +4055,7 @@ function confirmSaveTemplate(crId){
 function openTemplates(){
   if(!TEMPLATES.length){
     showModal(''
-      +'<h3 style="display:flex;align-items:center;gap:8px"><svg class="ico" style="color:var(--blue)"><use href="#i-file"/></svg> Modèles de CR</h3>'
+      +'<h3 style="display:flex;align-items:center;gap:8px"><svg class="ico" style="color:var(--accent)"><use href="#i-file"/></svg> Modèles de CR</h3>'
       +'<div style="text-align:center;padding:28px 0;color:var(--text3)">'
         +'<svg class="ico" style="width:40px;height:40px;display:block;margin:0 auto 12px"><use href="#i-file"/></svg>'
         +'<div style="font-weight:500;margin-bottom:6px">Aucun modèle enregistré</div>'
@@ -3075,7 +4105,7 @@ function openTemplates(){
   });
 
   showModal(''
-    +'<h3 style="display:flex;align-items:center;gap:8px"><svg class="ico" style="color:var(--blue)"><use href="#i-file"/></svg> Modèles de CR ('+TEMPLATES.length+')</h3>'
+    +'<h3 style="display:flex;align-items:center;gap:8px"><svg class="ico" style="color:var(--accent)"><use href="#i-file"/></svg> Modèles de CR ('+TEMPLATES.length+')</h3>'
     +'<div style="max-height:420px;overflow-y:auto">'+tplCards+'</div>'
     +'<div class="mo-foot">'
       +'<button class="btn" onclick="closeModal()">Fermer</button>'
@@ -3087,16 +4117,16 @@ function useTemplate(ti){
   const tpl=TEMPLATES[ti];
   if(!tpl)return;
   showModal(''
-    +'<h3><svg class="ico ico-sm" style="color:var(--blue)"><use href="#i-plus"/></svg> Nouveau CR depuis "'+e(tpl.name)+'"</h3>'
+    +'<h3><svg class="ico ico-sm" style="color:var(--accent)"><use href="#i-plus"/></svg> Nouveau CR depuis "'+e(tpl.name)+'"</h3>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
       +'<div class="fi" style="grid-column:1/-1"><label>Nom du projet *</label><input id="nc-proj" value="'+e(tpl.projet)+'" placeholder="Nom du projet"></div>'
       +'<div class="fi" style="grid-column:1/-1"><label>Adresse du chantier</label><input id="nc-addr" placeholder="Adresse"></div>'
       +'<div class="fi"><label>Date de la réunion *</label><input type="date" id="nc-date"></div>'
-      +'<div class="fi"><label>Date prochaine réunion</label><input id="nc-datep" placeholder="21/05/2026 14:00"></div>'
+      +'<div class="fi"><label>Date et heure de la prochaine réunion</label><input type="datetime-local" id="nc-datep"></div>'
       +'<div class="fi"><label>N° de CR</label><input type="number" id="nc-num" placeholder="1" min="1" value="'+(CRS.length+1)+'"></div>'
       +'<div class="fi"><label>Rédacteur</label><input id="nc-red" placeholder="Ex: Martin Dupont — Cabinet Martin"></div>'
     +'</div>'
-    +'<div style="background:var(--blue-bg);border-radius:var(--r);padding:10px 14px;margin-bottom:4px;font-size:12px;color:var(--text2)">'
+    +'<div style="background:var(--accent-bg);border-radius:var(--r);padding:10px 14px;margin-bottom:4px;font-size:12px;color:var(--text2)">'
       +'Sera importé depuis le modèle : '+tpl.intCount+' intervenants + '+tpl.lotCount+' lots vides'
     +'</div>'
     +'<div class="mo-foot">'
@@ -3157,7 +4187,7 @@ function editTemplate(ti){
   const tpl=TEMPLATES[ti];
   if(!tpl)return;
   showModal(''
-    +'<h3><svg class="ico ico-sm" style="color:var(--blue)"><use href="#i-edit"/></svg> Modifier le modèle</h3>'
+    +'<h3><svg class="ico ico-sm" style="color:var(--accent)"><use href="#i-edit"/></svg> Modifier le modèle</h3>'
     +'<div class="fi"><label>Nom *</label><input id="et-name" value="'+e(tpl.name)+'"></div>'
     +'<div class="fi"><label>Description</label><textarea id="et-desc" style="min-height:60px">'+e(tpl.desc||'')+'</textarea></div>'
     +'<div class="mo-foot">'
@@ -3189,8 +4219,8 @@ function cloneCR(crId){
   if(!cr)return;
   const pendingOpen=cr.lots.flatMap(l=>l.remarques).filter(r=>!r.done&&!r.archived).length;
   const pendingActions=cr.actions.filter(a=>!a.done).length;
-  showModal(`<h3><svg class="ico ico-sm" style="color:var(--blue)"><use href="#i-copy"/></svg> Creer le CR suivant</h3>
-    <div style="background:var(--blue-bg);border-radius:var(--r);padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--text2)">
+  showModal(`<h3><svg class="ico ico-sm" style="color:var(--accent)"><use href="#i-copy"/></svg> Creer le CR suivant</h3>
+    <div style="background:var(--accent-bg);border-radius:var(--r);padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--text2)">
       Reprend la structure complète et reporte automatiquement les
       <strong>${pendingOpen} points non traités</strong> et <strong>${pendingActions} actions non terminées</strong>.
       <br><span style="color:var(--text3)">Les points archivés/classés ne sont pas repris.</span>
@@ -3198,7 +4228,7 @@ function cloneCR(crId){
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div class="fi" style="grid-column:1/-1"><label>Nom du projet</label><input id="cl-proj" value="${e(cr.projet)}"></div>
       <div class="fi"><label>Date de la réunion *</label><input type="date" id="cl-date"></div>
-      <div class="fi"><label>Date prochaine réunion</label><input id="cl-datep" placeholder="28/05/2026 14:00"></div>
+      <div class="fi"><label>Date et heure de la prochaine réunion</label><input type="datetime-local" id="cl-datep"></div>
       <div class="fi"><label>N° de CR</label><input type="number" id="cl-num" value="${cr.numero+1}" min="1"></div>
       <div class="fi"><label>Rédacteur</label><input id="cl-red" value="${e(cr.redacteur)}"></div>
     </div>
@@ -3298,6 +4328,7 @@ function confirmCloneCR(crId){
   // Archiver le CR source — il devient historique
   cr.statut = 'archived';
   saveCRS();
+  logActivity('cr_created','cr',_crLabel(newCR)+' (CR suivant)',newCR.id);
   newCR.intervenants.forEach(function(int){if(!int.color)int.color=lotColor(int.lot);});
 
   closeModal();
@@ -3445,7 +4476,7 @@ function openPdfImport(typeHint){
     </p>
     <div id="pdf-import-drop" style="border:2px dashed var(--border2);border-radius:var(--r);padding:32px;text-align:center;cursor:pointer;color:var(--text3);font-size:13px;transition:border-color .15s"
       onclick="document.getElementById('pdf-import-file').click()"
-      ondragover="event.preventDefault();this.style.borderColor='var(--blue)'"
+      ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
       ondragleave="this.style.borderColor='var(--border2)'"
       ondrop="_handlePdfDrop(event)">
       <svg class="ico" style="width:32px;height:32px;display:block;margin:0 auto 10px;opacity:.4"><use href="#i-upload"/></svg>
@@ -3496,7 +4527,7 @@ function _showExtractingModal(name){
   showModal(`
     <h3>${ico('file','ico-sm')} Extraction en cours…</h3>
     <div style="display:flex;align-items:center;gap:12px;padding:20px 0;color:var(--text3);font-size:13px">
-      <div style="width:20px;height:20px;border:2px solid var(--border2);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0"></div>
+      <div style="width:20px;height:20px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0"></div>
       Analyse de <strong>${e(name)}</strong>…
     </div>
     <p style="font-size:11px;color:var(--text3)">Cela peut prendre quelques secondes.</p>`);
@@ -4038,7 +5069,7 @@ function updateSidebarLogo(){
     mark.innerHTML='<img src="'+s.logoLeft+'" style="width:34px;height:34px;object-fit:contain;display:block">';
   } else {
     const initials=(s.firmName||'PS').split(' ').map(function(w){return w[0]||'';}).filter(Boolean).slice(0,2).join('').toUpperCase()||'PS';
-    mark.style.cssText='width:34px;height:34px;background:var(--blue);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;flex-shrink:0;letter-spacing:-.5px';
+    mark.style.cssText='width:34px;height:34px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;flex-shrink:0;letter-spacing:-.5px';
     mark.innerHTML=initials;
   }
   if(nameEl)nameEl.textContent=s.firmName||'Cabinet';
@@ -4048,7 +5079,7 @@ function updateSidebarLogo(){
 function openPdfSettings(){
   const s=PDF_SETTINGS;
   var html=''
-    +'<h3 style="display:flex;align-items:center;gap:8px"><svg class="ico" style="color:var(--blue)"><use href="#i-settings"/></svg> Paramètres cabinet & PDF</h3>'
+    +'<h3 style="display:flex;align-items:center;gap:8px"><svg class="ico" style="color:var(--accent)"><use href="#i-settings"/></svg> Paramètres cabinet & PDF</h3>'
 
     // Firm info
     +'<div style="border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:12px">'
@@ -4163,10 +5194,23 @@ function toggleRemarqueMenu(e,id){
   e.stopPropagation();
   closeAllMenus();
   const el=document.getElementById(id);
-  if(el&&el.style.display==='none'){el.style.display='block';_menuOpen=id;}
+  if(el&&el.style.display==='none'){
+    // Show first so we can measure it, then decide direction.
+    el.style.visibility='hidden';
+    el.style.display='block';
+    el.style.top='24px';el.style.bottom='';
+    const rect=el.getBoundingClientRect();
+    const vh=window.innerHeight||document.documentElement.clientHeight;
+    // If the menu would overflow the bottom and there's room above, flip up.
+    if(rect.bottom>vh-8 && rect.top-rect.height>8){
+      el.style.top='';el.style.bottom='24px';
+    }
+    el.style.visibility='';
+    _menuOpen=id;
+  }
 }
 function closeAllMenus(){
-  if(_menuOpen){const el=document.getElementById(_menuOpen);if(el)el.style.display='none';}
+  if(_menuOpen){const el=document.getElementById(_menuOpen);if(el){el.style.display='none';el.style.top='';el.style.bottom='';}}
   _menuOpen=null;
 }
 document.addEventListener('click',function(){closeAllMenus();});
@@ -4199,6 +5243,17 @@ function isSoon(echeance){
 function previewPDF(crId){
   const cr=CRS.find(function(x){return x.id===crId;});
   if(!cr)return;
+  // The page-measurement build is synchronous and can briefly block on CRs with
+  // many large images. Show a loading modal first, then build on the next tick
+  // so the spinner actually paints.
+  showModal('<div style="display:flex;flex-direction:column;align-items:center;gap:14px;padding:24px 10px">'
+    +'<div style="width:26px;height:26px;border:3px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite"></div>'
+    +'<div style="font-size:13px;color:var(--text2);font-weight:500">Préparation du PDF…</div></div>');
+  setTimeout(function(){ _buildPreviewPDF(crId); }, 30);
+}
+function _buildPreviewPDF(crId){
+  const cr=CRS.find(function(x){return x.id===crId;});
+  if(!cr){ closeModal(); return; }
 
   const pages=buildPDFPages(cr);
   const fullHTML='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'
@@ -4230,7 +5285,7 @@ function previewPDF(crId){
           <svg class="ico ico-xs"><use href="#i-download"/></svg> HTML
         </button>
         <button class="btn btn-p btn-sm" onclick="printFromPreview('${crId}')">
-          <svg class="ico ico-xs"><use href="#i-printer"/></svg> Imprimer / PDF
+          <svg class="ico ico-xs"><use href="#i-printer"/></svg> Imprimer / Enregistrer en PDF
         </button>
         <button class="btn btn-sm" onclick="closeModal()">Fermer</button>
       </div>
@@ -4348,12 +5403,24 @@ function confirmAddImage(crId,lotId,rId){
 }
 
 function deleteImage(crId,lotId,rId,imgId){
+  if(!guardDelete(crId))return;
   const cr=CRS.find(c=>c.id===crId);
   const lot=cr?.lots.find(l=>l.id===lotId);
   const r=lot?.remarques.find(x=>x.id===rId);
   if(!r||!r.images)return;
-  r.images=r.images.filter(i=>i.id!==imgId);
+  const idx=r.images.findIndex(i=>i.id===imgId);
+  if(idx<0)return;
+  if(!confirm('Supprimer définitivement ? Cette action est irréversible.'))return;
+  const removed=r.images[idx];
+  r.images.splice(idx,1);
   markDirty();renderCR();
+  undoToast('Image supprimée',function(){
+    const r2=CRS.find(c=>c.id===crId)?.lots.find(l=>l.id===lotId)?.remarques.find(x=>x.id===rId);
+    if(!r2)return;
+    if(!r2.images)r2.images=[];
+    r2.images.splice(Math.min(idx,r2.images.length),0,removed);
+    markDirty();renderCR();
+  });
 }
 
 function openAddActionImage(crId,aId){
@@ -4392,11 +5459,23 @@ function confirmAddActionImage(crId,aId){
 }
 
 function deleteActionImage(crId,aId,imgId){
+  if(!guardDelete(crId))return;
   const cr=CRS.find(c=>c.id===crId);
   const a=cr?.actions.find(x=>x.id===aId);
   if(!a||!a.images)return;
-  a.images=a.images.filter(i=>i.id!==imgId);
+  const idx=a.images.findIndex(i=>i.id===imgId);
+  if(idx<0)return;
+  if(!confirm('Supprimer définitivement ? Cette action est irréversible.'))return;
+  const removed=a.images[idx];
+  a.images.splice(idx,1);
   markDirty();renderCR();
+  undoToast('Image supprimée',function(){
+    const a2=CRS.find(c=>c.id===crId)?.actions.find(x=>x.id===aId);
+    if(!a2)return;
+    if(!a2.images)a2.images=[];
+    a2.images.splice(Math.min(idx,a2.images.length),0,removed);
+    markDirty();renderCR();
+  });
 }
 
 function renderImageGrid(images,deleteFn){
