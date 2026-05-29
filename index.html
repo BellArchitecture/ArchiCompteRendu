@@ -1337,21 +1337,40 @@ async function refreshFromStorage(){
           const remoteUpdated = new Date(row.updated_at).getTime();
           const local = localMap[row.id];
           const localUpdated = (local && local._updatedAt) ? new Date(local._updatedAt).getTime() : 0;
-          // Si version locale existe et est plus récente, la garder
-          if(local && local._updatedAt && localUpdated > remoteUpdated){
-            merged.push(local);
+          if(!local){
+            // Aucune copie locale : prendre la version serveur.
+            merged.push(row.data);
           } else {
-            // Remote wins. If this is the CR currently open AND the local copy
-            // had genuinely different content (not just an older timestamp),
-            // a concurrent edit happened on another device — warn the user.
-            if(local && row.id===activeCR && remoteUpdated>localUpdated){
+            // Les deux existent : FUSIONNER par identifiant pour ne perdre
+            // aucun ajout (tâches/remarques/intervenants/lots) d'un côté ni de
+            // l'autre, quel que soit l'horodatage. Base = la version la plus
+            // récente ; on ré-injecte les éléments présents dans l'autre.
+            let base, other;
+            if(localUpdated >= remoteUpdated){ base=local; other=row.data; }
+            else { base=row.data; other=local; }
+            const mergedCR = _mergeCRForSave(base, other);
+            // Conserver l'horodatage le plus récent des deux.
+            mergedCR._updatedAt = (localUpdated>=remoteUpdated? (local._updatedAt) : row.updated_at);
+            // Si la fusion ajoute du contenu absent côté serveur, re-marquer le
+            // CR comme à synchroniser pour que le serveur reçoive l'union.
+            try{
+              const srv=JSON.stringify(Object.assign({},row.data,{_updatedAt:0}));
+              const mrg=JSON.stringify(Object.assign({},mergedCR,{_updatedAt:0}));
+              if(srv!==mrg){ _dirtyCRIds.add(row.id); }
+            }catch(e){}
+            // Si le CR ouvert a un contenu réellement différent côté serveur,
+            // signaler (info) — mais on ne perd plus rien grâce à la fusion.
+            if(row.id===activeCR && remoteUpdated!==localUpdated){
               try{
                 const a=JSON.stringify(Object.assign({},local,{_updatedAt:0}));
                 const b=JSON.stringify(Object.assign({},row.data,{_updatedAt:0}));
                 if(a!==b) conflictOnActive = true;
               }catch(e){}
             }
-            merged.push(row.data);
+            // Si la version locale n'est pas encore synchronisée, la garder sale
+            // pour que la fusion reparte vers le serveur.
+            if(_dirtyCRIds.has(row.id)){ /* reste à pousser */ }
+            merged.push(mergedCR);
           }
           seenIds.add(row.id);
         });
@@ -1928,6 +1947,8 @@ function openCR(id){
 function renderCR(){
   const cr=CRS.find(c=>c.id===activeCR);
   if(!cr)return;
+  // Un re-rendu recrée les lignes : refermer tout menu flottant détaché.
+  _cleanupFloatingMenus(); _menuOpen=null;
 
   document.getElementById('tb-title').textContent=cr.projet;
   document.getElementById('tb-sub').textContent=`CR n°${cr.numero} — ${cr.date} — Prochaine réunion: ${fmtMeetingDisplay(cr.dateProchaine)}`;
@@ -5308,6 +5329,22 @@ function savePdfSettingsForm(){
 
 /* ══ CONTEXT MENU ══ */
 let _menuOpen=null;
+// Referme et range tout menu actuellement détaché dans le body.
+function _cleanupFloatingMenus(){
+  const list=document.querySelectorAll('body > [data-floating-menu="1"]');
+  for(let i=0;i<list.length;i++){
+    const n=list[i];
+    n.removeAttribute('data-floating-menu');
+    n.style.display='none';
+    n.style.position=''; n.style.top=''; n.style.left=''; n.style.right=''; n.style.bottom='';
+    // Remettre dans la ligne d'origine si elle existe encore, sinon laisser
+    // orphelin (sera collecté) — un nouveau menu est recréé au prochain rendu.
+    if(n.__origParent && n.__origParent.isConnected){
+      try{ n.__origParent.appendChild(n); }catch(_){}
+    }
+    n.__origParent=null;
+  }
+}
 function toggleRemarqueMenu(e,id){
   e.stopPropagation();
   const already=(_menuOpen===id);
@@ -5315,10 +5352,13 @@ function toggleRemarqueMenu(e,id){
   if(already) return; // un second clic referme
   const el=document.getElementById(id);
   if(!el) return;
-  // Bouton déclencheur (ancre)
   const btn=(e.currentTarget||e.target);
   const br=btn.getBoundingClientRect();
-  // Afficher hors écran pour mesurer
+  // Détacher le menu vers le body : un parent avec opacity<1 (lignes "traité")
+  // ou un conteneur défilant le piégerait/masquerait sinon.
+  el.__origParent=el.parentNode;
+  el.setAttribute('data-floating-menu','1');
+  document.body.appendChild(el);
   el.style.position='fixed';
   el.style.visibility='hidden';
   el.style.display='block';
@@ -5327,11 +5367,9 @@ function toggleRemarqueMenu(e,id){
   const vw=window.innerWidth||document.documentElement.clientWidth;
   const vh=window.innerHeight||document.documentElement.clientHeight;
   const pad=8;
-  // Horizontal : aligner le bord droit du menu sous le bouton, sinon recaler
   let left=br.right-mw;
   if(left<pad) left=pad;
   if(left+mw>vw-pad) left=vw-pad-mw;
-  // Vertical : sous le bouton si la place suffit, sinon au-dessus
   let top=br.bottom+4;
   if(top+mh>vh-pad){
     const above=br.top-4-mh;
@@ -5343,10 +5381,7 @@ function toggleRemarqueMenu(e,id){
   _menuOpen=id;
 }
 function closeAllMenus(){
-  if(_menuOpen){
-    const el=document.getElementById(_menuOpen);
-    if(el){ el.style.display='none'; el.style.position=''; el.style.top=''; el.style.bottom=''; el.style.left=''; el.style.right=''; }
-  }
+  _cleanupFloatingMenus();
   _menuOpen=null;
 }
 // Refermer aussi au défilement (la position fixe ne suit pas le scroll).
