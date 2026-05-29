@@ -565,7 +565,20 @@ function e(s){return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').
 // "dirty" here means: saved (localStorage + Supabase) but NOT yet reflected in
 // the last exported PDF. markDirty() persists immediately; the indicator only
 // signals that a fresh PDF export would differ from the current data.
-function markDirty(){isDirty=true;const d=document.getElementById('dirty-dot');if(d)d.style.display='inline-flex';saveCRS();}
+// Ensemble des CRs réellement modifiés sur CET appareil et pas encore
+// synchronisés. Évite qu'un appareil ayant une copie périmée d'un AUTRE CR
+// n'écrase le serveur en repoussant tout le tableau (perte de données).
+let _dirtyCRIds = new Set();
+function markDirty(crId){
+  isDirty=true;
+  const d=document.getElementById('dirty-dot');
+  if(d)d.style.display='inline-flex';
+  // Si on connaît le CR concerné, ne marquer que celui-là ; sinon, repli sur
+  // le CR actif (la quasi-totalité des mutations agissent sur le CR ouvert).
+  const id = crId || activeCR;
+  if(id) _dirtyCRIds.add(id);
+  saveCRS(id);
+}
 function markClean(){isDirty=false;const d=document.getElementById('dirty-dot');if(d)d.style.display='none';}
 function toast(msg,color){
   const t=document.getElementById('toast');
@@ -744,16 +757,28 @@ function _loadTombstones() {
   } catch(e){}
 }
 
-function saveCRS() {
-  // Horodater chaque CR pour le merge multi-appareil
+function saveCRS(changedId) {
   const now = new Date().toISOString();
-  CRS.forEach(function(cr){ cr._updatedAt = now; });
-  // 1. localStorage immédiat
+  // Déterminer le CR concerné : explicite, sinon le CR actif.
+  const id = changedId || activeCR;
+  if(id) _dirtyCRIds.add(id);
+  // N'horodater QUE le(s) CR(s) modifié(s) sur cet appareil. Re-stamper tous
+  // les CRs ferait gagner un faux "plus récent" à des copies périmées et
+  // écraserait le travail des autres au prochain merge/sync.
+  if(id){
+    const cr=CRS.find(function(c){return c.id===id;});
+    if(cr) cr._updatedAt=now;
+  }
+  // Tout CR déjà marqué sale est aussi (re)horodaté pour rester cohérent.
+  CRS.forEach(function(cr){ if(_dirtyCRIds.has(cr.id)) cr._updatedAt=cr._updatedAt||now; });
+  // 1. localStorage immédiat (tout le tableau, sans danger en local)
   try { localStorage.setItem('plansync_crs', JSON.stringify(CRS)); }
   catch(e) { console.warn('PlanSync: localStorage save error:', e); }
-  // 2. Supabase en arrière-plan
+  // 2. Supabase en arrière-plan — uniquement les CRs modifiés ici
   _syncToSupabase();
 }
+// Forcer la synchro de TOUS les CRs (import, restauration) — usage rare.
+function _syncAll(){ CRS.forEach(function(cr){ _dirtyCRIds.add(cr.id); }); _syncToSupabase(); }
 
 /* ══ SUPABASE ══ */
 const SUPA_URL = 'https://voeumoqxsdbdmhhbnomb.supabase.co';
@@ -1187,17 +1212,23 @@ async function _syncToSupabase(){
   if(!sb) return;
   _pendingSync = true;
   try {
-    const upserts = CRS.filter(function(cr){ return !_deletedPVIds.has(cr.id); })
-      .map(function(cr){
-        // Preserve the original owner if known; otherwise the current user
-        // becomes the owner (new CR). Editors saving a shared CR must not
-        // hijack ownership.
-        const owner = _crOwners[cr.id] || currentUserId();
-        return { id: cr.id, user_id: owner, data: cr, updated_at: new Date().toISOString() };
-      });
-    if(!upserts.length){ _pendingSync=false; return; }
+    // Ne pousser QUE les CRs modifiés sur cet appareil (et non tombstonés).
+    // Un appareil ne ré-écrit jamais des CRs qu'il n'a pas touchés : c'est ce
+    // qui évite d'écraser le travail des autres avec une copie périmée.
+    const toPush = CRS.filter(function(cr){
+      return _dirtyCRIds.has(cr.id) && !_deletedPVIds.has(cr.id);
+    });
+    if(!toPush.length){ _pendingSync=false; return; }
+    const upserts = toPush.map(function(cr){
+      const owner = _crOwners[cr.id] || currentUserId();
+      // Utiliser l'horodatage propre du CR (et non "maintenant") pour que le
+      // merge serveur/local reste cohérent.
+      return { id: cr.id, user_id: owner, data: cr, updated_at: cr._updatedAt || new Date().toISOString() };
+    });
+    const pushedIds = toPush.map(function(cr){return cr.id;});
     const { error } = await sb.from('crs').upsert(upserts);
-    if(error) console.warn('PlanSync: Supabase sync error:', error.message);
+    if(error){ console.warn('PlanSync: Supabase sync error:', error.message); }
+    else { pushedIds.forEach(function(id){ _dirtyCRIds.delete(id); }); }
   } catch(e) { console.warn('PlanSync: Supabase unreachable:', e.message); }
   finally { _pendingSync = false; }
 }
@@ -1331,13 +1362,22 @@ async function refreshFromStorage(){
   }
 }
 
-// Temps réel : recharger si un autre onglet/appareil modifie les données
+// Temps réel : recharger si un autre onglet/appareil modifie les données.
+// Nécessite que la réplication "Realtime" soit ACTIVÉE sur la table crs côté
+// Supabase (sinon aucun événement n'arrive et il faut actualiser à la main).
+let _rtDebounce=null;
 function _initSupabaseRealtime(){
   const sb = getSupabase();
   if(!sb) return;
-  sb.channel('crs-realtime')
+  // Éviter les abonnements multiples (reconnexions).
+  try{ if(window._rtChannel){ sb.removeChannel(window._rtChannel); } }catch(e){}
+  window._rtChannel = sb.channel('crs-realtime')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'crs' },
-      function(){ refreshFromStorage(); })
+      function(){
+        // Petit debounce : regrouper les rafales d'événements.
+        clearTimeout(_rtDebounce);
+        _rtDebounce=setTimeout(function(){ refreshFromStorage(); }, 400);
+      })
     .subscribe();
 }
 
@@ -3046,7 +3086,7 @@ function saveNewCR(){
     actions:[],
   };
   CRS.unshift(newCR);
-  saveCRS();
+  saveCRS(newCR.id);
   logActivity('cr_created','cr',_crLabel(newCR),newCR.id);
   closeModal();
   activeCR=newCR.id;
@@ -4197,7 +4237,7 @@ function createFromTemplate(ti){
     actions:[],
   };
   CRS.unshift(newCR);
-  saveCRS();
+  saveCRS(newCR.id);
   // Initialize colors
   newCR.intervenants.forEach(function(int){if(!int.color)int.color=lotColor(int.lot);});
 
@@ -4353,7 +4393,8 @@ function confirmCloneCR(crId){
   CRS.unshift(newCR);
   // Archiver le CR source — il devient historique
   cr.statut = 'archived';
-  saveCRS();
+  _dirtyCRIds.add(newCR.id); _dirtyCRIds.add(cr.id);
+  saveCRS(newCR.id);
   logActivity('cr_created','cr',_crLabel(newCR)+' (CR suivant)',newCR.id);
   newCR.intervenants.forEach(function(int){if(!int.color)int.color=lotColor(int.lot);});
 
@@ -4897,7 +4938,7 @@ function _createImportedCR(parsed){
   };
 
   CRS.unshift(newCR);
-  saveCRS();
+  saveCRS(newCR.id);
   closeModal();
   activeCR=newCR.id;
   activeTab='remarques';
@@ -5006,8 +5047,9 @@ function _applyImport(backup, replace){
       });
     }
   }
-  // Persist everything
-  saveCRS();
+  // Persist everything (import complet : pousser tous les CRs)
+  _syncAll();
+  try { localStorage.setItem('plansync_crs', JSON.stringify(CRS)); }catch(e){}
   saveTemplatesToStorage();
   savePdfSettings();
   updateSidebarLogo();
